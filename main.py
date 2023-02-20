@@ -9,21 +9,15 @@ while True:
         break
     else:
         params = {
-            "action": "wbgetentities",
-            # "action": "wbsearchentities",
-            "languages": "en",
+            "action": "wbsearchentities",
+            "language": "en",
             "format": "json",
-            # "id": query
-            "ids": "Q76"
+            "search": query
         }
         try:
             data = requests.get(url, params=params)
-            print(data.json())
-            # print(data.json()["searchinfo"])
-            # print(data.json()["search"][0]["description"])
-            # print(data.json()["search"][0]["label"])
-            # print(data.json()["search"][0]["id"])
-            # print(data.json()["search"][0]["aliases"])
+            print(data.json()["search"][2]["description"])
+            print(data.json()["search"][2]["id"])
 
         except:
             print("Invalid Input try again !!!")
