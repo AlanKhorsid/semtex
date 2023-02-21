@@ -6,7 +6,7 @@ from spellchecker import SpellChecker
 def spellcheck(inputString: str) -> {str}:
     spell = SpellChecker()
     candidates = []
-    misspelled = spell.unknown(inputString.split(" "))
+    misspelled = spell.unknown(inputString.lower().split(" "))
 
     for word in misspelled:
         candidates.append(spell.candidates(word))
@@ -15,11 +15,11 @@ def spellcheck(inputString: str) -> {str}:
 
 def autocorrect(inputString: str) -> str:
     spell = Speller()
-    autocorrectedString = spell(inputString)
+    autocorrectedString = spell(inputString.lower())
 
     return autocorrectedString
 
-string = "adm"
+string = "salin"
 
 x = spellcheck(string)
 for cand in x:
