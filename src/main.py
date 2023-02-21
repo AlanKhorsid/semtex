@@ -1,37 +1,100 @@
 import requests
+from enum import Enum
 
-url = "https://www.wikidata.org/w/api.php"
+API_URL = "https://www.wikidata.org/w/api.php"
 
-while True:
-    query = input("Enter name: ")
-    if query == "quit":
-        break
+# Make enum for claim types
+class ClaimType(Enum):
+    STRING = 1
+    TIME = 2
+    ENTITY = 3
+    QUANTITY = 4
+    LEXEME = 5
+    # GLOBE_COORDINATES = 5
+    # MONOLINGUAL_TEXT = 6
+    # MULTILINGUAL_TEXT = 7
+    # URL = 8
+    # EXTERNAL_ID = 9
+    UNKNOWN = 10
+
+
+def get_candidates(mention):
+    params = {
+        "action": "wbsearchentities",
+        "language": "en",
+        "format": "json",
+        "search": mention,
+        "limit": "10",
+    }
+    try:
+        data = requests.get(API_URL, params=params)
+        res = [item["id"] for item in data.json()["search"]]
+        return [int(item[1:]) for item in res]
+    except:
+        return []
+
+
+def parse_claim(claim):
+    if claim["mainsnak"]["snaktype"] == "novalue":
+        return None
+
+    if claim["mainsnak"]["datatype"] == "wikibase-item":
+        return {"type": ClaimType.ENTITY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
+    elif claim["mainsnak"]["datatype"] == "string":
+        return {"type": ClaimType.STRING, "value": claim["mainsnak"]["datavalue"]["value"]}
+    elif claim["mainsnak"]["datatype"] == "time":
+        return {"type": ClaimType.TIME, "value": claim["mainsnak"]["datavalue"]["value"]["time"]}
+    elif claim["mainsnak"]["datatype"] == "external-id":
+        return {"type": ClaimType.STRING, "value": claim["mainsnak"]["datavalue"]["value"]}
+    elif claim["mainsnak"]["datatype"] == "monolingualtext":
+        return {"type": ClaimType.STRING, "value": claim["mainsnak"]["datavalue"]["value"]["text"]}
+    elif claim["mainsnak"]["datatype"] == "url":
+        return {"type": ClaimType.STRING, "value": claim["mainsnak"]["datavalue"]["value"]}
+    elif claim["mainsnak"]["datatype"] == "quantity":
+        # TODO: handle parseing of value and unit
+        return {"type": ClaimType.QUANTITY, "value": claim["mainsnak"]["datavalue"]["value"]["amount"]}
+    elif claim["mainsnak"]["datatype"] == "wikibase-lexeme":
+        return {"type": ClaimType.LEXEME, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
+    elif claim["mainsnak"]["datatype"] == "wikibase-form":
+        return {"type": ClaimType.LEXEME, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
+    elif claim["mainsnak"]["datatype"] == "geo-shape":
+        return {"type": ClaimType.STRING, "value": claim["mainsnak"]["datavalue"]["value"]}
+    elif claim["mainsnak"]["datatype"] == "commonsMedia" or claim["mainsnak"]["datatype"] == "globe-coordinate":
+        # ignore
+        return None
     else:
-        params = {
-            "action": "wbsearchentities",
-            "language": "en",
-            "format": "json",
-            "search": query,
-            "limit": "10",
-        }
-        try:
-            id_list = []
-            data = requests.get(url, params=params)
-            for i in range(len(data.json()["search"])):
-                print(data.json()["search"][i]["label"])
-                print(data.json()["search"][i]["id"])
-                id_list.append(data.json()["search"][i]["id"])
+        print(f"Unknown claim type: {claim['mainsnak']['datatype']}")
+        print(f"Claim: {claim}")
+        return {"type": ClaimType.UNKNOWN, "value": claim["mainsnak"]["datavalue"]["value"]}
 
-            for j in range(len(id_list)):
-                params = {
-                    "action": "wbgetentities",
-                    "languages": "en",
-                    "format": "json",
-                    "ids": id_list[j],
-                    "props": "claims",
-                }
-                data = requests.get(url, params=params)
-                print(id_list[j])
-                print(data.json())
-        except:
-            print("Invalid Input try again !!!")
+
+def get_entity_claims(id):
+    params = {
+        "action": "wbgetentities",
+        "languages": "en",
+        "format": "json",
+        "ids": f"Q{id}",
+        "props": "claims",
+    }
+
+    data = requests.get(API_URL, params=params)
+    res = data.json()["entities"][f"Q{id}"]["claims"]
+
+    claims = {}
+    for property in res:
+        for claim in res[property]:
+            parsed_claim = parse_claim(claim)
+            if parsed_claim:
+                claims[property] = parsed_claim
+
+    return claims
+
+
+candidates = get_candidates("-1")
+
+from pprint import pprint
+
+for candidate in candidates:
+    print(f"Q{candidate}:")
+    pprint(get_entity_claims(candidate))
+    print("")
