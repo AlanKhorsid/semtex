@@ -1,21 +1,8 @@
 import requests
 from enum import Enum
+from _types import ClaimType
 
 API_URL = "https://www.wikidata.org/w/api.php"
-
-# Make enum for claim types
-class ClaimType(Enum):
-    STRING = 1
-    TIME = 2
-    ENTITY = 3
-    QUANTITY = 4
-    LEXEME = 5
-    # GLOBE_COORDINATES = 5
-    # MONOLINGUAL_TEXT = 6
-    # MULTILINGUAL_TEXT = 7
-    # URL = 8
-    # EXTERNAL_ID = 9
-    UNKNOWN = 10
 
 
 def get_candidates(mention):
@@ -40,6 +27,11 @@ def parse_claim(claim):
 
     if claim["mainsnak"]["datatype"] == "wikibase-item":
         return {"type": ClaimType.ENTITY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
+    else:
+        return None
+
+    if claim["mainsnak"]["datatype"] == "wikibase-item":
+        return {"type": ClaimType.ENTITY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
     elif claim["mainsnak"]["datatype"] == "string":
         return {"type": ClaimType.STRING, "value": claim["mainsnak"]["datavalue"]["value"]}
     elif claim["mainsnak"]["datatype"] == "time":
@@ -59,6 +51,8 @@ def parse_claim(claim):
         return {"type": ClaimType.LEXEME, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
     elif claim["mainsnak"]["datatype"] == "geo-shape":
         return {"type": ClaimType.STRING, "value": claim["mainsnak"]["datavalue"]["value"]}
+    elif claim["mainsnak"]["datatype"] == "wikibase-property":
+        return {"type": ClaimType.PROPERTY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
     elif claim["mainsnak"]["datatype"] == "commonsMedia" or claim["mainsnak"]["datatype"] == "globe-coordinate":
         # ignore
         return None
@@ -90,7 +84,8 @@ def get_entity_claims(id):
     return claims
 
 
-candidates = get_candidates("-1")
+mention = input("Enter a mention: ")
+candidates = get_candidates(mention)
 
 from pprint import pprint
 
