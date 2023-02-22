@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import TypedDict
 
 
 class ClaimType(Enum):
@@ -14,3 +15,10 @@ class ClaimType(Enum):
     # URL = 8
     # EXTERNAL_ID = 9
     UNKNOWN = 10
+
+
+Entity = TypedDict("Entity", {"id": str, "claims": dict["Entity"]})
+
+Claim = TypedDict("Claim", {"type": ClaimType, "value": str})
+
+DiscoveredEntity = TypedDict("DiscoveredEntity", {"candidate": str, "index": int})
