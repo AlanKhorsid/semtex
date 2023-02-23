@@ -27,7 +27,10 @@ def get_candidates(mention: str) -> list[Entity]:
 
 
 def parse_claim(claim) -> Union[Claim, None]:
-    if claim["mainsnak"]["snaktype"] == "novalue" or claim["mainsnak"]["snaktype"] == "somevalue":
+    if (
+        claim["mainsnak"]["snaktype"] == "novalue"
+        or claim["mainsnak"]["snaktype"] == "somevalue"
+    ):
         return None
 
     good_properties = ["P31", "P279"]
@@ -36,12 +39,18 @@ def parse_claim(claim) -> Union[Claim, None]:
         if claim["mainsnak"]["property"] not in good_properties:
             return None
 
-        return {"type": ClaimType.ENTITY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
+        return {
+            "type": ClaimType.ENTITY,
+            "value": claim["mainsnak"]["datavalue"]["value"]["id"],
+        }
     else:
         return None
 
     if claim["mainsnak"]["datatype"] == "wikibase-item":
-        return {"type": ClaimType.ENTITY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
+        return {
+            "type": ClaimType.ENTITY,
+            "value": claim["mainsnak"]["datavalue"]["value"]["id"],
+        }
     elif claim["mainsnak"]["datatype"] == "string":
         return {
             "type": ClaimType.STRING,
@@ -84,10 +93,19 @@ def parse_claim(claim) -> Union[Claim, None]:
             "value": claim["mainsnak"]["datavalue"]["value"]["id"],
         }
     elif claim["mainsnak"]["datatype"] == "geo-shape":
-        return {"type": ClaimType.STRING, "value": claim["mainsnak"]["datavalue"]["value"]}
+        return {
+            "type": ClaimType.STRING,
+            "value": claim["mainsnak"]["datavalue"]["value"],
+        }
     elif claim["mainsnak"]["datatype"] == "wikibase-property":
-        return {"type": ClaimType.PROPERTY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
-    elif claim["mainsnak"]["datatype"] == "commonsMedia" or claim["mainsnak"]["datatype"] == "globe-coordinate":
+        return {
+            "type": ClaimType.PROPERTY,
+            "value": claim["mainsnak"]["datavalue"]["value"]["id"],
+        }
+    elif (
+        claim["mainsnak"]["datatype"] == "commonsMedia"
+        or claim["mainsnak"]["datatype"] == "globe-coordinate"
+    ):
         # ignore
         return None
     else:
@@ -122,10 +140,14 @@ def get_entity_claims(entity: Entity) -> list[Claim]:
     return claims
 
 
-def expand_entity(entity: Entity, trace: str = "", src_entity: Union[Entity, None] = None) -> Entity:
+def expand_entity(
+    entity: Entity, trace: str = "", src_entity: Union[Entity, None] = None
+) -> Entity:
     if entity["claims"] != {}:
         for e in entity["claims"]:
-            expand_entity(entity["claims"][e], f"{trace}{entity['id']} -> ", src_entity or entity)
+            expand_entity(
+                entity["claims"][e], f"{trace}{entity['id']} -> ", src_entity or entity
+            )
         return
 
     print(f"Expanding {trace}{entity['id']}")
@@ -165,7 +187,9 @@ def get_candidate_coverage(
 
             i = candidate_index(candidatesList, candidate)
             if i == -1:
-                raise Exception(f"Candidate {candidate} not found in candidatesList. This should not happen?")
+                raise Exception(
+                    f"Candidate {candidate} not found in candidatesList. This should not happen?"
+                )
 
             if not any(i == cand[0] for cand in cands):
                 cands.append((i, [candidate]))
@@ -187,7 +211,13 @@ def get_candidate_coverage(
 
 
 # MENTIONS = ["Helgafell", "Tungurahua volcano", "Khodutka", "Gamchen", "Voyampolsky"]
-MENTIONS = ["Barack Obama", "Donald Trump", "Joe Biden", "Hillary Clinton", "Bernie Sanders"]
+MENTIONS = [
+    "Barack Obama",
+    "Donald Trump",
+    "Joe Biden",
+    "Hillary Clinton",
+    "Bernie Sanders",
+]
 candidatesList = [get_candidates(mention) for mention in MENTIONS]
 
 for candidates in candidatesList:
