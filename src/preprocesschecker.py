@@ -69,7 +69,12 @@ def check_spellchecker(func, case_sensitive: bool = False, only_hard: bool = Fal
             label = label.lower()
             actual_label = actual_label.lower()
 
-        prediction = func(label)
+        try:
+            prediction = func(label)
+        except:
+            print(f"ERROR: {label} -> {actual_label}")
+            continue
+
         if not case_sensitive:
             prediction = prediction.lower()
 
@@ -80,10 +85,3 @@ def check_spellchecker(func, case_sensitive: bool = False, only_hard: bool = Fal
             print(f"INCORRECT: {label} -> {prediction} (should be {actual_label})")
 
     print(f"Accuracy: {correct / total * 100:.2f}%")
-
-
-# def func1(str: str):
-#     return str
-
-
-# check_spellchecker(func1, case_sensitive=True, only_hard=True)
