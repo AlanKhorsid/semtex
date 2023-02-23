@@ -82,8 +82,8 @@ def check_spellchecker(func, case_sensitive: bool = False, only_hard: bool = Fal
     print(f"Accuracy: {correct / total * 100:.2f}%")
 
 
-def func1(str: str):
-    return str
+# def func1(str: str):
+#     return str
 
 
-check_spellchecker(func1, case_sensitive=True, only_hard=True)
+# check_spellchecker(func1, case_sensitive=True, only_hard=True)
