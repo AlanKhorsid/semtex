@@ -26,12 +26,18 @@ def parse_claim(claim):
         return None
 
     if claim["mainsnak"]["datatype"] == "wikibase-item":
-        return {"type": ClaimType.ENTITY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
+        return {
+            "type": ClaimType.ENTITY,
+            "value": claim["mainsnak"]["datavalue"]["value"]["id"],
+        }
     else:
         return None
 
     if claim["mainsnak"]["datatype"] == "wikibase-item":
-        return {"type": ClaimType.ENTITY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
+        return {
+            "type": ClaimType.ENTITY,
+            "value": claim["mainsnak"]["datavalue"]["value"]["id"],
+        }
     elif claim["mainsnak"]["datatype"] == "string":
         return {
             "type": ClaimType.STRING,
@@ -74,10 +80,19 @@ def parse_claim(claim):
             "value": claim["mainsnak"]["datavalue"]["value"]["id"],
         }
     elif claim["mainsnak"]["datatype"] == "geo-shape":
-        return {"type": ClaimType.STRING, "value": claim["mainsnak"]["datavalue"]["value"]}
+        return {
+            "type": ClaimType.STRING,
+            "value": claim["mainsnak"]["datavalue"]["value"],
+        }
     elif claim["mainsnak"]["datatype"] == "wikibase-property":
-        return {"type": ClaimType.PROPERTY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
-    elif claim["mainsnak"]["datatype"] == "commonsMedia" or claim["mainsnak"]["datatype"] == "globe-coordinate":
+        return {
+            "type": ClaimType.PROPERTY,
+            "value": claim["mainsnak"]["datavalue"]["value"]["id"],
+        }
+    elif (
+        claim["mainsnak"]["datatype"] == "commonsMedia"
+        or claim["mainsnak"]["datatype"] == "globe-coordinate"
+    ):
         # ignore
         return None
     else:
@@ -111,12 +126,15 @@ def get_entity_claims(id):
     return claims
 
 
-mention = input("Enter a mention: ")
-candidates = get_candidates(mention)
+while True:
+    mention = input("Enter a mention: ")
+    if mention == "quit":
+        break
+    candidates = get_candidates(mention)
 
-from pprint import pprint
+    from pprint import pprint
 
-for candidate in candidates:
-    print(f"Q{candidate}:")
-    pprint(get_entity_claims(candidate))
-    print("")
+    for candidate in candidates:
+        print(f"Q{candidate}:")
+        pprint(get_entity_claims(candidate))
+        print("")
