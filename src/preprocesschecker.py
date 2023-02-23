@@ -1,5 +1,6 @@
 import csv
 import requests
+import threading
 
 
 def get_csv_lines(filename: str) -> list[list[str]]:
@@ -85,3 +86,54 @@ def check_spellchecker(func, case_sensitive: bool = False, only_hard: bool = Fal
             print(f"INCORRECT: {label} -> {prediction} (should be {actual_label})")
 
     print(f"Accuracy: {correct / total * 100:.2f}%")
+
+
+def check_spellchecker_threaded(func, case_sensitive: bool = False, only_hard: bool = False, num_threads: int = 20):
+    vals = get_csv_lines("./datasets/spellCheck/vals.csv")
+
+    if only_hard:
+        vals = [line for line in vals if line[0] != line[1]]
+
+    total = len(vals)
+    correct = 0
+
+    def check_line(line):
+        label, actual_label = line
+        if not case_sensitive:
+            label = label.lower()
+            actual_label = actual_label.lower()
+
+        try:
+            prediction = func(label)
+        except:
+            print(f"ERROR: {label} -> {actual_label}")
+            return
+
+        if not case_sensitive:
+            prediction = prediction.lower()
+
+        if prediction == actual_label:
+            nonlocal correct
+            correct += 1
+            print(f"CORRECT: {label} -> {actual_label}")
+        else:
+            print(f"INCORRECT: {label} -> {prediction} (should be {actual_label})")
+
+    # split vals into chunks of size num_threads
+    vals = [vals[i : i + num_threads] for i in range(0, len(vals), num_threads)]
+
+    threads = []
+    for chunk in vals:
+        for line in chunk:
+            t = threading.Thread(target=check_line, args=(line,))
+            t.start()
+            threads.append(t)
+
+        for t in threads:
+            t.join()
+
+    print(f"Accuracy: {correct / total * 100:.2f}%")
+
+
+# func1 = lambda x: x
+# check_spellchecker_threaded(func1)
