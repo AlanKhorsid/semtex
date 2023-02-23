@@ -1,7 +1,6 @@
 from typing import Union
 import requests
-from enum import Enum
-from _types import ClaimType, Entity, Claim, DiscoveredEntity
+from _types import ClaimType, Entity, Claim
 from pprint import pprint
 
 API_URL = "https://www.wikidata.org/w/api.php"
@@ -31,8 +30,10 @@ def parse_claim(claim) -> Union[Claim, None]:
     if claim["mainsnak"]["snaktype"] == "novalue" or claim["mainsnak"]["snaktype"] == "somevalue":
         return None
 
+    good_properties = ["P31", "P279"]
+
     if claim["mainsnak"]["datatype"] == "wikibase-item":
-        if claim["mainsnak"]["property"] != "P31" and claim["mainsnak"]["datavalue"]["value"]["id"] != "P279":
+        if claim["mainsnak"]["property"] not in good_properties:
             return None
 
         return {"type": ClaimType.ENTITY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
@@ -197,9 +198,9 @@ for candidates in candidatesList:
     for candidate in candidates:
         expand_entity(candidate)
 
-for candidates in candidatesList:
-    for candidate in candidates:
-        expand_entity(candidate)
+# for candidates in candidatesList:
+#     for candidate in candidates:
+#         expand_entity(candidate)
 
 # expand_entity(candidatesList[0][0])
 # expand_entity(candidatesList[1][0])
