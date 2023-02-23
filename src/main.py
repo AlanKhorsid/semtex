@@ -1,6 +1,8 @@
 from typing import Union
 import requests
-from _types import ClaimType, Entity, Claim
+import threading
+from enum import Enum
+from _types import ClaimType, Entity, Claim, DiscoveredEntity
 from pprint import pprint
 
 API_URL = "https://www.wikidata.org/w/api.php"
@@ -27,30 +29,19 @@ def get_candidates(mention: str) -> list[Entity]:
 
 
 def parse_claim(claim) -> Union[Claim, None]:
-    if (
-        claim["mainsnak"]["snaktype"] == "novalue"
-        or claim["mainsnak"]["snaktype"] == "somevalue"
-    ):
+    if claim["mainsnak"]["snaktype"] == "novalue" or claim["mainsnak"]["snaktype"] == "somevalue":
         return None
 
-    good_properties = ["P31", "P279"]
-
     if claim["mainsnak"]["datatype"] == "wikibase-item":
-        if claim["mainsnak"]["property"] not in good_properties:
+        if claim["mainsnak"]["property"] != "P31" and claim["mainsnak"]["datavalue"]["value"]["id"] != "P279":
             return None
 
-        return {
-            "type": ClaimType.ENTITY,
-            "value": claim["mainsnak"]["datavalue"]["value"]["id"],
-        }
+        return {"type": ClaimType.ENTITY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
     else:
         return None
 
     if claim["mainsnak"]["datatype"] == "wikibase-item":
-        return {
-            "type": ClaimType.ENTITY,
-            "value": claim["mainsnak"]["datavalue"]["value"]["id"],
-        }
+        return {"type": ClaimType.ENTITY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
     elif claim["mainsnak"]["datatype"] == "string":
         return {
             "type": ClaimType.STRING,
@@ -93,19 +84,10 @@ def parse_claim(claim) -> Union[Claim, None]:
             "value": claim["mainsnak"]["datavalue"]["value"]["id"],
         }
     elif claim["mainsnak"]["datatype"] == "geo-shape":
-        return {
-            "type": ClaimType.STRING,
-            "value": claim["mainsnak"]["datavalue"]["value"],
-        }
+        return {"type": ClaimType.STRING, "value": claim["mainsnak"]["datavalue"]["value"]}
     elif claim["mainsnak"]["datatype"] == "wikibase-property":
-        return {
-            "type": ClaimType.PROPERTY,
-            "value": claim["mainsnak"]["datavalue"]["value"]["id"],
-        }
-    elif (
-        claim["mainsnak"]["datatype"] == "commonsMedia"
-        or claim["mainsnak"]["datatype"] == "globe-coordinate"
-    ):
+        return {"type": ClaimType.PROPERTY, "value": claim["mainsnak"]["datavalue"]["value"]["id"]}
+    elif claim["mainsnak"]["datatype"] == "commonsMedia" or claim["mainsnak"]["datatype"] == "globe-coordinate":
         # ignore
         return None
     else:
@@ -140,14 +122,20 @@ def get_entity_claims(entity: Entity) -> list[Claim]:
     return claims
 
 
-def expand_entity(
-    entity: Entity, trace: str = "", src_entity: Union[Entity, None] = None
-) -> Entity:
+def expand_entity(entity: Entity, trace: str = "", src_entity: Union[Entity, None] = None, num_threads = 50) -> Entity:
     if entity["claims"] != {}:
+        threads = []
         for e in entity["claims"]:
-            expand_entity(
-                entity["claims"][e], f"{trace}{entity['id']} -> ", src_entity or entity
-            )
+            t = threading.Thread(
+                target=expand_entity, 
+                args=(
+                    entity["claims"][e], 
+                    f"{trace}{entity['id']} -> ", 
+                    src_entity or entity))
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
         return
 
     print(f"Expanding {trace}{entity['id']}")
@@ -187,9 +175,7 @@ def get_candidate_coverage(
 
             i = candidate_index(candidatesList, candidate)
             if i == -1:
-                raise Exception(
-                    f"Candidate {candidate} not found in candidatesList. This should not happen?"
-                )
+                raise Exception(f"Candidate {candidate} not found in candidatesList. This should not happen?")
 
             if not any(i == cand[0] for cand in cands):
                 cands.append((i, [candidate]))
@@ -211,26 +197,20 @@ def get_candidate_coverage(
 
 
 # MENTIONS = ["Helgafell", "Tungurahua volcano", "Khodutka", "Gamchen", "Voyampolsky"]
-MENTIONS = [
-    "Barack Obama",
-    "Donald Trump",
-    "Joe Biden",
-    "Hillary Clinton",
-    "Bernie Sanders",
-]
+MENTIONS = ["Barack Obama", "Donald Trump", "Joe Biden", "Hillary Clinton", "Bernie Sanders"]
 candidatesList = [get_candidates(mention) for mention in MENTIONS]
 
 for candidates in candidatesList:
     for candidate in candidates:
-        expand_entity(candidate)
+        expand_entity(candidate, num_threads=10)
 
 for candidates in candidatesList:
     for candidate in candidates:
-        expand_entity(candidate)
+        expand_entity(candidate, num_threads=10)
 
-# for candidates in candidatesList:
-#     for candidate in candidates:
-#         expand_entity(candidate)
+for candidates in candidatesList:
+    for candidate in candidates:
+        expand_entity(candidate, num_threads=10)
 
 # expand_entity(candidatesList[0][0])
 # expand_entity(candidatesList[1][0])
