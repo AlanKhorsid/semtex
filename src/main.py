@@ -1,6 +1,8 @@
 from typing import Union
 import requests
-from _types import ClaimType, Entity, Claim
+import threading
+from enum import Enum
+from _types import ClaimType, Entity, Claim, DiscoveredEntity
 from pprint import pprint
 
 API_URL = "https://www.wikidata.org/w/api.php"
@@ -8,13 +10,34 @@ API_URL = "https://www.wikidata.org/w/api.php"
 HASH: dict[set[str]] = {}
 
 
-def get_candidates(mention: str) -> list[Entity]:
+def get_candidates(mention: str, limit: int = 10) -> list[Entity]:
+    """
+    Fetches a list of candidate entities from the Wikidata API.
+
+    Parameters
+    ----------
+    mention : str
+        The mention to search for.
+    limit : int, optional
+        The maximum number of candidates to return, by default 10
+
+    Returns
+    -------
+    list[Entity]
+        A list of candidate entities.
+
+    Example
+    -------
+    >>> get_candidates("Barack Obama", limit=3)
+    [{'id': 'Q76', 'claims': {}}, {'id': 'Q47513588', 'claims': {}}, {'id': 'Q59661289', 'claims': {}}]
+    """
+
     params = {
         "action": "wbsearchentities",
         "language": "en",
         "format": "json",
         "search": mention,
-        "limit": "10",
+        "limit": f"{limit}",
     }
     data = requests.get(API_URL, params=params)
 
@@ -26,17 +49,26 @@ def get_candidates(mention: str) -> list[Entity]:
     return res
 
 
-def parse_claim(claim) -> Union[Claim, None]:
+def parse_claim(claim: dict) -> Union[Claim, None]:
+    """
+    Parses a claim from a JSON resonse from the Wikidata API.
+
+    For now, only claims of type "wikibase-item" are parsed. These claims map to actual entities.
+
+
+    """
+
     if (
         claim["mainsnak"]["snaktype"] == "novalue"
         or claim["mainsnak"]["snaktype"] == "somevalue"
     ):
         return None
 
-    good_properties = ["P31", "P279"]
-
     if claim["mainsnak"]["datatype"] == "wikibase-item":
-        if claim["mainsnak"]["property"] not in good_properties:
+        if (
+            claim["mainsnak"]["property"] != "P31"
+            and claim["mainsnak"]["datavalue"]["value"]["id"] != "P279"
+        ):
             return None
 
         return {
@@ -141,13 +173,26 @@ def get_entity_claims(entity: Entity) -> list[Claim]:
 
 
 def expand_entity(
-    entity: Entity, trace: str = "", src_entity: Union[Entity, None] = None
+    entity: Entity,
+    trace: str = "",
+    src_entity: Union[Entity, None] = None,
+    num_threads=50,
 ) -> Entity:
     if entity["claims"] != {}:
+        threads = []
         for e in entity["claims"]:
-            expand_entity(
-                entity["claims"][e], f"{trace}{entity['id']} -> ", src_entity or entity
+            t = threading.Thread(
+                target=expand_entity,
+                args=(
+                    entity["claims"][e],
+                    f"{trace}{entity['id']} -> ",
+                    src_entity or entity,
+                ),
             )
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
         return
 
     print(f"Expanding {trace}{entity['id']}")
@@ -222,15 +267,15 @@ candidatesList = [get_candidates(mention) for mention in MENTIONS]
 
 for candidates in candidatesList:
     for candidate in candidates:
-        expand_entity(candidate)
+        expand_entity(candidate, num_threads=10)
 
 for candidates in candidatesList:
     for candidate in candidates:
-        expand_entity(candidate)
+        expand_entity(candidate, num_threads=10)
 
-# for candidates in candidatesList:
-#     for candidate in candidates:
-#         expand_entity(candidate)
+for candidates in candidatesList:
+    for candidate in candidates:
+        expand_entity(candidate, num_threads=10)
 
 # expand_entity(candidatesList[0][0])
 # expand_entity(candidatesList[1][0])
@@ -240,9 +285,9 @@ for candidates in candidatesList:
 # expand_entity(candidatesList[0][0])
 
 # pprint(HASH)
-cov = get_candidate_coverage(HASH, candidatesList)
-pprint(cov)
-pprint(len([x for x in cov if x[1] == 1]))
+# cov = get_candidate_coverage(HASH, candidatesList)
+# pprint(cov)
+# pprint(len([x for x in cov if x[1] == 1]))
 
 # EXPAND ALL CANDIDATES
 # for candidates in candidatesList:
