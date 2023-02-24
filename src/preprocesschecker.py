@@ -122,8 +122,8 @@ def check_spellchecker_threaded(func, case_sensitive: bool = False, only_hard: b
     # split vals into chunks of size num_threads
     vals = [vals[i : i + num_threads] for i in range(0, len(vals), num_threads)]
 
-    threads = []
     for chunk in vals:
+        threads = []
         for line in chunk:
             t = threading.Thread(target=check_line, args=(line,))
             t.start()
@@ -135,5 +135,5 @@ def check_spellchecker_threaded(func, case_sensitive: bool = False, only_hard: b
     print(f"Accuracy: {correct / total * 100:.2f}%")
 
 
-# func1 = lambda x: x
-# check_spellchecker_threaded(func1)
+func1 = lambda x: x
+check_spellchecker_threaded(func1)
