@@ -1,0 +1,851 @@
+{
+   "_type": "SearchResponse",
+   "queryContext": {
+      "originalQuery": "Tezla",
+      "alteredQuery": "Tesla",
+      "alterationDisplayQuery": "<b>Tesla<\/b>",
+      "alterationOverrideQuery": "+Tezla",
+      "adultIntent": false
+   },
+   "webPages": {
+      "webSearchUrl": "https://www.bing.com/search?q=Tezla",
+      "totalEstimatedMatches": 1660000000,
+      "value": [
+         {
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.0",
+            "name": "Model S | Tesla Danmark",
+            "url": "https://www.tesla.com/da_dk/models",
+            "thumbnailUrl": "https://www.bing.com/th?id=OIP.lHTBzsNPdhwbuQXSwq6pYgHaEo&w=80&h=80&c=1&pid=5.1",
+            "isFamilyFriendly": true,
+            "displayUrl": "https://www.<b>tesla<\/b>.com/da_dk/<b>models<\/b>",
+            "snippet": "Sikkerhed er den vigtigste del af enhver <b>Tesla<\/b>. Vi designer vores køretøjer, så de overgår sikkerhedsstandarderne. 5-stjernet vurdering og bedste sikkerhed i sin klasse Model S opnåede en 5-stjernet Euro NCAP sikkerhedsklassificering i 2022 og vandt Best in Class-priserne i kategorierne Executive og Pure Electric.",
+            "deepLinks": [
+               {
+                  "name": "Opladning",
+                  "url": "https://www.tesla.com/da_DK/charging"
+               },
+               {
+                  "name": "Bestil Nu",
+                  "url": "https://www.tesla.com/da_DK/models/design"
+               },
+               {
+                  "name": "Model 3",
+                  "url": "https://www.tesla.com/da_dk/model3"
+               },
+               {
+                  "name": "Prøvetur",
+                  "url": "https://www.tesla.com/da_dk/drive"
+               }
+            ],
+            "dateLastCrawled": "2023-02-23T17:50:00.0000000Z",
+            "language": "da",
+            "isNavigational": false
+         },
+         {
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.1",
+            "name": "Model X | Tesla Danmark",
+            "url": "https://www.tesla.com/da_DK/modelx",
+            "thumbnailUrl": "https://www.bing.com/th?id=OIP.ghIRmU_hsRObF5teg09gJAHaDa&w=80&h=80&c=1&pid=5.1",
+            "isFamilyFriendly": true,
+            "displayUrl": "https://www.<b>tesla<\/b>.com/da_DK/<b>modelx<\/b>",
+            "snippet": "Lydanlæg med 22 højtalere, 960 watt og aktiv reduktion af vejstøj sikrer den bedste lytteoplevelse - uanset hvor du befinder dig. Model X. Platformen med Dual Motor og firehjulstræk maksimerer rækkevidde, og leverer nu også vanvittige kræfter og acceleration. 3,9 sek. 0-100 km/t. 576 km. Rækkevidde (WLTP)",
+            "deepLinks": [
+               {
+                  "name": "Powerwall",
+                  "url": "https://www.tesla.com/en_CA/powerwall"
+               },
+               {
+                  "name": "Opladning",
+                  "url": "https://www.tesla.com/da_DK/charging"
+               },
+               {
+                  "name": "Bestil Nu",
+                  "url": "https://www.tesla.com/da_dk/modelx/design"
+               },
+               {
+                  "name": "Model Y",
+                  "url": "https://www.tesla.com/da_DK/modely"
+               },
+               {
+                  "name": "Model S",
+                  "url": "https://www.tesla.com/da_dk/models"
+               },
+               {
+                  "name": "Model X",
+                  "url": "https://www.tesla.com/modelx"
+               }
+            ],
+            "dateLastCrawled": "2023-02-22T14:58:00.0000000Z",
+            "language": "da",
+            "isNavigational": false
+         },
+         {
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.2",
+            "name": "Tesla - 904 brugte til salg på Bilbasen",
+            "url": "https://www.bilbasen.dk/brugt/bil/tesla",
+            "isFamilyFriendly": true,
+            "displayUrl": "https://www.bilbasen.dk/brugt/bil/<b>tesla<\/b>",
+            "snippet": "Til Langdistanceture Tilføjer Model 3 Op Til 275 Kilometer Rækkevidde På Kun 15 Minutter Ved Hjælp Af<b> Teslas<\/b> Supercharger-Netværk, Så Du Kommer Hurtigt Tilbage På Vejen) · Sædevarme For Og Bag · Talestyring ·<b> Tesla<\/b> Mobil-App (Fjernstyr Og Overvåg Din<b> Tesla<\/b> Med Nøglefri Kørsel Med Telefonnøgle, Rækkevidde- Og Opladningsstatus, Klimaanlæg, Live GPS-Placering Og Mere.",
+            "dateLastCrawled": "2023-02-23T05:12:00.0000000Z",
+            "language": "da",
+            "isNavigational": false
+         },
+         {
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.3",
+            "name": "Den officielle Tesla-butik | Tesla",
+            "url": "https://shop.tesla.com/da_dk?tesref=true",
+            "isFamilyFriendly": true,
+            "displayUrl": "https://shop.<b>tesla<\/b>.com/da_dk?tesref=true",
+            "snippet": "Køb vægopladere, opladere, adaptere, køretøjstilbehør og<b> Tesla<\/b> branded merchandise, samleobjekter og beklædning til kvinder, mænd og børn. Den officielle<b> Tesla-butik<\/b> |<b> Tesla<\/b> Det ser ud til at du bruger en forældet browser, som forhindrer dig i at få adgang til en række forskellige funktioner på vores websted.",
+            "dateLastCrawled": "2023-02-23T21:41:00.0000000Z",
+            "language": "da",
+            "isNavigational": false
+         },
+         {
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.4",
+            "name": "Brugt Tesla - 258 til salg i alle modeller - AutoUncle",
+            "url": "https://www.autouncle.dk/da/brugte-biler/Tesla",
+            "isFamilyFriendly": true,
+            "displayUrl": "https://www.autouncle.dk/da/brugte-biler/<b>Tesla<\/b>",
+            "snippet": "<b>Tesla –<\/b> Pris sammenligning på brugte <b>Tesla<\/b>. Alle brugte <b>Tesla<\/b> efter model. Typisk salgstid 39. dage 324. nedsatte med 11% i snit. <b>Tesla<\/b> Model 3 Årgang: 2019-2023. Varianter: Sedan (656) Brændstof: El (656) Priser Fra kr 1.599 til kr 541.580. 656 biler 36 til. Super pris. 119 til. God pris. Se udbuddet » Typisk salgstid 27. dage 44.",
+            "dateLastCrawled": "2023-02-23T19:58:00.0000000Z",
+            "language": "da",
+            "isNavigational": false
+         },
+         {
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.5",
+            "name": "Elektrische auto&#39;s, zonnepanelen en schone energie | Tesla",
+            "url": "https://www.tesla.com/nl_nl",
+            "thumbnailUrl": "https://www.bing.com/th?id=OIP.ZqmFcudwy2k8lXAR6anztAHaD4&w=80&h=80&c=1&pid=5.1",
+            "isFamilyFriendly": true,
+            "displayUrl": "https://www.<b>tesla<\/b>.com/nl",
+            "snippet": "<b>Tesla<\/b> versnelt de wereldwijde transitie naar duurzame energie, met elektrische auto&#39;s, zonnepanelen en geïntegreerde duurzame energieoplossingen voor woningen en bedrijven. Elektrische auto&#39;s, zonnepanelen en schone energie |<b> Tesla<\/b> Nederland",
+            "dateLastCrawled": "2023-02-03T12:30:00.0000000Z",
+            "language": "nl",
+            "isNavigational": false
+         },
+         {
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.6",
+            "name": "Tesla Electric Vehicles: Reviews, Pricing, and Specs",
+            "url": "https://www.caranddriver.com/tesla",
+            "thumbnailUrl": "https://www.bing.com/th?id=OIP.2GDNhvC1myEKQTZCONFX-wHaEK&w=80&h=80&c=1&pid=5.1",
+            "isFamilyFriendly": true,
+            "displayUrl": "https://www.caranddriver.com/<b>tesla<\/b>",
+            "snippet": "The 2023 <b>Tesla<\/b> Model X exemplifies the EV automakers&#39; brand ethos with its quick acceleration, high-tech software, and host of gimmicky features. view 2023 Model X details expand all model years",
+            "dateLastCrawled": "2023-02-23T20:31:00.0000000Z",
+            "language": "en",
+            "isNavigational": false
+         },
+         {
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.7",
+            "name": "TEZLA SEAT mod inkontinens | Dermalounge",
+            "url": "https://www.dermalounge.dk/tezlaseat",
+            "isFamilyFriendly": true,
+            "displayUrl": "https://www.dermalounge.dk/<b>tezla<\/b>seat",
+            "snippet": "<b>TEZLA<\/b>-SEAT stimulerer hele bækkenbundsområdet udefra, og impulserne rammer PRÆCIST på hele den muskulære del af din bækkenbund. Behandlingen genopretter den neuromuskulære kontrol, og en enkelt session gi’r dig optil 49.500 muskelsammentrækninger (med en intensitet på ml 0-7 <b>TEZLA<\/b>) pr behandling.",
+            "dateLastCrawled": "2022-12-21T13:28:00.0000000Z",
+            "language": "da",
+            "isNavigational": false
+         },
+         {
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.8",
+            "name": "Aktier - Euroinvestor",
+            "url": "https://www.euroinvestor.dk/markeder/aktier/tesla-inc/92791",
+            "isFamilyFriendly": true,
+            "displayUrl": "https://www.euroinvestor.dk/markeder/aktier/<b>tesla<\/b>-inc/92791",
+            "snippet": "Wall Street status: Investorerne puster ud efter tunge fald. 22. februar 2023 Nyheder. Det mener analytiker om<b> Disney-aktien.<\/b> 22. februar 2023 Nyheder. Det mener analytikerne om Netflix-aktien. 22. februar 2023 Nyheder. Onsdagens aktier: Regnskab sendte FLSmidth til bunds. 22. februar 2023 Nyheder. Genmab overrasker positivt.",
+            "dateLastCrawled": "2023-02-23T01:35:00.0000000Z",
+            "language": "da",
+            "isNavigational": false
+         },
+         {
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.9",
+            "contractualRules": [
+               {
+                  "_type": "ContractualRules/LicenseAttribution",
+                  "targetPropertyName": "snippet",
+                  "targetPropertyIndex": 9,
+                  "mustBeCloseToContent": true,
+                  "license": {
+                     "name": "CC-BY-SA",
+                     "url": "http://creativecommons.org/licenses/by-sa/3.0/"
+                  },
+                  "licenseNotice": "Tekst underlagt CC-BY-SA-licens"
+               }
+            ],
+            "name": "Nikola Tesla - Wikipedia",
+            "url": "https://en.wikipedia.org/wiki/Nikola_Tesla",
+            "thumbnailUrl": "https://www.bing.com/th?id=OIP.6faur69YLkZySj5pu217lgAAAA&w=80&h=80&c=1&pid=5.1",
+            "isFamilyFriendly": true,
+            "displayUrl": "https://en.wikipedia.org/wiki/<b>Nikola_Tesla<\/b>",
+            "snippet": "Nikola <b>Tesla<\/b> (/ ˈ t ɛ s l ə / TESS-lə; Serbian Cyrillic: Никола Тесла, pronounced [nǐkola têsla]; 10 July [O.S. 28 June] 1856 – 7 January 1943) was a Serbian-American inventor, electrical engineer, mechanical engineer, and futurist best known for his contributions to the design of the modern alternating current (AC) electricity supply system.",
+            "dateLastCrawled": "2023-02-24T05:28:00.0000000Z",
+            "language": "en",
+            "isNavigational": false
+         }
+      ]
+   },
+   "images": {
+      "id": "https://api.bing.microsoft.com/api/v7/#Images",
+      "readLink": "https://api.bing.microsoft.com/api/v7/images/search?q=tesla&qpvt=Tezla",
+      "webSearchUrl": "https://www.bing.com/images/search?q=tesla&qpvt=Tezla",
+      "isFamilyFriendly": true,
+      "value": [
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=92A7C9CF3B867264131939CB3F4CB1A6DA6C98CC&FORM=IQFRBA",
+            "name": "Tesla Reveals Next-Gen Roadster With a 1.9-Second 0-60 MPH Time",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.sk_sadxJjpXw-L5Vui5-NwHaEK&pid=Api",
+            "datePublished": "2021-04-06T07:18:00.0000000Z",
+            "contentUrl": "https://www.thedrive.com/content/2017/11/roadster_hero.jpg?quality=85&width=1920&quality=70",
+            "hostPageUrl": "https://www.thedrive.com/news/16182/tesla-reveals-next-gen-roadster-with-a-1-9-second-0-60-mph-time",
+            "contentSize": "230977 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://www.thedrive.com/news/16182/tesla-reveals-next-gen-roadster-with-a-1-9-second-0-60-mph-time",
+            "width": 1920,
+            "height": 1080,
+            "thumbnail": {
+               "width": 474,
+               "height": 266
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=1F44D01BF5F8701A3ED823AB394A8F124054954D&FORM=IQFRBA",
+            "name": "Tesla Stock Shudders Amid Cheap Gas Prices",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.ET2CQeOggiZwvVrSnIo1PgHaE8&pid=Api",
+            "datePublished": "2020-06-06T19:45:00.0000000Z",
+            "contentUrl": "https://cdn.motor1.com/images/mgl/KAqQq/s3/tesla-stock-shudders-amid-cheap-gas-prices.jpg",
+            "hostPageUrl": "https://www.motor1.com/news/74243/tesla-stock-shudders-amid-cheap-gas-prices/",
+            "contentSize": "817032 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://www.motor1.com/news/74243/tesla-stock-shudders-amid-cheap-gas-prices/",
+            "width": 1920,
+            "height": 1280,
+            "thumbnail": {
+               "width": 474,
+               "height": 316
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=F307A4BA945B9FD5CAD1B416092EF5B9DD7E2016&FORM=IQFRBA",
+            "name": "Tesla&#39;s Most Controversial Feature Ever Coming Soon | CarBuzz",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.LrE15eN-0xRL4JTNdo7HOgHaE8&pid=Api",
+            "datePublished": "2021-09-11T19:55:00.0000000Z",
+            "contentUrl": "https://cdn.carbuzz.com/gallery-images/1600/817000/900/817975.jpg",
+            "hostPageUrl": "https://carbuzz.com/news/teslas-most-controversial-feature-ever-coming-soon",
+            "contentSize": "95906 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://carbuzz.com/news/teslas-most-controversial-feature-ever-coming-soon",
+            "width": 1600,
+            "height": 1067,
+            "thumbnail": {
+               "width": 474,
+               "height": 316
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=3B58A91ACBFB815BB8EDE063561E714DF19F7ED4&FORM=IQFRBA",
+            "name": "Elon Musk says next year&#39;s Tesla cars will be able to self-drive 90 ...",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.9RtIPHIREox4EiCjqvOSxgHaEK&pid=Api",
+            "datePublished": "2014-10-02T12:00:00.0000000Z",
+            "contentUrl": "https://cdn.vox-cdn.com/thumbor/pM_KyHyFzix0b3ekzK4liM7KMuw=/0x19:640x379/1600x900/cdn.vox-cdn.com/uploads/chorus_image/image/40712094/teslamodels.0.jpg",
+            "hostPageUrl": "http://www.theverge.com/2014/10/2/6894875/elon-musk-says-next-years-tesla-cars-will-be-able-to-self-drive-90-percent-of-the-time",
+            "contentSize": "137791 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "http://www.theverge.com/2014/10/2/6894875/elon-musk-says-next-years-tesla-cars-will-be-able-to-self-drive-90-percent-of-the-time",
+            "width": 1600,
+            "height": 900,
+            "thumbnail": {
+               "width": 474,
+               "height": 266
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=9B1986868FC4090D920464F56B6AF106EBA540F6&FORM=IQFRBA",
+            "name": "Tesla Model X - цены, отзывы, характеристики Model X от Tesla",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.9oooR51KvEuOvp-8oFI_NQHaE8&pid=Api",
+            "datePublished": "2016-05-19T09:01:00.0000000Z",
+            "contentUrl": "https://i.infocar.ua/i/12/4757/1200x800.jpg",
+            "hostPageUrl": "https://tesla-model-x.infocar.ua/model-x_id4757.html",
+            "contentSize": "375107 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://tesla-model-x.infocar.ua/model-x_id4757.html",
+            "width": 1200,
+            "height": 800,
+            "thumbnail": {
+               "width": 474,
+               "height": 316
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=D265AC40CB802BED355808A49F0884206347D89E&FORM=IQFRBA",
+            "name": "Top Car Brands: Tesla - car videos, pics, maps, history, crash tests ...",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.gIfbpq6yhPH3m13M6XByrgHaEK&pid=Api",
+            "datePublished": "2020-04-06T18:12:00.0000000Z",
+            "contentUrl": "https://1.bp.blogspot.com/-TKLwhjRZjM4/Xl-S4lVz5UI/AAAAAAAAGG4/EQs4Q71o7xQUIPw-M9iRTWX0JQEXf1CVgCLcBGAsYHQ/s1600/Tesla%2B15.jpg",
+            "hostPageUrl": "https://www.autotopnl.com/2019/09/tesla-car-videos-pics-maps-history.html",
+            "contentSize": "321410 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://www.autotopnl.com/2019/09/tesla-car-videos-pics-maps-history.html",
+            "width": 1600,
+            "height": 900,
+            "thumbnail": {
+               "width": 474,
+               "height": 266
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=800BAC2296530CB7AFE7FA7445E3F2F00CF49796&FORM=IQFRBA",
+            "name": "Here&#39;s How Much A Used Tesla Model 3 Costs",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.LqEgkMSUDdEImT7bgeGPHwHaD4&pid=Api",
+            "datePublished": "2021-03-04T16:15:00.0000000Z",
+            "contentUrl": "https://static1.hotcarsimages.com/wordpress/wp-content/uploads/2021/02/lhd-model-3-social.png",
+            "hostPageUrl": "https://www.hotcars.com/heres-cost-used-tesla-model-3/",
+            "contentSize": "1060493 B",
+            "encodingFormat": "png",
+            "hostPageDisplayUrl": "https://www.hotcars.com/heres-cost-used-tesla-model-3/",
+            "width": 1200,
+            "height": 628,
+            "thumbnail": {
+               "width": 474,
+               "height": 248
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=C97711F1C2F00121742456BDBB459AA7CB402AEC&FORM=IQFRBA",
+            "name": "Used 2020 Tesla Model X Long Range Performance For Sale ($114,900 ...",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.h3N_9PTIRxsi5Z2S_shYBAHaE7&pid=Api",
+            "datePublished": "2021-08-02T04:00:00.0000000Z",
+            "contentUrl": "http://www.marinoperformancemotors.com/imagetag/13711/11/l/Used-2020-Tesla-Model-X-Long-Range-Performance.jpg",
+            "hostPageUrl": "https://www.marinoperformancemotors.com/2020-tesla-model-x-long-range-performance-c-13711.htm",
+            "contentSize": "465851 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://www.marinoperformancemotors.com/2020-tesla-model-x-long-range-performance-c-13711.htm",
+            "width": 1920,
+            "height": 1279,
+            "thumbnail": {
+               "width": 474,
+               "height": 315
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=3D7EB57B456DE77C19A199DF11453D43F3429A64&FORM=IQFRBA",
+            "name": "Tesla Model X involved in Autopilot-related crash in US | Autocar",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.QrG4PK5qtuun20pf861pgwHaE5&pid=Api",
+            "datePublished": "2017-12-25T02:35:00.0000000Z",
+            "contentUrl": "https://www.autocar.co.uk/sites/autocar.co.uk/files/styles/gallery_slide/public/images/car-reviews/first-drives/legacy/tesla-model-x-web-2-505_0.jpg?itok=EOpoHipU",
+            "hostPageUrl": "http://www.autocar.co.uk/car-news/new-cars/tesla-model-x-involved-autopilot-related-crash-us",
+            "contentSize": "108486 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "http://www.autocar.co.uk/car-news/new-cars/tesla-model-x-involved-autopilot-related-crash-us",
+            "width": 900,
+            "height": 596,
+            "thumbnail": {
+               "width": 474,
+               "height": 313
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=66B2F06F96C1A8772AB7F0529B5C52466E6A0ADF&FORM=IQFRBA",
+            "name": "Tesla Model Y Long Range 2020 : déjà au prochain tour",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.aERgTZivV_q1EtJGMppX6AHaE8&pid=Api",
+            "datePublished": "2020-11-30T02:03:00.0000000Z",
+            "contentUrl": "https://rpmweb.ca/storage/reviews/image/10ed257dd1091d774d647a472d1ebd8e.jpg",
+            "hostPageUrl": "https://rpmweb.ca/fr/essais-vehicules/premier-contact/tesla-model-y-long-range-2020-deja-au-prochain-tour",
+            "contentSize": "384249 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://rpmweb.ca/fr/essais-vehicules/premier-contact/tesla-model-y-long-range-2020-deja-au-prochain-tour",
+            "width": 1920,
+            "height": 1282,
+            "thumbnail": {
+               "width": 474,
+               "height": 316
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=CF7713047F0755D400D37964A91013D25DC2BD89&FORM=IQFRBA",
+            "name": "Tesla Model 3 er stadig en køreglad elbil. Læs testen nu | FDM",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.nt-JMNJI_rpQuiB-asm9VwHaEJ&pid=Api",
+            "datePublished": "2021-03-23T12:43:00.0000000Z",
+            "contentUrl": "https://fdm.dk/sites/default/files/2021-03/2021-TeslaModel3-k%C3%B8rebilleder-015_1900.jpg",
+            "hostPageUrl": "https://fdm.dk/motor/biltest/tesla-model-3-fortsat-en-sjov-bil",
+            "contentSize": "272934 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://fdm.dk/motor/biltest/tesla-model-3-fortsat-en-sjov-bil",
+            "width": 1900,
+            "height": 1065,
+            "thumbnail": {
+               "width": 474,
+               "height": 265
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=D7753CCCB9431735A9F8857EFE09767BC6E18CBE&FORM=IQFRBA",
+            "name": "Tesla Motors to share patents to spur electric car development",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.3P0yYRLgJSLprSqsAYIt0gHaE6&pid=Api",
+            "datePublished": "2014-06-12T12:00:00.0000000Z",
+            "contentUrl": "https://nypost.com/wp-content/uploads/sites/2/2014/06/tesla-swap_.jpg?quality=90&strip=all&w=1236&h=820&crop=1",
+            "hostPageUrl": "https://nypost.com/2014/06/12/tesla-motors-to-share-patents-to-spur-electric-car-development/",
+            "contentSize": "156227 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://nypost.com/2014/06/12/tesla-motors-to-share-patents-to-spur-electric-car-development/",
+            "width": 1236,
+            "height": 820,
+            "thumbnail": {
+               "width": 474,
+               "height": 314
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=81F356B4E747567256A4210871C1B8691CF1822F&FORM=IQFRBA",
+            "name": "Tesla Y | Teslas nyeste el-bil | Læs mere om modellen her",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.HDcUwFMA3ZheuCnTuZW7MgHaEK&pid=Api",
+            "datePublished": "2021-02-19T00:21:00.0000000Z",
+            "contentUrl": "https://blog.bilbasen.dk/wp-content/uploads/2021/02/Tesla-Model_Y-2.jpg",
+            "hostPageUrl": "https://blog.bilbasen.dk/bilmaerker/tesla/model-y/",
+            "contentSize": "201543 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://blog.bilbasen.dk/bilmaerker/tesla/model-y/",
+            "width": 1599,
+            "height": 900,
+            "thumbnail": {
+               "width": 474,
+               "height": 266
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=12DD277887CA05EED163E21FBE67D7416F4EB971&FORM=IQFRBA",
+            "name": "Tesla Model-X - Revere London",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.PoIyCGRPQki2Q3oAqrmR2gHaDY&pid=Api",
+            "datePublished": "2021-03-18T14:14:00.0000000Z",
+            "contentUrl": "https://www.reverelondon.com/media/1567292400/1569412856-726453a123586c6191d3821406cff5d6.jpg",
+            "hostPageUrl": "http://www.reverelondon.com/vehicles/63/Tesla-Model-X.html",
+            "contentSize": "779055 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "http://www.reverelondon.com/vehicles/63/Tesla-Model-X.html",
+            "width": 1119,
+            "height": 510,
+            "thumbnail": {
+               "width": 474,
+               "height": 216
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=498FB9C9B2F82092DC4BE70BBCBE150EBB702AEC&FORM=IQFRBA",
+            "name": "Tesla&#39;s new Roadster will beat Nürburgring&#39;s all-time lap record, says ...",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.OGzJG15Lo0_gei-nFjfvkAHaES&pid=Api",
+            "datePublished": "2019-09-17T17:29:00.0000000Z",
+            "contentUrl": "https://www.teslarati.com/wp-content/uploads/2019/06/tesla-roadster-red-1b-1024x592.jpg",
+            "hostPageUrl": "https://www.teslarati.com/tesla-roadster-all-time-nurburgring-lap-record-elon-musk/",
+            "contentSize": "154842 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://www.teslarati.com/tesla-roadster-all-time-nurburgring-lap-record-elon-musk/",
+            "width": 1024,
+            "height": 592,
+            "thumbnail": {
+               "width": 474,
+               "height": 274
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=B6F9491EAE69A21ACC04F786C3F0B44E226D61B4&FORM=IQFRBA",
+            "name": "TESLA Model X - Foto e Immagini Esclusive - Listino - Quattroruote.it",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.w08hjLkIl7gIAsMfXtTuTQHaEK&pid=Api",
+            "datePublished": "2021-08-13T14:53:00.0000000Z",
+            "contentUrl": "https://storage.edidomus.it/ListinoAuto/webFoto_16_9_1280/90017750.jpg",
+            "hostPageUrl": "https://www.quattroruote.it/listino/foto/tesla/model-x",
+            "contentSize": "88258 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://www.quattroruote.it/listino/foto/tesla/model-x",
+            "width": 1280,
+            "height": 720,
+            "thumbnail": {
+               "width": 474,
+               "height": 266
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=2E808F070459231A66F805F76D881E01D07E2B05&FORM=IQFRBA",
+            "name": "Tesla&#39;s gains new Street-high price target from Bank of America",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.pC9tIDIwxWsEgVrXDv-D2wHaDy&pid=Api",
+            "datePublished": "2021-01-11T15:30:00.0000000Z",
+            "contentUrl": "https://www.teslarati.com/wp-content/uploads/2021/01/tesla-model-3-performance-blue-charging-e1610378951998-1024x524.jpg",
+            "hostPageUrl": "https://www.teslarati.com/tesla-tsla-boa-aggressive-global-buildout-street-high-price-target-january-2021/",
+            "contentSize": "105547 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://www.teslarati.com/tesla-tsla-boa-aggressive-global-buildout-street-high-price-target-january-2021/",
+            "width": 1024,
+            "height": 524,
+            "thumbnail": {
+               "width": 474,
+               "height": 242
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=C95155FF392368800CD64B385BFFBE04452495F0&FORM=IQFRBA",
+            "name": "Wiktor Urbańczyk - Tesla Roadster 2.0 2020",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.vn33oU9VNtZFId_4wEBLPgHaEK&pid=Api",
+            "datePublished": "2021-07-03T19:02:00.0000000Z",
+            "contentUrl": "https://cdnb.artstation.com/p/assets/images/images/008/423/063/medium/wiktor-urbanczyk-01.jpg?1512661729",
+            "hostPageUrl": "https://wiwens.artstation.com/projects/owPeJ?album_id=19390",
+            "contentSize": "116631 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://wiwens.artstation.com/projects/owPeJ?album_id=19390",
+            "width": 1600,
+            "height": 900,
+            "thumbnail": {
+               "width": 474,
+               "height": 266
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=57C9ECE20F642A3D0FA0A1BA97D109F9CB82439C&FORM=IQFRBA",
+            "name": "What will Tesla maintenance cost you in 2021? – Car News",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.8eKaZa2_lkrsg1sPBMAACAHaEK&pid=Api",
+            "datePublished": "2021-02-25T10:07:00.0000000Z",
+            "contentUrl": "https://i2.wp.com/www.carztune.com/wp-content/uploads/2021/02/AdobeStock_292125571.jpeg?w=1280&ssl=1",
+            "hostPageUrl": "https://www.carztune.com/what-will-tesla-maintenance-cost-you-in-2021/",
+            "contentSize": "132953 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://www.carztune.com/what-will-tesla-maintenance-cost-you-in-2021/",
+            "width": 1280,
+            "height": 720,
+            "thumbnail": {
+               "width": 474,
+               "height": 266
+            }
+         },
+         {
+            "webSearchUrl": "https://www.bing.com/images/search?q=tesla&id=E43E4B5E8AD3E4749ED3117A814267B13D10E6AA&FORM=IQFRBA",
+            "name": "Tesla a livré un nombre record de voitures en fin d&#39;année | AM-Today",
+            "thumbnailUrl": "https://tse1.mm.bing.net/th?id=OIP.5VlcfY1EPwkE5sF95caw0QHaFH&pid=Api",
+            "datePublished": "2021-02-26T02:06:00.0000000Z",
+            "contentUrl": "https://www.am-today.com/sites/default/files/articles/56585/tesla.jpg",
+            "hostPageUrl": "https://www.am-today.com/article/tesla-livre-un-nombre-record-voitures-en-fin-dannee-1",
+            "contentSize": "172474 B",
+            "encodingFormat": "jpeg",
+            "hostPageDisplayUrl": "https://www.am-today.com/article/tesla-livre-un-nombre-record-voitures-en-fin-dannee-1",
+            "width": 1600,
+            "height": 1106,
+            "thumbnail": {
+               "width": 474,
+               "height": 327
+            }
+         }
+      ]
+   },
+   "news": {
+      "id": "https://api.bing.microsoft.com/api/v7/#News",
+      "readLink": "https://api.bing.microsoft.com/api/v7/news/search?q=tesla",
+      "value": [
+         {
+            "contractualRules": [
+               {
+                  "_type": "ContractualRules/TextAttribution",
+                  "text": "MSN"
+               }
+            ],
+            "name": "Efter kritik: <b>Tesla<\/b> begrænser overvågning",
+            "url": "https://www.msn.com/da-dk/nyheder/other/efter-kritik-tesla-begr%C3%A6nser-overv%C3%A5gning/ar-AA17TvOl",
+            "image": {
+               "contentUrl": "https://img-s-msn-com.akamaized.net/tenant/amp/entityid/AA17TEUT.img?h=630&w=1200&m=6&q=60&o=t&l=f&f=jpg",
+               "thumbnail": {
+                  "contentUrl": "https://www.bing.com/th?id=OVFT.0Wu3u4HQca-mjz-ExKeM6C&pid=News",
+                  "width": 700,
+                  "height": 367
+               }
+            },
+            "description": "Det er ikke i orden, når parkerede Teslaer kan videofilme alle, der kommer i nærheden af bilen, uden at de ved det. Derfor må den amerikanske bilproducent nu ændre sit overvågningssystem, Sentry Mode,",
+            "about": [
+               {
+                  "readLink": "https://api.bing.microsoft.com/api/v7/entities/9a01f6b9-e521-f551-eff1-936b09d46b77",
+                  "name": "Kritik"
+               }
+            ],
+            "mentions": [
+               {
+                  "name": "Kritik"
+               },
+               {
+                  "name": "Tesla Motors"
+               },
+               {
+                  "name": "Tesla"
+               }
+            ],
+            "provider": [
+               {
+                  "_type": "Organization",
+                  "name": "MSN"
+               }
+            ],
+            "datePublished": "2023-02-24T15:50:23.0000000Z"
+         },
+         {
+            "contractualRules": [
+               {
+                  "_type": "ContractualRules/TextAttribution",
+                  "text": "fdm"
+               }
+            ],
+            "name": "<b>Tesla<\/b> dumper igen prisen på Model 3",
+            "url": "https://fdm.dk/nyheder/nyt-om-biler/2023-02-tesla-dumper-igen-prisen-paa-model-3",
+            "image": {
+               "contentUrl": "https://fdm.dk/sites/default/files/2023-02/HERO-Tesla-Model3.jpg",
+               "thumbnail": {
+                  "contentUrl": "https://www.bing.com/th?id=OVFT.3Bb6iexdPEk8KLF8rFqpES&pid=News",
+                  "width": 700,
+                  "height": 368
+               }
+            },
+            "description": "Godt en måned efter <b>Tesla<\/b> kom med eksorbitante prisnedsættelser, har den amerikanske producent af elbiler igen sat prisen på deres mindste model markant ned. Prisen gør Model 3 interessant igen, fordi den nu er billigere end SUV-udgaven, Model Y.",
+            "about": [
+               {
+                  "readLink": "https://api.bing.microsoft.com/api/v7/entities/eea9a1fb-24d1-6718-ed5d-4b14e8228b52",
+                  "name": "Nikola Tesla"
+               }
+            ],
+            "provider": [
+               {
+                  "_type": "Organization",
+                  "name": "fdm"
+               }
+            ],
+            "datePublished": "2023-02-24T11:33:00.0000000Z"
+         },
+         {
+            "contractualRules": [
+               {
+                  "_type": "ContractualRules/TextAttribution",
+                  "text": "berlingske.dk"
+               }
+            ],
+            "name": "Nyt prisfald hos <b>Tesla<\/b> – vi skal vænne os til »yoyopriser« på nye biler",
+            "url": "https://www.berlingske.dk/virksomheder/nyt-prisfald-hos-tesla-vi-skal-vaenne-os-til-yoyopriser-paa-nye-biler",
+            "image": {
+               "contentUrl": "https://berlingske.bmcdn.dk/media/cache/resolve/image_960x545/image/164/1649993/24355411-tesla-compensationtrial.jpg",
+               "thumbnail": {
+                  "contentUrl": "https://www.bing.com/th?id=OVFT.sBjavKmL622VsvM_tFp2cC&pid=News",
+                  "width": 700,
+                  "height": 466
+               }
+            },
+            "description": "Den amerikanske elbilgigant kapper igen en bid af priserne på flere modeller i Danmark. Det giver god mening, siger FDM, der regner med, at bilpriserne fremover vil ændre sig uge for uge. Analytiker e",
+            "about": [
+               {
+                  "readLink": "https://api.bing.microsoft.com/api/v7/entities/eea9a1fb-24d1-6718-ed5d-4b14e8228b52",
+                  "name": "Nikola Tesla"
+               }
+            ],
+            "provider": [
+               {
+                  "_type": "Organization",
+                  "name": "berlingske.dk",
+                  "image": {
+                     "thumbnail": {
+                        "contentUrl": "https://www.bing.com/th?id=ODF.iGHZuoqE5_q-6i0qIki_iQ&pid=news"
+                     }
+                  }
+               }
+            ],
+            "datePublished": "2023-02-24T11:09:00.0000000Z"
+         },
+         {
+            "contractualRules": [
+               {
+                  "_type": "ContractualRules/TextAttribution",
+                  "text": "Ekstra Bladet"
+               }
+            ],
+            "name": "<b>Tesla<\/b> sænker priserne - igen",
+            "url": "https://ekstrabladet.dk/nyheder/samfund/tesla-saenker-priserne-igen/9649121",
+            "image": {
+               "contentUrl": "https://img-cdn-p.ekstrabladet.dk/image/ekstrabladet/9111078/socialMediaImg/eblogo/?at=0dec964602ec7718128a379445f923b1",
+               "thumbnail": {
+                  "contentUrl": "https://www.bing.com/th?id=OVFT.uuv-yTAiriQScPQzJJQxRC&pid=News",
+                  "width": 700,
+                  "height": 394
+               }
+            },
+            "description": "<b>Tesla<\/b> sænker priserne endnu en gang på flere af deres yderst populære elbiler Prisen på <b>Tesla<\/b>-elbiler falder endnu en gang. Det drejer sig blandt andet om Model 3. Arkivfoto: Benny Kjølhede Går du og drømmer om en elbil fra <b>Tesla<\/b>, er der gode ...",
+            "about": [
+               {
+                  "readLink": "https://api.bing.microsoft.com/api/v7/entities/a1db0be0-7df4-4ebd-b868-dde7d9c5d63b",
+                  "name": "Tesla, West Virginia"
+               }
+            ],
+            "provider": [
+               {
+                  "_type": "Organization",
+                  "name": "Ekstra Bladet"
+               }
+            ],
+            "datePublished": "2023-02-24T10:01:00.0000000Z"
+         },
+         {
+            "contractualRules": [
+               {
+                  "_type": "ContractualRules/TextAttribution",
+                  "text": "jyllands-posten.dk"
+               }
+            ],
+            "name": "<b>Tesla<\/b> overrasker med endnu et markant prisfald",
+            "url": "https://jyllands-posten.dk/biler/ECE15151705/tesla-overrasker-med-endnu-et-markant-prisfald/",
+            "image": {
+               "contentUrl": "https://billeder.jyllands-posten.dk/pictures/image/15151748/5xwdeu/ALTERNATES/master-social/tesla-jpg",
+               "thumbnail": {
+                  "contentUrl": "https://www.bing.com/th?id=OVFT.KBPZGV9-MBW5KtfxFpwgii&pid=News",
+                  "width": 700,
+                  "height": 367
+               }
+            },
+            "description": "Bedst som mange forventede, at <b>Tesla<\/b> ville begynde at hæve priserne stille og roligt, overrasker mærket med en ny markant melding. Priserne på <b>Tesla<\/b> Model 3 er faldet med næsten 10 pct. siden i går.",
+            "provider": [
+               {
+                  "_type": "Organization",
+                  "name": "jyllands-posten.dk"
+               }
+            ],
+            "datePublished": "2023-02-24T08:42:00.0000000Z"
+         }
+      ]
+   },
+   "relatedSearches": {
+      "id": "https://api.bing.microsoft.com/api/v7/#RelatedSearches",
+      "value": [
+         {
+            "text": "tesla motor",
+            "displayText": "tesla <b>motor<\/b>",
+            "webSearchUrl": "https://www.bing.com/search?q=tesla+motor"
+         },
+         {
+            "text": "tesla cars",
+            "displayText": "tesla <b>cars<\/b>",
+            "webSearchUrl": "https://www.bing.com/search?q=tesla+cars"
+         },
+         {
+            "text": "tesla model 3",
+            "displayText": "tesla <b>model<\/b> <b>3<\/b>",
+            "webSearchUrl": "https://www.bing.com/search?q=tesla+model+3"
+         },
+         {
+            "text": "tesla dk",
+            "displayText": "tesla <b>dk<\/b>",
+            "webSearchUrl": "https://www.bing.com/search?q=tesla+dk"
+         },
+         {
+            "text": "tesla danmark",
+            "displayText": "tesla <b>danmark<\/b>",
+            "webSearchUrl": "https://www.bing.com/search?q=tesla+danmark"
+         },
+         {
+            "text": "tesla motors dk",
+            "displayText": "tesla <b>motors<\/b> <b>dk<\/b>",
+            "webSearchUrl": "https://www.bing.com/search?q=tesla+motors+dk"
+         },
+         {
+            "text": "tesla hjemmeside",
+            "displayText": "tesla <b>hjemmeside<\/b>",
+            "webSearchUrl": "https://www.bing.com/search?q=tesla+hjemmeside"
+         },
+         {
+            "text": "tesla biler danmark",
+            "displayText": "tesla <b>biler<\/b> <b>danmark<\/b>",
+            "webSearchUrl": "https://www.bing.com/search?q=tesla+biler+danmark"
+         }
+      ]
+   },
+   "rankingResponse": {
+      "mainline": {
+         "items": [
+            {
+               "answerType": "WebPages",
+               "resultIndex": 0,
+               "value": {
+                  "id": "https://api.bing.microsoft.com/api/v7/#WebPages.0"
+               }
+            },
+            {
+               "answerType": "WebPages",
+               "resultIndex": 1,
+               "value": {
+                  "id": "https://api.bing.microsoft.com/api/v7/#WebPages.1"
+               }
+            },
+            {
+               "answerType": "WebPages",
+               "resultIndex": 2,
+               "value": {
+                  "id": "https://api.bing.microsoft.com/api/v7/#WebPages.2"
+               }
+            },
+            {
+               "answerType": "News",
+               "value": {
+                  "id": "https://api.bing.microsoft.com/api/v7/#News"
+               }
+            },
+            {
+               "answerType": "Images",
+               "value": {
+                  "id": "https://api.bing.microsoft.com/api/v7/#Images"
+               }
+            },
+            {
+               "answerType": "WebPages",
+               "resultIndex": 3,
+               "value": {
+                  "id": "https://api.bing.microsoft.com/api/v7/#WebPages.3"
+               }
+            },
+            {
+               "answerType": "WebPages",
+               "resultIndex": 4,
+               "value": {
+                  "id": "https://api.bing.microsoft.com/api/v7/#WebPages.4"
+               }
+            },
+            {
+               "answerType": "WebPages",
+               "resultIndex": 5,
+               "value": {
+                  "id": "https://api.bing.microsoft.com/api/v7/#WebPages.5"
+               }
+            },
+            {
+               "answerType": "WebPages",
+               "resultIndex": 6,
+               "value": {
+                  "id": "https://api.bing.microsoft.com/api/v7/#WebPages.6"
+               }
+            },
+            {
+               "answerType": "WebPages",
+               "resultIndex": 7,
+               "value": {
+                  "id": "https://api.bing.microsoft.com/api/v7/#WebPages.7"
+               }
+            },
+            {
+               "answerType": "WebPages",
+               "resultIndex": 8,
+               "value": {
+                  "id": "https://api.bing.microsoft.com/api/v7/#WebPages.8"
+               }
+            },
+            {
+               "answerType": "WebPages",
+               "resultIndex": 9,
+               "value": {
+                  "id": "https://api.bing.microsoft.com/api/v7/#WebPages.9"
+               }
+            },
+            {
+               "answerType": "RelatedSearches",
+               "value": {
+                  "id": "https://api.bing.microsoft.com/api/v7/#RelatedSearches"
+               }
+            }
+         ]
+      }
+   }
+}
