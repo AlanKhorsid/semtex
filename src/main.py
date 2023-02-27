@@ -58,17 +58,11 @@ def parse_claim(claim: dict) -> Union[Claim, None]:
 
     """
 
-    if (
-        claim["mainsnak"]["snaktype"] == "novalue"
-        or claim["mainsnak"]["snaktype"] == "somevalue"
-    ):
+    if claim["mainsnak"]["snaktype"] == "novalue" or claim["mainsnak"]["snaktype"] == "somevalue":
         return None
 
     if claim["mainsnak"]["datatype"] == "wikibase-item":
-        if (
-            claim["mainsnak"]["property"] != "P31"
-            and claim["mainsnak"]["datavalue"]["value"]["id"] != "P279"
-        ):
+        if claim["mainsnak"]["property"] != "P31" and claim["mainsnak"]["datavalue"]["value"]["id"] != "P279":
             return None
 
         return {
@@ -134,10 +128,7 @@ def parse_claim(claim: dict) -> Union[Claim, None]:
             "type": ClaimType.PROPERTY,
             "value": claim["mainsnak"]["datavalue"]["value"]["id"],
         }
-    elif (
-        claim["mainsnak"]["datatype"] == "commonsMedia"
-        or claim["mainsnak"]["datatype"] == "globe-coordinate"
-    ):
+    elif claim["mainsnak"]["datatype"] == "commonsMedia" or claim["mainsnak"]["datatype"] == "globe-coordinate":
         # ignore
         return None
     else:
@@ -232,9 +223,7 @@ def get_candidate_coverage(
 
             i = candidate_index(candidatesList, candidate)
             if i == -1:
-                raise Exception(
-                    f"Candidate {candidate} not found in candidatesList. This should not happen?"
-                )
+                raise Exception(f"Candidate {candidate} not found in candidatesList. This should not happen?")
 
             if not any(i == cand[0] for cand in cands):
                 cands.append((i, [candidate]))

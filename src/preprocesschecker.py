@@ -135,5 +135,5 @@ def check_spellchecker_threaded(func, case_sensitive: bool = False, only_hard: b
     print(f"Accuracy: {correct / total * 100:.2f}%")
 
 
-func1 = lambda x: x
-check_spellchecker_threaded(func1)
+# func1 = lambda x: x
+# check_spellchecker_threaded(func1)
