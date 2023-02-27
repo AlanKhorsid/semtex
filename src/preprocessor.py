@@ -19,9 +19,6 @@ def autocorrect(inputString: str) -> str:
     autocorrectedString = spell(inputString.lower())
 
     return autocorrectedString
-#def powerset(iterable):
-#    s = list(iterable)
-#    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
 def removeUnwantedCharacters(inputString: str, symbolsToRemove = ["!", "\n", "."]) -> [str]:
     candidateStrings = []
@@ -40,11 +37,13 @@ def removeUnwantedCharacters(inputString: str, symbolsToRemove = ["!", "\n", "."
 
     return candidateStrings
 
-strings = removeUnwantedCharacters("\"trtle.prsident!obma\"")
-
-print(f"strings: {strings}\n")
-x = []
-for string in strings:
-    x.append(spellcheck(string))
-for cand in x:
-    print(cand)
+# test code
+if __name__ == "__main__":
+    strings = removeUnwantedCharacters("\"trtle.prsident!obma\"")
+    
+    print(f"strings: {strings}\n")
+    x = []
+    for string in strings:
+        x.append(spellcheck(string))
+    for cand in x:
+        print(cand)
