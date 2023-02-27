@@ -20,7 +20,7 @@ def autocorrect(inputString: str) -> str:
 
     return autocorrectedString
 
-def removeUnwantedCharacters(inputString: str, symbolsToRemove = ["!", "\n", "."]) -> [str]:
+def removeUnwantedCharacters(inputString: str, symbolsToRemove = ["!", "\n", ".", "\"", "\'"]) -> [str]:
     candidateStrings = []
     pSet =  chain.from_iterable(combinations(list(symbolsToRemove), r) for r in range(len(symbolsToRemove)+1))
 
