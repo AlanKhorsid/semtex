@@ -27,7 +27,9 @@ def append_to_csv(filename: str, line: str):
 
 
 def generate_vals_csv():
-    cea_gt = get_csv_lines("./datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/cea_gt.csv")
+    cea_gt = get_csv_lines(
+        "./datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/cea_gt.csv"
+    )
 
     current_file_lines = []
     current_filename = ""
@@ -76,8 +78,9 @@ def check_spellchecker(func, case_sensitive: bool = False, only_hard: bool = Fal
             print(f"ERROR: {label} -> {actual_label}")
             continue
 
-        if not case_sensitive:
-            prediction = prediction.lower()
+        if prediction is not None:
+            if not case_sensitive:
+                prediction = prediction.lower()
 
         if prediction == actual_label:
             correct += 1
@@ -88,7 +91,9 @@ def check_spellchecker(func, case_sensitive: bool = False, only_hard: bool = Fal
     print(f"Accuracy: {correct / total * 100:.2f}%")
 
 
-def check_spellchecker_threaded(func, case_sensitive: bool = False, only_hard: bool = False, num_threads: int = 20):
+def check_spellchecker_threaded(
+    func, case_sensitive: bool = False, only_hard: bool = False, num_threads: int = 20
+):
     vals = get_csv_lines("./datasets/spellCheck/vals.csv")
 
     if only_hard:
@@ -109,8 +114,10 @@ def check_spellchecker_threaded(func, case_sensitive: bool = False, only_hard: b
             print(f"ERROR: {label} -> {actual_label}")
             return
 
-        if not case_sensitive:
+        if prediction is not None:
             prediction = prediction.lower()
+            if not case_sensitive:
+                prediction = prediction.lower()
 
         if prediction == actual_label:
             nonlocal correct
