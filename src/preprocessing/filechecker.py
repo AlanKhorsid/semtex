@@ -14,26 +14,27 @@ def check_missing_files() -> [str]:
 
     #Generates the filenames for each entity value json file to check if it exists
     for filename in os.listdir(text_files_dir):
+        filenameCounter = 1
         with open(os.path.join(text_files_dir, filename), "r") as f:
             stripped_filename = filename.strip(".csv")
             for i, line in enumerate(f):
                 if i == 0:
                     continue
                 #generates the name of a .json file to lookup
-                json_filename = stripped_filename + "_" + str(i) + ".json"
                 fields = line.strip().split(",")
-
                 for field in fields:
+                    json_filename = stripped_filename + "_" + str(filenameCounter) + ".json"
+                    filenameCounter += 1
                     if not check_if_file_exists(json_filename):
                         missing_files.append(json_filename)
                         #call suggester from here
-                        print(json_filename)
     
     #returns the list of missing json files
     return missing_files
 
 
 
-#print(check_if_file_exists("QIYBVSKQ_18.json"))
-#print(check_if_file_exists("blerp"))
-#print(len(check_missing_files()))
+#debug code
+if __name__ == "__main__":
+    files = check_missing_files()
+    print(f"amount of files that does not exist: {len(files)}\nList of files that are missing: {files}")
