@@ -1,4 +1,66 @@
+import csv
 from typing import Union
+from pprint import pprint
+
+
+def get_csv_lines(filename: str) -> list[list[str]]:
+    """
+    Reads a CSV file and returns a list of lines.
+
+    Parameters
+    ----------
+    filename : str
+        The path to the CSV file.
+
+    Returns
+    -------
+    list[list[str]]
+        A list of lines, where each line is a list of strings.
+
+    Example
+    -------
+    >>> get_csv_lines("./datasets/spellCheck/vals_labeled.csv")
+    [
+        ["Lincoln Township", "Lincoln Township", "Q7996268"],
+        ["Stony Creek Township", "Stony Creek Township", "Q7996260"],
+        ...
+    ]
+    """
+
+    with open(filename, "r", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        return list(reader)
+
+
+def open_dataset(correct_spelling: bool = False) -> list[tuple[str, str]]:
+    """
+    Opens the dataset and returns a list of (mention, id) tuples.
+
+    Parameters
+    ----------
+    correct_spelling : bool, optional
+        Whether to return the correctly preprocessed mentions or the mentions
+
+    Returns
+    -------
+    list[tuple[str, str]]
+        A list of (mention, id) tuples.
+
+    Example
+    -------
+    >>> open_dataset()
+    [
+        ('Lincoln Township', 'Q7996268'),
+        ('Stony Creek Township', 'Q7996260'),
+        ...
+    ]
+    """
+
+    vals = get_csv_lines("./datasets/spellCheck/vals_labeled.csv")
+    if correct_spelling:
+        return [(line[1], line[2]) for line in vals]
+    else:
+        return [(line[0], line[2]) for line in vals]
 
 
 def parse_entity_title(entity_data: dict) -> Union[str, None]:

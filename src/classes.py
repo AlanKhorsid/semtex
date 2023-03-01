@@ -2,6 +2,7 @@ from _requests import wikidata_entity_search, wikidata_get_entity
 from util import parse_entity_description, parse_entity_properties, parse_entity_title
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from typing import Union
 import Levenshtein
 
 
@@ -12,8 +13,11 @@ class Candidate:
     instances: list[int]
     subclasses: list[int]
 
-    def __init__(self, id: str):
+    is_correct: bool
+
+    def __init__(self, id: str, is_correct: bool = False):
         self.id = int(id[1:])
+        self.is_correct = is_correct
 
     def fetch_info(self):
         entity_data = wikidata_get_entity(self.id)
@@ -42,17 +46,20 @@ class Candidate:
 class CandidateSet:
     mention: str
     candidates: list[Candidate]
+    correct_id: Union[str, None]
 
-    def __init__(self, mention: str):
+    def __init__(self, mention: str, correct_id: Union[str, None] = None):
         self.mention = mention
         self.candidates = []
+        self.correct_id = correct_id
 
     def fetch_candidates(self):
         print(f"Fetching candidates for '{self.mention}'...")
         entity_ids = wikidata_entity_search(self.mention)
         print(f"Found {len(entity_ids)} candidates.")
         for entity_id in entity_ids:
-            self.candidates.append(Candidate(entity_id))
+            is_correct = entity_id == self.correct_id
+            self.candidates.append(Candidate(entity_id, is_correct))
 
     def fetch_candidate_info(self):
         for candidate in self.candidates:
