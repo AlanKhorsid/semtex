@@ -27,7 +27,6 @@ def random_forest(data: list, labels: list[bool], test_size: float = 0.3):
 
     # Evaluate the accuracy of the model
     accuracy = accuracy_score(y_test, y_pred)
-    print(f"Accuracy: {accuracy:.2f}")
 
     # Get the decision rules for every tree in the forest
     for i, tree in enumerate(rf.estimators_):
@@ -43,6 +42,7 @@ def random_forest(data: list, labels: list[bool], test_size: float = 0.3):
                 ],
             )
         )
+    print(f"Accuracy: {accuracy:.2f}")
 
 
 def remove_stopwords(unfiltered_string: str) -> str:
