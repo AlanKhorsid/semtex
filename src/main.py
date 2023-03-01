@@ -7,7 +7,7 @@ from pprint import pprint
 
 from classes import Candidate, CandidateSet
 from _requests import wikidata_get_entity
-from util import parse_entity_properties, open_dataset
+from util import parse_entity_properties, open_dataset, random_forest
 
 API_URL = "https://www.wikidata.org/w/api.php"
 
@@ -273,7 +273,7 @@ dataset = open_dataset(correct_spelling=True)
 
 # Fetch candidates
 all_candidates: list[CandidateSet] = []
-for mention, id in dataset[:5]:
+for mention, id in dataset[:50]:
     candidate_set = CandidateSet(mention, correct_id=id)
     candidate_set.fetch_candidates()
     candidate_set.fetch_candidate_info()
@@ -315,5 +315,7 @@ for i, candidate_set in enumerate(all_candidates):
             ]
         )
 
-pprint(data)
-pprint(labels)
+random_forest(data, labels)
+
+# pprint(data)
+# pprint(labels)

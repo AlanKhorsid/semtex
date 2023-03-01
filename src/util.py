@@ -3,6 +3,47 @@ from typing import Union
 from nltk.corpus import stopwords
 import string
 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from fractions import Fraction
+from sklearn.tree import export_text
+
+
+def random_forest(data: list, labels: list[bool], test_size: float = 0.3):
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size
+    )
+
+    # Create a Random Forest Classifier with 100 trees
+    rf = RandomForestClassifier(n_estimators=100)
+
+    # Train the model on the training set
+    rf.fit(X_train, y_train)
+
+    # Use the model to make predictions on the testing set
+    y_pred = rf.predict(X_test)
+
+    # Evaluate the accuracy of the model
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Accuracy: {accuracy:.2f}")
+
+    # Get the decision rules for every tree in the forest
+    for i, tree in enumerate(rf.estimators_):
+        print(f"Tree {i + 1}")
+        print(
+            export_text(
+                tree,
+                feature_names=[
+                    "lexscore",
+                    "instance overlap",
+                    "subclass overlap",
+                    "desc overlap",
+                ],
+            )
+        )
+
 
 def remove_stopwords(unfiltered_string: str) -> str:
     """
@@ -30,9 +71,6 @@ def remove_stopwords(unfiltered_string: str) -> str:
         word for word in filtered_words.split() if word.lower() not in stop_words
     ]
     return " ".join(filtered_words)
-
-
-from pprint import pprint
 
 
 def get_csv_lines(filename: str) -> list[list[str]]:

@@ -46,6 +46,8 @@ class Candidate:
         )
 
     def description_overlap(self, other: "Candidate"):
+        if len(self.description) == 0 or len(other.description) == 0:
+            return 0.0
         vectorizer = CountVectorizer().fit_transform(
             [remove_stopwords(self.description), remove_stopwords(other.description)]
         )
