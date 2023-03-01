@@ -5,6 +5,10 @@ from enum import Enum
 from _types import ClaimType, Entity, Claim, DiscoveredEntity
 from pprint import pprint
 
+from classes import Candidate, CandidateSet
+from _requests import wikidata_get_entity
+from util import parse_entity_properties
+
 API_URL = "https://www.wikidata.org/w/api.php"
 
 HASH: dict[set[str]] = {}
@@ -244,7 +248,14 @@ def get_candidate_coverage(
     return res
 
 
-# MENTIONS = ["Helgafell", "Tungurahua volcano", "Khodutka", "Gamchen", "Voyampolsky"]
+def candidates_iter(candidate_sets: list[CandidateSet], skip_index: int = -1) -> list[Candidate]:
+    for i, candidate_set in enumerate(candidate_sets):
+        if i == skip_index:
+            continue
+        for candidate in candidate_set.candidates:
+            yield candidate
+
+
 MENTIONS = [
     "Barack Obama",
     "Donald Trump",
@@ -252,33 +263,44 @@ MENTIONS = [
     "Hillary Clinton",
     "Bernie Sanders",
 ]
-candidatesList = [get_candidates(mention) for mention in MENTIONS]
 
-for candidates in candidatesList:
-    for candidate in candidates:
-        expand_entity(candidate, num_threads=10)
+# Fetch candidates
+all_candidates: list[CandidateSet] = []
+for mention in MENTIONS:
+    candidate_set = CandidateSet(mention)
+    candidate_set.fetch_candidates()
+    candidate_set.fetch_candidate_info()
+    all_candidates.append(candidate_set)
 
-for candidates in candidatesList:
-    for candidate in candidates:
-        expand_entity(candidate, num_threads=10)
+data = []
+for i, candidate_set in enumerate(all_candidates):
+    for candidate in candidate_set.candidates:
+        instance_total = 0
+        instance_overlap = 0
+        subclass_total = 0
+        subclass_overlap = 0
+        description_overlaps = []
 
-for candidates in candidatesList:
-    for candidate in candidates:
-        expand_entity(candidate, num_threads=10)
+        for other_candidate in candidates_iter(all_candidates, i):
+            (overlap, total) = candidate.instance_overlap(other_candidate)
+            instance_total += total
+            instance_overlap += overlap
 
-# expand_entity(candidatesList[0][0])
-# expand_entity(candidatesList[1][0])
-# expand_entity(candidatesList[2][0])
-# expand_entity(candidatesList[3][0])
-# expand_entity(candidatesList[4][0])
-# expand_entity(candidatesList[0][0])
+            (overlap, total) = candidate.subclass_overlap(other_candidate)
+            subclass_total += total
+            subclass_overlap += overlap
 
-# pprint(HASH)
-# cov = get_candidate_coverage(HASH, candidatesList)
-# pprint(cov)
-# pprint(len([x for x in cov if x[1] == 1]))
+            description_overlaps.append(candidate.description_overlap(other_candidate))
 
-# EXPAND ALL CANDIDATES
-# for candidates in candidatesList:
-#     for candidate in candidates:
-#         expand_entity(candidate)
+        data.append(
+            [
+                candidate.title,
+                candidate.description,
+                candidate.lex_score(candidate_set.mention),
+                instance_overlap / instance_total if instance_total > 0 else 0,
+                subclass_overlap / subclass_total if subclass_total > 0 else 0,
+                sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0,
+            ]
+        )
+
+pprint(data)
