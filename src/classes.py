@@ -1,5 +1,10 @@
 from _requests import wikidata_entity_search, wikidata_get_entity
-from util import parse_entity_description, parse_entity_properties, parse_entity_title
+from util import (
+    parse_entity_description,
+    parse_entity_properties,
+    parse_entity_title,
+    remove_stopwords,
+)
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import Levenshtein
@@ -31,10 +36,15 @@ class Candidate:
         return (len(set(self.instances) & set(other.instances)), len(other.instances))
 
     def subclass_overlap(self, other: "Candidate") -> tuple[int, int]:
-        return (len(set(self.subclasses) & set(other.subclasses)), len(other.subclasses))
+        return (
+            len(set(self.subclasses) & set(other.subclasses)),
+            len(other.subclasses),
+        )
 
     def description_overlap(self, other: "Candidate"):
-        vectorizer = CountVectorizer().fit_transform([self.description, other.description])
+        vectorizer = CountVectorizer().fit_transform(
+            [remove_stopwords(self.description), remove_stopwords(other.description)]
+        )
         cosine_sim = cosine_similarity(vectorizer)
         return cosine_sim[0][1]
 
