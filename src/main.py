@@ -284,6 +284,7 @@ data = []
 labels = []
 for i, candidate_set in enumerate(all_candidates):
     for candidate in candidate_set.candidates:
+        print(f"Generating features for {candidate.title}")
         instance_total = 0
         instance_overlap = 0
         subclass_total = 0
