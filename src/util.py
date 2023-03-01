@@ -3,11 +3,46 @@ from typing import Union
 from nltk.corpus import stopwords
 import string
 
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, explained_variance_score
 from fractions import Fraction
 from sklearn.tree import export_text
+
+
+def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size
+    )
+
+    # Create a Random Forest Regressor with 100 trees
+    rf = RandomForestRegressor(n_estimators=100)
+
+    # Train the model on the training set
+    rf.fit(X_train, y_train)
+
+    # Use the model to make predictions on the testing set
+    y_pred = rf.predict(X_test)
+
+    # Evaluate the accuracy of the model
+    variance_score = explained_variance_score(y_test, y_pred)
+
+    # Get the decision rules for every tree in the forest
+    for i, tree in enumerate(rf.estimators_):
+        print(f"Tree {i + 1}")
+        print(
+            export_text(
+                tree,
+                feature_names=[
+                    "lexscore",
+                    "instance overlap",
+                    "subclass overlap",
+                    "desc overlap",
+                ],
+            )
+        )
+    print(f"Variance score: {variance_score:.2f}")
 
 
 def random_forest(data: list, labels: list[bool], test_size: float = 0.3):

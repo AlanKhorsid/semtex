@@ -7,7 +7,12 @@ from pprint import pprint
 
 from classes import Candidate, CandidateSet
 from _requests import wikidata_get_entity
-from util import parse_entity_properties, open_dataset, random_forest
+from util import (
+    parse_entity_properties,
+    open_dataset,
+    random_forest,
+    random_forest_regression,
+)
 
 API_URL = "https://www.wikidata.org/w/api.php"
 
@@ -273,7 +278,7 @@ dataset = open_dataset(correct_spelling=True)
 
 # Fetch candidates
 all_candidates: list[CandidateSet] = []
-for mention, id in dataset[:50]:
+for mention, id in dataset[:5]:
     candidate_set = CandidateSet(mention, correct_id=id)
     candidate_set.fetch_candidates()
     candidate_set.fetch_candidate_info()
@@ -282,6 +287,7 @@ for mention, id in dataset[:50]:
 # Generate features and labels
 data = []
 labels = []
+labels_reg = []
 for i, candidate_set in enumerate(all_candidates):
     for candidate in candidate_set.candidates:
         print(f"Generating features for {candidate.title}")
@@ -303,6 +309,7 @@ for i, candidate_set in enumerate(all_candidates):
             description_overlaps.append(candidate.description_overlap(other_candidate))
 
         labels.append(candidate.is_correct)
+        labels_reg.append(1.0 if candidate.is_correct else 0.0)
         data.append(
             [
                 # candidate.title,
@@ -316,7 +323,7 @@ for i, candidate_set in enumerate(all_candidates):
             ]
         )
 
-random_forest(data, labels)
+random_forest_regression(data, labels_reg)
 
 # pprint(data)
 # pprint(labels)
