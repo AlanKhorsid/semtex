@@ -3,7 +3,7 @@ import requests
 API_URL = "https://www.wikidata.org/w/api.php"
 
 
-def wikidata_entity_search(query: str, limit: int = 10, lang: str = "en") -> list[str]:
+def wikidata_entity_search(query: str, limit: int = 30, lang: str = "en") -> list[str]:
     """
     Fetches a list of entities matching the given query from the Wikidata API.
 

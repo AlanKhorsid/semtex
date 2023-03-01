@@ -7,7 +7,7 @@ from pprint import pprint
 
 from classes import Candidate, CandidateSet
 from _requests import wikidata_get_entity
-from util import parse_entity_properties, remove_stopwords
+from util import parse_entity_properties, open_dataset
 
 API_URL = "https://www.wikidata.org/w/api.php"
 
@@ -269,23 +269,19 @@ def candidates_iter(
             yield candidate
 
 
-MENTIONS = [
-    "Barack Obama",
-    "Donald Trump",
-    "Joe Biden",
-    "Hillary Clinton",
-    "Bernie Sanders",
-]
+dataset = open_dataset(correct_spelling=True)
 
 # Fetch candidates
 all_candidates: list[CandidateSet] = []
-for mention in MENTIONS:
-    candidate_set = CandidateSet(mention)
+for mention, id in dataset[:5]:
+    candidate_set = CandidateSet(mention, correct_id=id)
     candidate_set.fetch_candidates()
     candidate_set.fetch_candidate_info()
     all_candidates.append(candidate_set)
 
+# Generate features and labels
 data = []
+labels = []
 for i, candidate_set in enumerate(all_candidates):
     for candidate in candidate_set.candidates:
         instance_total = 0
@@ -305,10 +301,11 @@ for i, candidate_set in enumerate(all_candidates):
 
             description_overlaps.append(candidate.description_overlap(other_candidate))
 
+        labels.append(candidate.is_correct)
         data.append(
             [
-                candidate.title,
-                candidate.description,
+                # candidate.title,
+                # candidate.description,
                 candidate.lex_score(candidate_set.mention),
                 instance_overlap / instance_total if instance_total > 0 else 0,
                 subclass_overlap / subclass_total if subclass_total > 0 else 0,
@@ -319,3 +316,4 @@ for i, candidate_set in enumerate(all_candidates):
         )
 
 pprint(data)
+pprint(labels)
