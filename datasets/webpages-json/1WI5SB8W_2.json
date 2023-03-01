@@ -1,0 +1,1 @@
+{"_type": "SearchResponse", "queryContext": {"originalQuery": "-73.3218927929439"}, "computation": {"id": "https://api.bing.microsoft.com/api/v7/#Computation", "expression": "-73,3218927929439", "value": "-73,3218928"}, "rankingResponse": {"mainline": {"items": [{"answerType": "Computation", "value": {"id": "https://api.bing.microsoft.com/api/v7/#Computation"}}]}}}
