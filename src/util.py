@@ -2,12 +2,87 @@ import csv
 from typing import Union
 from nltk.corpus import stopwords
 import string
+from sklearn.datasets import make_regression
 
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import (
+    GradientBoostingClassifier,
+    GradientBoostingRegressor,
+    RandomForestClassifier,
+    RandomForestRegressor,
+)
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, explained_variance_score
+from sklearn.metrics import accuracy_score, explained_variance_score, mean_squared_error
 from fractions import Fraction
 from sklearn.tree import export_text
+
+
+def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
+    """
+    Trains a Gradient Boosting ensemble on the input data and labels and prints the accuracy of the model.
+
+    Parameters:
+    data (list): A list of input data.
+    labels (list): A list of boolean labels corresponding to the input data.
+    test_size (float, optional): The proportion of the data to use for testing. Default is 0.3.
+    n_estimators (int, optional): The number of trees in the Gradient Boosting ensemble. Default is 100.
+
+    Returns:
+    None
+    """
+
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size
+    )
+
+    # Create a Gradient Boosting Regressor with n_estimators trees
+    gb = GradientBoostingRegressor(
+        n_estimators=500,
+        max_depth=4,
+        min_samples_split=5,
+        learning_rate=0.01,
+        loss="squared_error",
+    )
+
+    # Train the model on the training set
+    gb.fit(X_train, y_train)
+
+    mse = mean_squared_error(y_test, gb.predict(X_test))
+    print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
+
+
+def ensemble_gradient_boost_classifier(data, labels, test_size=0.3, n_estimators=200):
+    """
+    Trains a Gradient Boosting ensemble on the input data and labels and prints the accuracy of the model.
+
+    Parameters:
+    data (list): A list of input data.
+    labels (list): A list of boolean labels corresponding to the input data.
+    test_size (float, optional): The proportion of the data to use for testing. Default is 0.3.
+    n_estimators (int, optional): The number of trees in the Gradient Boosting ensemble. Default is 100.
+
+    Returns:
+    None
+    """
+
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size
+    )
+
+    # Create a Gradient Boosting Classifier with n_estimators trees
+    gb = GradientBoostingClassifier(
+        n_estimators=n_estimators, learning_rate=0.05, subsample=0.5, max_depth=2
+    )
+
+    # Train the model on the training set
+    gb.fit(X_train, y_train)
+
+    # Use the model to make predictions on the testing set
+    y_pred = gb.predict(X_test)
+
+    score = gb.score(X_test, y_test)
+    print(f"Score: {score:.2f}")
 
 
 def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
@@ -16,33 +91,45 @@ def random_forest_regression(data: list, labels: list[float], test_size: float =
         data, labels, test_size=test_size
     )
 
-    # Create a Random Forest Regressor with 100 trees
-    rf = RandomForestRegressor(n_estimators=100)
-
-    # Train the model on the training set
+    X_train, y_train = make_regression(
+        n_features=4, n_informative=2, random_state=0, shuffle=False
+    )
+    rf = RandomForestRegressor(
+        n_estimators=500, criterion="squared_error", min_samples_split=5, max_depth=4
+    )
     rf.fit(X_train, y_train)
 
+    prediction = rf.predict(X_test)
+    mse = mean_squared_error(y_test, prediction)
+    print(mse)
+
+    # # Create a Random Forest Regressor with 100 trees
+    # rf = RandomForestRegressor(n_estimators=100)
+
+    # # Train the model on the training set
+    # rf.fit(X_train, y_train)
+
     # Use the model to make predictions on the testing set
-    y_pred = rf.predict(X_test)
+    # y_pred = rf.predict(X_test)
 
-    # Evaluate the accuracy of the model
-    variance_score = explained_variance_score(y_test, y_pred)
+    # # Evaluate the accuracy of the model
+    # variance_score = explained_variance_score(y_test, y_pred)
 
-    # Get the decision rules for every tree in the forest
-    for i, tree in enumerate(rf.estimators_):
-        print(f"Tree {i + 1}")
-        print(
-            export_text(
-                tree,
-                feature_names=[
-                    "lexscore",
-                    "instance overlap",
-                    "subclass overlap",
-                    "desc overlap",
-                ],
-            )
-        )
-    print(f"Variance score: {variance_score:.2f}")
+    # # Get the decision rules for every tree in the forest
+    # for i, tree in enumerate(rf.estimators_):
+    #     print(f"Tree {i + 1}")
+    #     print(
+    #         export_text(
+    #             tree,
+    #             feature_names=[
+    #                 "lexscore",
+    #                 "instance overlap",
+    #                 "subclass overlap",
+    #                 "desc overlap",
+    #             ],
+    #         )
+    #     )
+    # print(f"Variance score: {variance_score:.2f}")
 
 
 def random_forest(data: list, labels: list[bool], test_size: float = 0.3):
@@ -77,7 +164,10 @@ def random_forest(data: list, labels: list[bool], test_size: float = 0.3):
                 ],
             )
         )
-    print(f"Accuracy: {accuracy:.2f}")
+    # print(f"Accuracy: {accuracy:.2f}")
+    # print the score
+    score = rf.score(X_test, y_test)
+    print(f"Score: {score:.2f}")
 
 
 def remove_stopwords(unfiltered_string: str) -> str:
