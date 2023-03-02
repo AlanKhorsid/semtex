@@ -1,9 +1,10 @@
 import csv
+import os
 from typing import Union
 from nltk.corpus import stopwords
 import string
 from sklearn.datasets import make_regression
-
+from tqdm import tqdm
 from sklearn.ensemble import (
     GradientBoostingClassifier,
     GradientBoostingRegressor,
@@ -12,10 +13,10 @@ from sklearn.ensemble import (
 )
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, explained_variance_score, mean_squared_error
-from fractions import Fraction
 from sklearn.tree import export_text
 import pickle
 from datetime import datetime
+# from classes import Candidate, CandidateSet
 
 
 def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
@@ -91,9 +92,9 @@ def random_forest_regression(data: list, labels: list[float], test_size: float =
     # Split the dataset into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
 
-    X_train, y_train = make_regression(
-        n_features=4, n_informative=2, random_state=0, shuffle=False
-    )
+    # X_train, y_train = make_regression(
+    #     n_features=4, n_informative=2, random_state=0, shuffle=False
+    # )
     rf = RandomForestRegressor(
         n_estimators=500, criterion="squared_error", min_samples_split=5, max_depth=4
     )
@@ -356,11 +357,69 @@ def parse_entity_properties(entity_data: dict) -> dict:
 def pickle_save(obj):
     now = datetime.now()
     filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+
+    # check if file already exists and if so, append a number to the filename
+    i = 1
+    while os.path.isfile(filename):
+        filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
+        i += 1
+
     with open(filename, "wb") as f:
         pickle.dump(obj, f)
 
 
-def pickle_load(filename):
-    file = f"src/pickle-dumps/{filename}.pickle"
+def pickle_load(filename, is_dump: bool = False):
+    file = f"src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
     with open(file, "rb") as f:
         return pickle.load(f)
+
+
+def candidates_iter(candidate_sets: list[object], skip_index: int = -1) -> list[object]:
+    for i, candidate_set in enumerate(candidate_sets):
+        if i == skip_index:
+            continue
+        for candidate in candidate_set.candidates:
+            yield candidate
+
+
+def generate_features(candidate_sets: list[object]) -> tuple[list, list[bool], list[float]]:
+    features = []
+    labels_clas = []
+    labels_regr = []
+    for i, candidate_set in enumerate(candidate_sets):
+        print(f"{i + 1}/{len(candidate_sets)} Generating features for {candidate_set.mention}")
+        for candidate in tqdm(candidate_set.candidates):
+            # print(f"Generating features for {candidate.title}")
+            instance_total = 0
+            instance_overlap = 0
+            subclass_total = 0
+            subclass_overlap = 0
+            description_overlaps = []
+
+            for other_candidate in candidates_iter(candidate_sets, i):
+                (overlap, total) = candidate.instance_overlap(other_candidate)
+                instance_total += total
+                instance_overlap += overlap
+
+                (overlap, total) = candidate.subclass_overlap(other_candidate)
+                subclass_total += total
+                subclass_overlap += overlap
+
+                description_overlaps.append(candidate.description_overlap(other_candidate))
+
+            labels_clas.append(candidate.is_correct)
+            labels_regr.append(1.0 if candidate.is_correct else 0.0)
+            features.append(
+                [
+                    candidate.lex_score(candidate_set.mention),
+                    instance_overlap / instance_total if instance_total > 0 else 0,
+                    subclass_overlap / subclass_total if subclass_total > 0 else 0,
+                    sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0,
+                ]
+            )
+    
+    pickle_save(features)
+    pickle_save(labels_clas)
+    pickle_save(labels_regr)
+    
+    return features, labels_clas, labels_regr
