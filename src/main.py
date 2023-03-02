@@ -259,23 +259,24 @@ def candidates_iter(candidate_sets: list[CandidateSet], skip_index: int = -1) ->
             yield candidate
 
 
-# dataset = open_dataset(correct_spelling=True)
+# ----- Open dataset -----
+dataset = open_dataset(correct_spelling=True)
 
-# # ----- Fetch candidates -----
-# candidate_sets: list[CandidateSet] = []
-# for mention, id in dataset[:100]:
-#     candidate_set = CandidateSet(mention, correct_id=id)
-#     candidate_set.fetch_candidates()
-#     candidate_set.fetch_candidate_info()
-#     candidate_sets.append(candidate_set)
-# pickle_save(candidate_sets)
+# ----- Fetch candidates -----
+candidate_sets: list[CandidateSet] = []
+for mention, id in dataset[:100]:
+    candidate_set = CandidateSet(mention, correct_id=id)
+    candidate_set.fetch_candidates()
+    candidate_set.fetch_candidate_info()
+    candidate_sets.append(candidate_set)
+pickle_save(candidate_sets)
 
-# # ----- Generate features -----
-# features, labels_clas, labels_regr = generate_features(candidate_sets)
+# ----- Generate features -----
+features, labels_clas, labels_regr = generate_features(candidate_sets)
 
-# # ----- Train classifier -----
-# random_forest_regression(features, labels_regr)
+# ----- Train classifier -----
+random_forest_regression(features, labels_regr)
 
-features = pickle_load("first-100_correct-spelling_features")
-labels = pickle_load("first-100_correct-spelling_labels-regr")
-random_forest_regression(features, labels)
+# features = pickle_load("first-100_correct-spelling_features")
+# labels = pickle_load("first-100_correct-spelling_labels-regr")
+# random_forest_regression(features, labels)
