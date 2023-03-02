@@ -3,3 +3,4 @@ env/
 .vscode/
 src/__pycache__/
 .env
+src/pickle-dumps/*

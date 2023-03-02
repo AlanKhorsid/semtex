@@ -14,6 +14,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, explained_variance_score, mean_squared_error
 from fractions import Fraction
 from sklearn.tree import export_text
+import pickle
+from datetime import datetime
 
 
 def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
@@ -87,9 +89,7 @@ def ensemble_gradient_boost_classifier(data, labels, test_size=0.3, n_estimators
 
 def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        data, labels, test_size=test_size
-    )
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
 
     X_train, y_train = make_regression(
         n_features=4, n_informative=2, random_state=0, shuffle=False
@@ -134,9 +134,7 @@ def random_forest_regression(data: list, labels: list[float], test_size: float =
 
 def random_forest(data: list, labels: list[bool], test_size: float = 0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        data, labels, test_size=test_size
-    )
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
 
     # Create a Random Forest Classifier with 100 trees
     rf = RandomForestClassifier(n_estimators=100)
@@ -192,9 +190,7 @@ def remove_stopwords(unfiltered_string: str) -> str:
     translator = str.maketrans("", "", string.punctuation)
     filtered_words = unfiltered_string.translate(translator)
     stop_words = set(stopwords.words("english"))
-    filtered_words = [
-        word for word in filtered_words.split() if word.lower() not in stop_words
-    ]
+    filtered_words = [word for word in filtered_words.split() if word.lower() not in stop_words]
     return " ".join(filtered_words)
 
 
@@ -355,3 +351,16 @@ def parse_entity_properties(entity_data: dict) -> dict:
             print(claim)
 
     return properties
+
+
+def pickle_save(obj):
+    now = datetime.now()
+    filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+    with open(filename, "wb") as f:
+        pickle.dump(obj, f)
+
+
+def pickle_load(filename):
+    file = f"src/pickle-dumps/{filename}.pickle"
+    with open(file, "rb") as f:
+        return pickle.load(f)
