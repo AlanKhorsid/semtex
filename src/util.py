@@ -355,6 +355,9 @@ def parse_entity_properties(entity_data: dict) -> dict:
 
 
 def pickle_save(obj):
+    if os.path.isdir('./src/pickle-dumps') == False:
+        os.mkdir('./src/pickle-dumps')
+
     now = datetime.now()
     filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
 
