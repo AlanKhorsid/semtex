@@ -1,5 +1,7 @@
-from pathlib import Path
 import os
+from pathlib import Path
+
+import suggester
 
 def check_if_file_exists(filename: str) -> bool:
     """Takes an input filename and checks if it is in the datasets/webpages-json folder, returns boolean True or False."""
@@ -25,9 +27,15 @@ def check_missing_files() -> [str]:
                 for field in fields:
                     json_filename = stripped_filename + "_" + str(filenameCounter) + ".json"
                     filenameCounter += 1
-                    if not check_if_file_exists(json_filename):
+                    if check_if_file_exists(json_filename):
+                        full_filelocation = str(Path(__file__).parent.parent.parent) + "/datasets/webpages-json/" + json_filename
+                        try:
+                            suggester.generate_suggestion(filepath=full_filelocation)
+                        except Exception as err:
+                            print(f"Error found in file {json_filename}")
+                            print(f"Exception error: {err}")
+                    else:
                         missing_files.append(json_filename)
-                        #call suggester from here
     
     #returns the list of missing json files
     return missing_files
