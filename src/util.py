@@ -333,23 +333,24 @@ def parse_entity_properties(entity_data: dict) -> dict:
     """
 
     properties = []
-    for claim in entity_data["claims"].values():
-        try:
-            if (
-                claim[0]["mainsnak"]["snaktype"] == "novalue"
-                or claim[0]["mainsnak"]["snaktype"] == "somevalue"
-                or claim[0]["mainsnak"]["datatype"] != "wikibase-item"
-            ):
-                continue
+    for claims in entity_data["claims"].values():
+        for claim in claims:
+            try:
+                if (
+                    claim["mainsnak"]["snaktype"] == "novalue"
+                    or claim["mainsnak"]["snaktype"] == "somevalue"
+                    or claim["mainsnak"]["datatype"] != "wikibase-item"
+                ):
+                    continue
 
-            prop = claim[0]["mainsnak"]["property"]
-            target = claim[0]["mainsnak"]["datavalue"]["value"]["id"]
-            properties.append((prop, target))
-        except KeyError:
-            continue
-        except:
-            print("----- ERROR -------")
-            print(claim)
+                prop = claim["mainsnak"]["property"]
+                target = claim["mainsnak"]["datavalue"]["value"]["id"]
+                properties.append((prop, target))
+            except KeyError:
+                continue
+            except:
+                print("----- ERROR -------")
+                print(claims)
 
     return properties
 

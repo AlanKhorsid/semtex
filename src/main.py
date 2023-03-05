@@ -2,6 +2,8 @@ from pprint import pprint
 from typing import Union
 import requests
 import threading
+
+from tqdm import tqdm
 from _types import ClaimType, Entity, Claim
 from classes import Candidate, CandidateSet
 from util import (
@@ -264,7 +266,7 @@ dataset = open_dataset(correct_spelling=True)
 
 # ----- Fetch candidates -----
 candidate_sets: list[CandidateSet] = []
-for mention, id in dataset[:100]:
+for mention, id in tqdm(dataset):
     candidate_set = CandidateSet(mention, correct_id=id)
     candidate_set.fetch_candidates()
     candidate_set.fetch_candidate_info()
