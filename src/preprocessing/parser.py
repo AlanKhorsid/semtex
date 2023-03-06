@@ -22,5 +22,5 @@ def parse_string(inputString:str) -> [str]:
 
     return outputStrings
 
-print(parse_string("\"Uniastate, Bears\",1,2,\"hi, you\", yes"))
-print(parse_string("\"awmaod"))
+if __name__ == "__main__":
+    print(parse_string("\"Uniastate, Bears\",1,2,\"hi, you\", yes"))
