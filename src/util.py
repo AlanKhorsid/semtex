@@ -5,9 +5,7 @@ import string
 from sklearn.datasets import make_regression
 
 from sklearn.ensemble import (
-    GradientBoostingClassifier,
     GradientBoostingRegressor,
-    RandomForestClassifier,
     RandomForestRegressor,
 )
 from sklearn.model_selection import train_test_split
@@ -34,17 +32,22 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
 
     # Split the dataset into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(
-        data, labels, test_size=test_size
+        data, labels, test_size=test_size, random_state=42
     )
 
+    # Hyperparameters for Gradient Boosting Regressor
+    gbr_params = {
+        "n_estimators": 500,
+        "learning_rate": 0.01,
+        "subsample": 0.5,
+        "max_depth": 4,
+        "min_samples_split": 6,
+        "loss": "squared_error",
+        "random_state": 42,
+    }
+
     # Create a Gradient Boosting Regressor with n_estimators trees
-    gb = GradientBoostingRegressor(
-        n_estimators=500,
-        max_depth=4,
-        min_samples_split=5,
-        learning_rate=0.01,
-        loss="squared_error",
-    )
+    gb = GradientBoostingRegressor(**gbr_params)
 
     # Train the model on the training set
     gb.fit(X_train, y_train)
@@ -53,49 +56,21 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
     print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
 
 
-def ensemble_gradient_boost_classifier(data, labels, test_size=0.3, n_estimators=200):
-    """
-    Trains a Gradient Boosting ensemble on the input data and labels and prints the accuracy of the model.
-
-    Parameters:
-    data (list): A list of input data.
-    labels (list): A list of boolean labels corresponding to the input data.
-    test_size (float, optional): The proportion of the data to use for testing. Default is 0.3.
-    n_estimators (int, optional): The number of trees in the Gradient Boosting ensemble. Default is 100.
-
-    Returns:
-    None
-    """
-
+def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
     # Split the dataset into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(
         data, labels, test_size=test_size
     )
 
-    # Create a Gradient Boosting Classifier with n_estimators trees
-    gb = GradientBoostingClassifier(
-        n_estimators=n_estimators, learning_rate=0.05, subsample=0.5, max_depth=2
-    )
-
-    # Train the model on the training set
-    gb.fit(X_train, y_train)
-
-    # Use the model to make predictions on the testing set
-    y_pred = gb.predict(X_test)
-
-    score = gb.score(X_test, y_test)
-    print(f"Score: {score:.2f}")
-
-
-def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
-    # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
-
     X_train, y_train = make_regression(
-        n_features=4, n_informative=2, random_state=0, shuffle=False
+        n_features=4, n_informative=2, random_state=42, shuffle=False
     )
     rf = RandomForestRegressor(
-        n_estimators=500, criterion="squared_error", min_samples_split=5, max_depth=4
+        n_estimators=500,
+        min_samples_split=6,
+        max_depth=4,
+        criterion="squared_error",
+        random_state=42,
     )
     rf.fit(X_train, y_train)
 
@@ -132,42 +107,6 @@ def random_forest_regression(data: list, labels: list[float], test_size: float =
     # print(f"Variance score: {variance_score:.2f}")
 
 
-def random_forest(data: list, labels: list[bool], test_size: float = 0.3):
-    # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
-
-    # Create a Random Forest Classifier with 100 trees
-    rf = RandomForestClassifier(n_estimators=100)
-
-    # Train the model on the training set
-    rf.fit(X_train, y_train)
-
-    # Use the model to make predictions on the testing set
-    y_pred = rf.predict(X_test)
-
-    # Evaluate the accuracy of the model
-    accuracy = accuracy_score(y_test, y_pred)
-
-    # Get the decision rules for every tree in the forest
-    for i, tree in enumerate(rf.estimators_):
-        print(f"Tree {i + 1}")
-        print(
-            export_text(
-                tree,
-                feature_names=[
-                    "lexscore",
-                    "instance overlap",
-                    "subclass overlap",
-                    "desc overlap",
-                ],
-            )
-        )
-    # print(f"Accuracy: {accuracy:.2f}")
-    # print the score
-    score = rf.score(X_test, y_test)
-    print(f"Score: {score:.2f}")
-
-
 def remove_stopwords(unfiltered_string: str) -> str:
     """
     Filters a string by removing stop words and punctuations.
@@ -190,7 +129,9 @@ def remove_stopwords(unfiltered_string: str) -> str:
     translator = str.maketrans("", "", string.punctuation)
     filtered_words = unfiltered_string.translate(translator)
     stop_words = set(stopwords.words("english"))
-    filtered_words = [word for word in filtered_words.split() if word.lower() not in stop_words]
+    filtered_words = [
+        word for word in filtered_words.split() if word.lower() not in stop_words
+    ]
     return " ".join(filtered_words)
 
 

@@ -13,7 +13,9 @@ def generate_title_permutations(title):
 
     title = title.split()
     n = len(title)
-    result = [" ".join([title[j] for j in range(n) if i & (1 << j)]) for i in range(1, 2**n)]
+    result = [
+        " ".join([title[j] for j in range(n) if i & (1 << j)]) for i in range(1, 2**n)
+    ]
     result = [x for x in result if len(x.split()) > 1]
     result.extend(title)
     permutations = result if len(title) > 0 and len(result) > 0 else []
@@ -39,6 +41,13 @@ def compare_title_permutations_with_query(title, query):
     return results
 
 
+# Remove comma from best match
+def remove_comma_from_best_match(best_match):
+    if best_match[-1] == ",":
+        best_match = best_match[:-1]
+    return best_match
+
+
 def get_best_title_match(query, titles):
     """Get the best title match for a given query.
 
@@ -58,4 +67,5 @@ def get_best_title_match(query, titles):
             if r[1] < best_distance:
                 best_distance = r[1]
                 best_match = r[0]
+    best_match = remove_comma_from_best_match(best_match)
     return best_match
