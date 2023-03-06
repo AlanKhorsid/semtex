@@ -10,17 +10,17 @@ def parse_string(inputString:str) -> [str]:
             quoteCounter += 1
         elif c == "\"" and quoteCounter == 1:
             string = string + c
-            outputStrings.append(string)
-            string = ""
             quoteCounter -= 1
         elif c == ","  and quoteCounter == 0:
             outputStrings.append(string)
             string = ""
         else:
             string = string + c
+    outputStrings.append(string)
     if quoteCounter == 1:
-        print("ERROR UNEVEN AMOUNT OF QUOTATION MARKS")
+        raise Exception('Uneven amount of quotation marks')
 
     return outputStrings
 
-print(parse_string("hi, \"hello,greetings\",5,6"))
+print(parse_string("\"Uniastate, Bears\",1,2,\"hi, you\", yes"))
+print(parse_string("\"awmaod"))
