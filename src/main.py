@@ -1,15 +1,13 @@
+from pprint import pprint
 from typing import Union
 import requests
 import threading
-from enum import Enum
-from _types import ClaimType, Entity, Claim, DiscoveredEntity
-from pprint import pprint
 
+from tqdm import tqdm
+from _types import ClaimType, Entity, Claim
 from classes import Candidate, CandidateSet
-from _requests import wikidata_get_entity
 from util import (
-    ensemble_gradient_boost_regression,
-    parse_entity_properties,
+    generate_features,
     open_dataset,
     pickle_load,
     pickle_save,
@@ -276,64 +274,24 @@ def candidates_iter(
             yield candidate
 
 
-# dataset = open_dataset(correct_spelling=True)
+# ----- Open dataset -----
+dataset = open_dataset(correct_spelling=True)
 
-# # Fetch candidates
-# all_candidates: list[CandidateSet] = []
-# for mention, id in dataset[:50]:
-#     candidate_set = CandidateSet(mention, correct_id=id)
-#     candidate_set.fetch_candidates()
-#     candidate_set.fetch_candidate_info()
-#     all_candidates.append(candidate_set)
+# ----- Fetch candidates -----
+candidate_sets: list[CandidateSet] = []
+for mention, id in tqdm(dataset):
+    candidate_set = CandidateSet(mention, correct_id=id)
+    candidate_set.fetch_candidates()
+    candidate_set.fetch_candidate_info()
+    candidate_sets.append(candidate_set)
+pickle_save(candidate_sets)
 
-# pickle_save(all_candidates)
-all_candidates = pickle_load("02-03_14-20-53")
+# ----- Generate features -----
+features, labels_clas, labels_regr = generate_features(candidate_sets)
 
-# Generate features and labels
-data = []
-labels = []
-labels_reg = []
-labels_grad = []
-labels_grad_reg = []
-for i, candidate_set in enumerate(all_candidates):
-    for candidate in candidate_set.candidates:
-        print(f"Generating features for {candidate.title}")
-        instance_total = 0
-        instance_overlap = 0
-        subclass_total = 0
-        subclass_overlap = 0
-        description_overlaps = []
+# ----- Train classifier -----
+random_forest_regression(features, labels_regr)
 
-        for other_candidate in candidates_iter(all_candidates, i):
-            (overlap, total) = candidate.instance_overlap(other_candidate)
-            instance_total += total
-            instance_overlap += overlap
-
-            (overlap, total) = candidate.subclass_overlap(other_candidate)
-            subclass_total += total
-            subclass_overlap += overlap
-
-            description_overlaps.append(candidate.description_overlap(other_candidate))
-
-        labels.append(candidate.is_correct)
-        labels_reg.append(1.0 if candidate.is_correct else 0.0)
-        labels_grad.append(candidate.is_correct)
-        labels_grad_reg.append(1.0 if candidate.is_correct else 0.0)
-        data.append(
-            [
-                # candidate.title,
-                # candidate.description,
-                candidate.lex_score(candidate_set.mention),
-                instance_overlap / instance_total if instance_total > 0 else 0,
-                subclass_overlap / subclass_total if subclass_total > 0 else 0,
-                sum(description_overlaps) / len(description_overlaps)
-                if len(description_overlaps) > 0
-                else 0,
-            ]
-        )
-
-# ensemble_gradient_boost_regression(data, labels)
-random_forest_regression(data, labels)
-
-# pprint(data)
-# pprint(labels)
+# features = pickle_load("first-100_correct-spelling_features")
+# labels = pickle_load("first-100_correct-spelling_labels-regr")
+# random_forest_regression(features, labels)

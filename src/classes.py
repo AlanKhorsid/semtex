@@ -66,18 +66,18 @@ class CandidateSet:
         self.correct_id = correct_id
 
     def fetch_candidates(self):
-        print(f"Fetching candidates for '{self.mention}'...")
+        # print(f"Fetching candidates for '{self.mention}'...")
         entity_ids = wikidata_entity_search(self.mention)
-        print(f"Found {len(entity_ids)} candidates.")
+        # print(f"Found {len(entity_ids)} candidates.")
         for entity_id in entity_ids:
             is_correct = entity_id == self.correct_id
             self.candidates.append(Candidate(entity_id, is_correct))
 
     def fetch_candidate_info(self):
         for candidate in self.candidates:
-            print(f"Fetching info for 'Q{candidate.id}'...")
+            # print(f"Fetching info for 'Q{candidate.id}'...")
             candidate.fetch_info()
-            print(f"Found entity '{candidate.title}'")
+            # print(f"Found entity '{candidate.title}'")
 
     def pretty_print(self):
         print(f"Results for '{self.mention}':")
