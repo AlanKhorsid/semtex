@@ -164,11 +164,11 @@ def open_dataset(correct_spelling: bool = False) -> list[tuple[str, str]]:
     ]
     """
 
-    vals = get_csv_lines("./datasets/spellCheck/vals_labeled.csv")
+    vals = get_csv_lines("./datasets/spellCheck/vals_labeled2.csv")
     if correct_spelling:
-        return [(line[1], line[2]) for line in vals]
+        return [(line[1], line[2], line[3]) for line in vals]
     else:
-        return [(line[0], line[2]) for line in vals]
+        return [(line[0], line[2], line[3]) for line in vals]
 
 
 def parse_entity_title(entity_data: dict) -> Union[str, None]:
@@ -302,18 +302,15 @@ def candidates_iter(candidate_sets: list[object], skip_index: int = -1) -> list[
             yield candidate
 
 
-def generate_features(
-    candidate_sets: list[object],
-) -> tuple[list, list[bool], list[float]]:
-    features = []
-    labels_clas = []
-    labels_regr = []
-    for i, candidate_set in enumerate(candidate_sets):
-        print(
-            f"{i + 1}/{len(candidate_sets)} Generating features for {candidate_set.mention}"
-        )
-        for candidate in tqdm(candidate_set.candidates):
-            # print(f"Generating features for {candidate.title}")
+def generate_features(candidate_sets: list[object]) -> tuple[list, list[bool], list[float]]:
+    total_features = []
+    total_labels_clas = []
+    total_labels_regr = []
+    for i, candidate_set in tqdm(enumerate(candidate_sets), position=1, leave=False):
+        features = []
+        labels_clas = []
+        labels_regr = []
+        for candidate in candidate_set.candidates:
             instance_total = 0
             instance_overlap = 0
             subclass_total = 0
@@ -337,6 +334,7 @@ def generate_features(
             labels_regr.append(1.0 if candidate.is_correct else 0.0)
             features.append(
                 [
+                    candidate.id,
                     candidate.lex_score(candidate_set.mention),
                     instance_overlap / instance_total if instance_total > 0 else 0,
                     subclass_overlap / subclass_total if subclass_total > 0 else 0,
@@ -345,9 +343,8 @@ def generate_features(
                     else 0,
                 ]
             )
+        total_features.append(features)
+        total_labels_clas.append(labels_clas)
+        total_labels_regr.append(labels_regr)
 
-    pickle_save(features)
-    pickle_save(labels_clas)
-    pickle_save(labels_regr)
-
-    return features, labels_clas, labels_regr
+    return total_features, total_labels_clas, total_labels_regr

@@ -37,13 +37,10 @@ class Candidate:
         return Levenshtein.ratio(self.title, other)
 
     def instance_overlap(self, other: "Candidate") -> tuple[int, int]:
-        return (len(set(self.instances) & set(other.instances)), len(other.instances))
+        return (len(set(self.instances).intersection(other.instances)), len(other.instances))
 
     def subclass_overlap(self, other: "Candidate") -> tuple[int, int]:
-        return (
-            len(set(self.subclasses) & set(other.subclasses)),
-            len(other.subclasses),
-        )
+        return (len(set(self.subclasses).intersection(other.subclasses)), len(other.subclasses))
 
     def description_overlap(self, other: "Candidate"):
         if len(self.description) == 0 or len(other.description) == 0:
