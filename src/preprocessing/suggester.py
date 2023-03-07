@@ -18,15 +18,20 @@ def preprocess_query(query):
     preprocessed_query = preprocessed_query.lower()
     return preprocessed_query
 
-
-def generate_suggestion(query):
+def generate_suggestion(query="", use_api=False, filepath=""):
     """
     Preprocesses a search query by checking for spelling errors and suggesting alternatives.
 
     Args:
+<<<<<<< HEAD
         query (str): The original search query.
         use_api (bool): A flag indicating whether to use the Bing search API or read from a JSON file in the webpages-json folder.
                         Defaults to False.
+=======
+        query (str): Optional search query for api call.
+        use_api (bool): Optional flag to determine if the bing api should be used.
+        filepath (str): Optional filepath string for json cache location.
+>>>>>>> 2b7e5abf471ee67f370e43ff259d7a1cfe1323d1
 
     Returns:
         str: The suggested alternative search query, or the best match for the original query based on search result titles.
@@ -56,14 +61,8 @@ def generate_suggestion(query):
         results = json_obj["webPages"]["value"]
         titles = [result["name"] for result in results]
         suggestion = get_best_title_match(query, titles)
-        # print(f"Found best match: {suggestion}")
+        print(f"Found best match: {suggestion}")
         return suggestion
-
-
-subscription_key = config("subscription_key", default="")
-search_url = "https://api.bing.microsoft.com/v7.0/search"
-headers = {"Ocp-Apim-Subscription-Key": subscription_key}
-
 
 def generate_suggestion2(query="", use_api=False, filepath=""):
     """
@@ -112,6 +111,9 @@ def generate_suggestion2(query="", use_api=False, filepath=""):
         print(f"Found best match: {suggestion}")
         return suggestion
     
+subscription_key = config("subscription_key", default="")
+search_url = "https://api.bing.microsoft.com/v7.0/search"
+headers = {"Ocp-Apim-Subscription-Key": subscription_key}
 
 check_spellchecker_threaded(generate_suggestion, num_threads=100, only_hard=True)
 
