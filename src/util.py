@@ -9,7 +9,7 @@ from sklearn.ensemble import (
     GradientBoostingRegressor,
     RandomForestRegressor,
 )
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.metrics import accuracy_score, explained_variance_score, mean_squared_error
 from sklearn.tree import export_text
 import pickle
@@ -57,6 +57,12 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
     mse = mean_squared_error(y_test, gb.predict(X_test))
     print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
 
+    # cross validation
+    scores = cross_val_score(
+        gb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
+    )
+    print("Cross-validated scores:", scores)
+
 
 def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
     # Split the dataset into training and testing sets
@@ -75,34 +81,6 @@ def random_forest_regression(data: list, labels: list[float], test_size: float =
     prediction = rf.predict(X_test)
     mse = mean_squared_error(y_test, prediction)
     print(mse)
-
-    # # Create a Random Forest Regressor with 100 trees
-    # rf = RandomForestRegressor(n_estimators=100)
-
-    # # Train the model on the training set
-    # rf.fit(X_train, y_train)
-
-    # Use the model to make predictions on the testing set
-    # y_pred = rf.predict(X_test)
-
-    # # Evaluate the accuracy of the model
-    # variance_score = explained_variance_score(y_test, y_pred)
-
-    # # Get the decision rules for every tree in the forest
-    # for i, tree in enumerate(rf.estimators_):
-    #     print(f"Tree {i + 1}")
-    #     print(
-    #         export_text(
-    #             tree,
-    #             feature_names=[
-    #                 "lexscore",
-    #                 "instance overlap",
-    #                 "subclass overlap",
-    #                 "desc overlap",
-    #             ],
-    #         )
-    #     )
-    # print(f"Variance score: {variance_score:.2f}")
 
 
 def remove_stopwords(unfiltered_string: str) -> str:

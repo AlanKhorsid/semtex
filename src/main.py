@@ -7,6 +7,7 @@ from tqdm import tqdm
 from _types import ClaimType, Entity, Claim
 from classes import Candidate, CandidateSet
 from util import (
+    ensemble_gradient_boost_regression,
     generate_features,
     open_dataset,
     pickle_load,
@@ -289,8 +290,9 @@ pickle_save(candidate_sets)
 # ----- Generate features -----
 features, labels_clas, labels_regr = generate_features(candidate_sets)
 
-# ----- Train classifier -----
-random_forest_regression(features, labels_regr)
+# ----- Train regressor -----
+# random_forest_regression(features, labels_regr)
+ensemble_gradient_boost_regression(features, labels_regr)
 
 # features = pickle_load("first-100_correct-spelling_features")
 # labels = pickle_load("first-100_correct-spelling_labels-regr")
