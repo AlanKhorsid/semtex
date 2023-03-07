@@ -1,4 +1,6 @@
 import requests
+from _types import WikiDataSearchEntitiesResponse, validate_wikidata_search_entities_response
+from util import pickle_save
 
 API_URL = "https://www.wikidata.org/w/api.php"
 
@@ -36,7 +38,19 @@ def wikidata_entity_search(query: str, limit: int = 30, lang: str = "en") -> lis
     }
     data = requests.get(API_URL, params=params)
 
-    search_results = data.json()["search"]
+    res = data.json()
+    if "search-continue" in res:   
+        res["search_continue"] = res.pop("search-continue")
+    res: WikiDataSearchEntitiesResponse = res
+
+    # try:
+    #     validate_wikidata_search_entities_response(res)
+    # except Exception as e:
+    #     print('Error validating wikidata search entities response!!!!')
+    #     print(e)
+    #     pickle_save(res)
+    
+    search_results = res["search"]
     entity_ids = [result["id"] for result in search_results]
 
     return entity_ids
