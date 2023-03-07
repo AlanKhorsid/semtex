@@ -83,3 +83,18 @@ class CandidateSet:
             print(f"Instances: {candidate.instances}")
             print(f"Subclasses: {candidate.subclasses}")
             print()
+
+
+class Column:
+    cells: list[CandidateSet]
+
+    def __init__(self):
+        self.cells = []
+
+    def add_cell(self, cell: CandidateSet):
+        self.cells.append(cell)
+    
+    def fetch_cells(self):
+        for cell in self.cells:
+            cell.fetch_candidates()
+            cell.fetch_candidate_info()

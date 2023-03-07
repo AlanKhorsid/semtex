@@ -7,6 +7,7 @@ from sklearn.datasets import make_regression
 from tqdm import tqdm
 from sklearn.ensemble import (
     GradientBoostingRegressor,
+    HistGradientBoostingRegressor,
     RandomForestRegressor,
 )
 from sklearn.model_selection import cross_val_score, train_test_split
@@ -15,7 +16,38 @@ from sklearn.tree import export_text
 import pickle
 from datetime import datetime
 
-# from classes import Candidate, CandidateSet
+def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
+
+    # Hyperparameters for HistGradientBoostingRegressor
+    hgb_params = {
+        "max_iter": 100,
+        "learning_rate": 0.1,
+        "max_depth": 8,
+        "min_samples_leaf": 5,
+        "l2_regularization": 0.01,
+        "random_state": 42,
+    }
+
+    # Create a HistGradientBoostingRegressor with max_iter iterations
+    hgb = HistGradientBoostingRegressor(**hgb_params)
+
+    # Train the model on the training set
+    hgb.fit(X_train, y_train)
+
+    return hgb
+
+    mse = mean_squared_error(y_test, hgb.predict(X_test))
+    print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
+
+    # Cross validation
+    scores = cross_val_score(
+        hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
+    )
+    print("Cross-validated scores:", scores)
 
 
 def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
@@ -39,11 +71,11 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
 
     # Hyperparameters for Gradient Boosting Regressor
     gbr_params = {
-        "n_estimators": 500,
+        "n_estimators": 800,
         "learning_rate": 0.01,
-        "subsample": 0.5,
-        "max_depth": 4,
-        "min_samples_split": 6,
+        "subsample": 0.8,
+        "max_depth": 8,
+        "min_samples_split": 2,
         "loss": "squared_error",
         "random_state": 42,
     }
@@ -53,6 +85,8 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
 
     # Train the model on the training set
     gb.fit(X_train, y_train)
+
+    return gb
 
     mse = mean_squared_error(y_test, gb.predict(X_test))
     print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
@@ -77,6 +111,8 @@ def random_forest_regression(data: list, labels: list[float], test_size: float =
         random_state=42,
     )
     rf.fit(X_train, y_train)
+
+    return rf
 
     prediction = rf.predict(X_test)
     mse = mean_squared_error(y_test, prediction)
@@ -140,7 +176,7 @@ def get_csv_lines(filename: str) -> list[list[str]]:
         return list(reader)
 
 
-def open_dataset(correct_spelling: bool = False) -> list[tuple[str, str]]:
+def open_dataset(correct_spelling: bool = False, use_test_data: bool = False):
     """
     Opens the dataset and returns a list of (mention, id) tuples.
 
@@ -148,27 +184,53 @@ def open_dataset(correct_spelling: bool = False) -> list[tuple[str, str]]:
     ----------
     correct_spelling : bool, optional
         Whether to return the correctly preprocessed mentions or the mentions
+    
+    use_test_data : bool, optional
+        Whether to use the test data or the validation data
 
     Returns
     -------
-    list[tuple[str, str]]
-        A list of (mention, id) tuples.
-
-    Example
-    -------
-    >>> open_dataset()
-    [
-        ('Lincoln Township', 'Q7996268'),
-        ('Stony Creek Township', 'Q7996260'),
-        ...
-    ]
+    list[Column]
     """
 
-    vals = get_csv_lines("./datasets/spellCheck/vals_labeled2.csv")
-    if correct_spelling:
-        return [(line[1], line[2], line[3]) for line in vals]
-    else:
-        return [(line[0], line[2], line[3]) for line in vals]
+    from classes import CandidateSet, Column
+
+    file_path = "./datasets/HardTablesR1/DataSets/HardTablesR1/Test" if use_test_data else "./datasets/HardTablesR1/DataSets/HardTablesR1/Valid"
+    cea_lines = get_csv_lines(f"{file_path}/gt/cea_gt.csv")
+    cea_lines = [[l[0], int(l[1]), int(l[2]), l[3]] for l in cea_lines]
+    
+    current_filename = ""
+    lines = []
+    cols: list[Column] = []
+    for filename, _, _, _ in cea_lines:
+        if filename == current_filename:
+            continue
+        current_filename = filename
+
+        file = get_csv_lines(f"{file_path}/tables/{filename}.csv")
+
+        lines = [l for l in cea_lines if l[0] == filename]
+        lines.sort(key=lambda x: (x[2], x[1]))
+
+        current_col = -1
+        new_cols: list[Column] = []
+        for _, row, col, _ in lines:
+            if col != current_col:
+                current_col = col
+                new_cols.append(Column())
+            
+            mention = file[row][col]
+            new_cols[-1].add_cell(CandidateSet(mention))
+        
+        cols.extend(new_cols)
+    
+    return cols
+
+    # vals = get_csv_lines("./datasets/spellCheck/vals_labeled2.csv")
+    # if correct_spelling:
+    #     return [(line[1], line[2], line[3]) for line in vals]
+    # else:
+    #     return [(line[0], line[2], line[3]) for line in vals]
 
 
 def parse_entity_title(entity_data: dict) -> Union[str, None]:
