@@ -302,7 +302,9 @@ def candidates_iter(candidate_sets: list[object], skip_index: int = -1) -> list[
             yield candidate
 
 
-def generate_features(candidate_sets: list[object]) -> tuple[list, list[bool], list[float]]:
+def generate_features(
+    candidate_sets: list[object],
+) -> tuple[list, list[bool], list[float]]:
     total_features = []
     total_labels_clas = []
     total_labels_regr = []
@@ -348,3 +350,23 @@ def generate_features(candidate_sets: list[object]) -> tuple[list, list[bool], l
         total_labels_regr.append(labels_regr)
 
     return total_features, total_labels_clas, total_labels_regr
+
+
+def flatten_list(nested_list: list[list[any]]) -> list[any]:
+    """
+    Takes a nested list of lists and returns a flattened list.
+
+    Args:
+        nested_list (list[list[T]]): The nested list to be flattened.
+
+    Returns:
+        list[T]: A flattened list containing all elements from the nested list.
+
+    Example:
+        >>> nested_list = [[[1],[2],[3]], [[4],[5],[6]], [[7],[8],[9]]]
+        >>> flatten_list(nested_list)
+        [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    """
+    return [
+        num for sublist1 in nested_list for sublist2 in sublist1 for num in sublist2
+    ]
