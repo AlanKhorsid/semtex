@@ -7,6 +7,7 @@ from tqdm import tqdm
 from _types import ClaimType, Entity, Claim
 from classes import Candidate, CandidateSet
 from util import (
+    ensemble_gradient_boost_regression,
     generate_features,
     open_dataset,
     pickle_load,
@@ -67,11 +68,17 @@ def parse_claim(claim: dict) -> Union[Claim, None]:
 
     """
 
-    if claim["mainsnak"]["snaktype"] == "novalue" or claim["mainsnak"]["snaktype"] == "somevalue":
+    if (
+        claim["mainsnak"]["snaktype"] == "novalue"
+        or claim["mainsnak"]["snaktype"] == "somevalue"
+    ):
         return None
 
     if claim["mainsnak"]["datatype"] == "wikibase-item":
-        if claim["mainsnak"]["property"] != "P31" and claim["mainsnak"]["datavalue"]["value"]["id"] != "P279":
+        if (
+            claim["mainsnak"]["property"] != "P31"
+            and claim["mainsnak"]["datavalue"]["value"]["id"] != "P279"
+        ):
             return None
 
         return {
@@ -137,7 +144,10 @@ def parse_claim(claim: dict) -> Union[Claim, None]:
             "type": ClaimType.PROPERTY,
             "value": claim["mainsnak"]["datavalue"]["value"]["id"],
         }
-    elif claim["mainsnak"]["datatype"] == "commonsMedia" or claim["mainsnak"]["datatype"] == "globe-coordinate":
+    elif (
+        claim["mainsnak"]["datatype"] == "commonsMedia"
+        or claim["mainsnak"]["datatype"] == "globe-coordinate"
+    ):
         # ignore
         return None
     else:
@@ -232,7 +242,9 @@ def get_candidate_coverage(
 
             i = candidate_index(candidatesList, candidate)
             if i == -1:
-                raise Exception(f"Candidate {candidate} not found in candidatesList. This should not happen?")
+                raise Exception(
+                    f"Candidate {candidate} not found in candidatesList. This should not happen?"
+                )
 
             if not any(i == cand[0] for cand in cands):
                 cands.append((i, [candidate]))
@@ -253,7 +265,9 @@ def get_candidate_coverage(
     return res
 
 
-def candidates_iter(candidate_sets: list[CandidateSet], skip_index: int = -1) -> list[Candidate]:
+def candidates_iter(
+    candidate_sets: list[CandidateSet], skip_index: int = -1
+) -> list[Candidate]:
     for i, candidate_set in enumerate(candidate_sets):
         if i == skip_index:
             continue
@@ -276,8 +290,9 @@ pickle_save(candidate_sets)
 # ----- Generate features -----
 features, labels_clas, labels_regr = generate_features(candidate_sets)
 
-# ----- Train classifier -----
-random_forest_regression(features, labels_regr)
+# ----- Train regressor -----
+# random_forest_regression(features, labels_regr)
+ensemble_gradient_boost_regression(features, labels_regr)
 
 # features = pickle_load("first-100_correct-spelling_features")
 # labels = pickle_load("first-100_correct-spelling_labels-regr")
