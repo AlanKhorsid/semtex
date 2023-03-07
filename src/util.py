@@ -14,6 +14,8 @@ from sklearn.metrics import accuracy_score, explained_variance_score, mean_squar
 from sklearn.tree import export_text
 import pickle
 from datetime import datetime
+import queue
+import threading
 
 # from classes import Candidate, CandidateSet
 
@@ -348,3 +350,22 @@ def generate_features(candidate_sets: list[object]) -> tuple[list, list[bool], l
         total_labels_regr.append(labels_regr)
 
     return total_features, total_labels_clas, total_labels_regr
+
+thread_queue = queue.Queue()
+def thread_worker():
+    """
+    Works on 1 element of a global queue (intended as a target of a thread).
+
+    Example
+    -------
+    >>> thread_queue.put(candidate.fetch_info)
+    >>> threading.Thread(target=thread_worker).start()
+    """
+    func = thread_queue.get()
+    try:
+        func()
+    except:
+        thread_queue.put(func)
+        threading.Thread(target=thread_worker).start()
+        return
+    thread_queue.task_done()

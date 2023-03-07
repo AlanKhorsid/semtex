@@ -4,12 +4,15 @@ from util import (
     parse_entity_properties,
     parse_entity_title,
     remove_stopwords,
+    thread_worker,
+    thread_queue,
 )
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from typing import Union
 import Levenshtein
-
+import threading
+import queue
 
 class Candidate:
     id: int
@@ -51,7 +54,6 @@ class Candidate:
         cosine_sim = cosine_similarity(vectorizer)
         return cosine_sim[0][1]
 
-
 class CandidateSet:
     mention: str
     candidates: list[Candidate]
@@ -73,9 +75,10 @@ class CandidateSet:
     def fetch_candidate_info(self):
         for candidate in self.candidates:
             # print(f"Fetching info for 'Q{candidate.id}'...")
-            candidate.fetch_info()
+            thread_queue.put(candidate.fetch_info)
             # print(f"Found entity '{candidate.title}'")
-
+            threading.Thread(target=thread_worker).start()
+            
     def pretty_print(self):
         print(f"Results for '{self.mention}':")
         for candidate in self.candidates:
