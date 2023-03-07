@@ -23,15 +23,9 @@ def generate_suggestion(query="", use_api=False, filepath=""):
     Preprocesses a search query by checking for spelling errors and suggesting alternatives.
 
     Args:
-<<<<<<< HEAD
         query (str): The original search query.
         use_api (bool): A flag indicating whether to use the Bing search API or read from a JSON file in the webpages-json folder.
                         Defaults to False.
-=======
-        query (str): Optional search query for api call.
-        use_api (bool): Optional flag to determine if the bing api should be used.
-        filepath (str): Optional filepath string for json cache location.
->>>>>>> 2b7e5abf471ee67f370e43ff259d7a1cfe1323d1
 
     Returns:
         str: The suggested alternative search query, or the best match for the original query based on search result titles.
