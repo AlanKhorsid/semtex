@@ -18,7 +18,7 @@ def preprocess_query(query):
     preprocessed_query = preprocessed_query.lower()
     return preprocessed_query
 
-def generate_suggestion(query="", use_api=False, filepath=""):
+def generate_suggestion(query=""):
     """
     Preprocesses a search query by checking for spelling errors and suggesting alternatives.
 
