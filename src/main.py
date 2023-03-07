@@ -2,6 +2,7 @@ from tqdm import tqdm
 from classes import Candidate, CandidateSet
 from util import (
     ensemble_gradient_boost_regression,
+    ensemble_hist_gradient_boost_regression,
     flatten_list,
     generate_features,
     open_dataset,
@@ -32,9 +33,11 @@ labels_regr = pickle_load("all_correct-spelling_labels-regr")
 # x = 1
 
 # ----- Train regressor -----
-# random_forest_regression(features, labels_regr)
-ensemble_gradient_boost_regression(flatten_list(features), flatten_list(labels_regr))
-
+# random_forest_regression(flatten_list(features), flatten_list(labels_regr))
+# ensemble_gradient_boost_regression(flatten_list(features), flatten_list(labels_regr))
+ensemble_hist_gradient_boost_regression(
+    flatten_list(features), flatten_list(labels_regr)
+)
 
 # features = pickle_load("first-100_correct-spelling_features")
 # labels = pickle_load("first-100_correct-spelling_labels-regr")

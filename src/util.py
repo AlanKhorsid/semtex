@@ -7,6 +7,7 @@ from sklearn.datasets import make_regression
 from tqdm import tqdm
 from sklearn.ensemble import (
     GradientBoostingRegressor,
+    HistGradientBoostingRegressor,
     RandomForestRegressor,
 )
 from sklearn.model_selection import cross_val_score, train_test_split
@@ -17,21 +18,48 @@ from datetime import datetime
 
 # from classes import Candidate, CandidateSet
 
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.metrics import mean_squared_error
+
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import mean_squared_error
+from sklearn.ensemble import HistGradientBoostingRegressor
+
+
+def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
+
+    # Hyperparameters for HistGradientBoostingRegressor
+    hgb_params = {
+        "max_iter": 500,
+        "learning_rate": 0.1,
+        "max_depth": 8,
+        "min_samples_leaf": 5,
+        "l2_regularization": 0.01,
+        "random_state": 42,
+    }
+
+    # Create a HistGradientBoostingRegressor with max_iter iterations
+    hgb = HistGradientBoostingRegressor(**hgb_params)
+
+    # Train the model on the training set
+    hgb.fit(X_train, y_train)
+
+    mse = mean_squared_error(y_test, hgb.predict(X_test))
+    print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
+
+    # Cross validation
+    scores = cross_val_score(
+        hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
+    )
+    print("Cross-validated scores:", scores)
+
 
 def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
-    """
-    Trains a Gradient Boosting ensemble on the input data and labels and prints the accuracy of the model.
-
-    Parameters:
-    data (list): A list of input data.
-    labels (list): A list of boolean labels corresponding to the input data.
-    test_size (float, optional): The proportion of the data to use for testing. Default is 0.3.
-    n_estimators (int, optional): The number of trees in the Gradient Boosting ensemble. Default is 100.
-
-    Returns:
-    None
-    """
-
     # Split the dataset into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(
         data, labels, test_size=test_size, random_state=42
