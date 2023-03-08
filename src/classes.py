@@ -18,11 +18,8 @@ class Candidate:
     instances: list[int]
     subclasses: list[int]
 
-    is_correct: bool
-
-    def __init__(self, id: str, is_correct: bool = False):
-        self.id = int(id[1:])
-        self.is_correct = is_correct
+    def __init__(self, id: int):
+        self.id = id
 
     def fetch_info(self):
         entity_data = wikidata_get_entity(self.id)
@@ -55,26 +52,39 @@ class Candidate:
 class CandidateSet:
     mention: str
     candidates: list[Candidate]
-    correct_id: Union[str, None]
+    correct_candidate: Union[Candidate, None]
+    correct_id: Union[int, None]
 
     def __init__(self, mention: str, correct_id: Union[str, None] = None):
         self.mention = mention
         self.candidates = []
-        self.correct_id = correct_id
+        if correct_id is not None:
+            self.correct_id = int(correct_id[1:])
 
     def fetch_candidates(self):
         # print(f"Fetching candidates for '{self.mention}'...")
         entity_ids = wikidata_entity_search(self.mention)
         # print(f"Found {len(entity_ids)} candidates.")
         for entity_id in entity_ids:
-            is_correct = entity_id == self.correct_id
-            self.candidates.append(Candidate(entity_id, is_correct))
+            self.candidates.append(Candidate(int(entity_id[1:])))
 
     def fetch_candidate_info(self):
         for candidate in self.candidates:
             # print(f"Fetching info for 'Q{candidate.id}'...")
             candidate.fetch_info()
             # print(f"Found entity '{candidate.title}'")
+
+    def fetch_correct_candidate(self) -> None:
+        if self.correct_id is None:
+            return
+
+        for candidate in self.candidates:
+            if candidate.id == self.correct_id:
+                self.correct_candidate = candidate
+                return
+
+        self.correct_candidate = Candidate(self.correct_id)
+        self.correct_candidate.fetch_info()
 
     def pretty_print(self):
         print(f"Results for '{self.mention}':")
@@ -93,8 +103,9 @@ class Column:
 
     def add_cell(self, cell: CandidateSet):
         self.cells.append(cell)
-    
+
     def fetch_cells(self):
         for cell in self.cells:
             cell.fetch_candidates()
             cell.fetch_candidate_info()
+            cell.fetch_correct_candidate()

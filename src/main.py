@@ -1,4 +1,12 @@
-from util import ensemble_gradient_boost_regression, ensemble_hist_gradient_boost_regression, open_dataset, pickle_load, random_forest_regression
+from util import (
+    ensemble_gradient_boost_regression,
+    ensemble_hist_gradient_boost_regression,
+    open_dataset,
+    pickle_load,
+    random_forest_regression,
+)
+from tqdm import tqdm
+
 
 def flatten_list(nested_list: list[list[any]]) -> list[any]:
     """
@@ -12,16 +20,15 @@ def flatten_list(nested_list: list[list[any]]) -> list[any]:
         >>> flatten_list(nested_list)
         [1, 2, 3, 4, 5, 6, 7, 8, 9]
     """
-    return [
-        num for sublist1 in nested_list for sublist2 in sublist1 for num in sublist2
-    ]
+    return [num for sublist1 in nested_list for sublist2 in sublist1 for num in sublist2]
+
 
 # ----- Open dataset -----
 cols = open_dataset(use_test_data=True)
 
 # ----- Fetch candidates -----
-cols = cols[:1]
-for col in cols:
+# cols = cols[:1]
+for col in tqdm(cols):
     col.fetch_cells()
 
 x = 0
@@ -66,7 +73,7 @@ x = 0
 #         for candidate in cell.candidates:
 #             feature = next(feature for feature in features_flat if feature[0] == candidate.id)
 #             cell_features.append(feature)
-        
+
 #         cell_predictions = model.predict(cell_features)
 #         cell_predictions = list(zip(cell_predictions, cell.candidates))
 #         cell_predictions.sort(key=lambda x: x[0], reverse=True)
@@ -75,12 +82,12 @@ x = 0
 #         print(f"Candidates:")
 #         for pred in cell_predictions:
 #             print(f"    {pred[0]}: {pred[1].title} ({pred[1].description})")
-        
+
 #         print(f"Prediction:")
 #         if (cell_predictions[0][1].is_correct):
 #             print(f"    CORRECT: {cell_predictions[0][1].title} ({cell_predictions[0][1].description})")
 #             total_correct += 1
-#         else: 
+#         else:
 #             try:
 #                 correct_candidate = next(candidate for candidate in cell.candidates if candidate.is_correct)
 #                 print(f"    INCORRECT - Should have been: {correct_candidate.title} ({correct_candidate.description})")

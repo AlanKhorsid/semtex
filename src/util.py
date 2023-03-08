@@ -16,11 +16,10 @@ from sklearn.tree import export_text
 import pickle
 from datetime import datetime
 
+
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        data, labels, test_size=test_size, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
 
     # Hyperparameters for HistGradientBoostingRegressor
     hgb_params = {
@@ -44,9 +43,7 @@ def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
     print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
 
     # Cross validation
-    scores = cross_val_score(
-        hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
-    )
+    scores = cross_val_score(hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error")
     print("Cross-validated scores:", scores)
 
 
@@ -65,9 +62,7 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
     """
 
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        data, labels, test_size=test_size, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
 
     # Hyperparameters for Gradient Boosting Regressor
     gbr_params = {
@@ -92,17 +87,13 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
     print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
 
     # cross validation
-    scores = cross_val_score(
-        gb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
-    )
+    scores = cross_val_score(gb, X_train, y_train, cv=5, scoring="neg_mean_squared_error")
     print("Cross-validated scores:", scores)
 
 
 def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        data, labels, test_size=test_size
-    )
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
     rf = RandomForestRegressor(
         n_estimators=500,
         min_samples_split=6,
@@ -141,9 +132,7 @@ def remove_stopwords(unfiltered_string: str) -> str:
     translator = str.maketrans("", "", string.punctuation)
     filtered_words = unfiltered_string.translate(translator)
     stop_words = set(stopwords.words("english"))
-    filtered_words = [
-        word for word in filtered_words.split() if word.lower() not in stop_words
-    ]
+    filtered_words = [word for word in filtered_words.split() if word.lower() not in stop_words]
     return " ".join(filtered_words)
 
 
@@ -184,7 +173,7 @@ def open_dataset(correct_spelling: bool = False, use_test_data: bool = False):
     ----------
     correct_spelling : bool, optional
         Whether to return the correctly preprocessed mentions or the mentions
-    
+
     use_test_data : bool, optional
         Whether to use the test data or the validation data
 
@@ -195,35 +184,40 @@ def open_dataset(correct_spelling: bool = False, use_test_data: bool = False):
 
     from classes import CandidateSet, Column
 
-    file_path = "./datasets/HardTablesR1/DataSets/HardTablesR1/Test" if use_test_data else "./datasets/HardTablesR1/DataSets/HardTablesR1/Valid"
-    cea_lines = get_csv_lines(f"{file_path}/gt/cea_gt.csv")
-    cea_lines = [[l[0], int(l[1]), int(l[2]), l[3]] for l in cea_lines]
-    
+    file_path = (
+        "./datasets/HardTablesR1/DataSets/HardTablesR1/Test"
+        if use_test_data
+        else "./datasets/HardTablesR1/DataSets/HardTablesR1/Valid"
+    )
+    gt_lines = get_csv_lines(f"{file_path}/gt/cea_gt.csv")
+    gt_lines = [[l[0], int(l[1]), int(l[2]), l[3]] for l in gt_lines]
+
     current_filename = ""
     lines = []
     cols: list[Column] = []
-    for filename, _, _, _ in cea_lines:
+    for filename, _, _, _ in gt_lines:
         if filename == current_filename:
             continue
         current_filename = filename
 
         file = get_csv_lines(f"{file_path}/tables/{filename}.csv")
 
-        lines = [l for l in cea_lines if l[0] == filename]
+        lines = [l for l in gt_lines if l[0] == filename]
         lines.sort(key=lambda x: (x[2], x[1]))
 
         current_col = -1
         new_cols: list[Column] = []
-        for _, row, col, _ in lines:
+        for _, row, col, entity_url in lines:
             if col != current_col:
                 current_col = col
                 new_cols.append(Column())
-            
+
             mention = file[row][col]
-            new_cols[-1].add_cell(CandidateSet(mention))
-        
+            entity_id = entity_url.split("/")[-1]
+            new_cols[-1].add_cell(CandidateSet(mention, correct_id=entity_id))
+
         cols.extend(new_cols)
-    
+
     return cols
 
     # vals = get_csv_lines("./datasets/spellCheck/vals_labeled2.csv")
@@ -388,9 +382,7 @@ def generate_features(candidate_sets: list[object]) -> tuple[list, list[bool], l
                 subclass_total += total
                 subclass_overlap += overlap
 
-                description_overlaps.append(
-                    candidate.description_overlap(other_candidate)
-                )
+                description_overlaps.append(candidate.description_overlap(other_candidate))
 
             labels_clas.append(candidate.is_correct)
             labels_regr.append(1.0 if candidate.is_correct else 0.0)
@@ -400,9 +392,7 @@ def generate_features(candidate_sets: list[object]) -> tuple[list, list[bool], l
                     candidate.lex_score(candidate_set.mention),
                     instance_overlap / instance_total if instance_total > 0 else 0,
                     subclass_overlap / subclass_total if subclass_total > 0 else 0,
-                    sum(description_overlaps) / len(description_overlaps)
-                    if len(description_overlaps) > 0
-                    else 0,
+                    sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0,
                 ]
             )
         total_features.append(features)
