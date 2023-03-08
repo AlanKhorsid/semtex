@@ -334,7 +334,6 @@ def pickle_save(obj):
     now = datetime.now()
     filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
 
-    # check if file already exists and if so, append a number to the filename
     i = 1
     while os.path.isfile(filename):
         filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"

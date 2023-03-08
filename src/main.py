@@ -1,3 +1,4 @@
+from classes import Column
 from util import (
     ensemble_gradient_boost_regression,
     ensemble_hist_gradient_boost_regression,
@@ -23,30 +24,16 @@ def flatten_list(nested_list: list[list[any]]) -> list[any]:
     """
     return [num for sublist1 in nested_list for sublist2 in sublist1 for num in sublist2]
 
-
 # ----- Open dataset -----
 # cols = open_dataset(use_test_data=True)
-cols = pickle_load("08-03_13-44-13", is_dump=True)
+cols: list[Column] = pickle_load("test-data_cols")
 
 # ----- Fetch candidates -----
-# cols = cols[:1]
 for col in tqdm(cols):
+    if col.all_cells_fetched():
+        continue
     col.fetch_cells()
     pickle_save(cols)
-
-
-# # ----- Open dataset -----
-# dataset = open_dataset(correct_spelling=True)
-
-# # ----- Fetch candidates -----
-# # candidate_sets: list[CandidateSet] = []
-# # for mention, id in tqdm(dataset):
-# #     candidate_set = CandidateSet(mention, correct_id=id)
-# #     candidate_set.fetch_candidates()
-# #     candidate_set.fetch_candidate_info()
-# #     candidate_sets.append(candidate_set)
-# # pickle_save(candidate_sets)
-# cols = pickle_load("all_correct-spelling_cols")
 
 # # ----- Generate features -----
 # # features, labels_clas, labels_regr = generate_features(candidate_sets)

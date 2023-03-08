@@ -52,6 +52,9 @@ class Candidate:
         )
         cosine_sim = cosine_similarity(vectorizer)
         return cosine_sim[0][1]
+    
+    def info_fetched(self) -> bool:
+        return self.title is not None
 
 
 class CandidateSet:
@@ -70,7 +73,11 @@ class CandidateSet:
             self.correct_id = None
 
     def fetch_candidates(self):
-        if self.mention == "" or self.candidates is not None:
+        if self.mention == "":
+            self.candidates = []
+            return
+
+        if self.candidates is not None:
             return
 
         entity_ids = wikidata_entity_search(self.mention)
@@ -86,7 +93,7 @@ class CandidateSet:
                 candidate.fetch_info()
 
     def fetch_correct_candidate(self) -> None:
-        if self.correct_id is None:
+        if self.correct_id is None or self.correct_candidate is not None:
             return
 
         for candidate in self.candidates:
@@ -96,6 +103,19 @@ class CandidateSet:
 
         self.correct_candidate = Candidate(self.correct_id)
         self.correct_candidate.fetch_info()
+    
+    def all_candidates_fetched(self) -> bool:
+        if self.candidates is None:
+            return False
+
+        for candidate in self.candidates:
+            if not candidate.info_fetched():
+                return False
+        
+        if not self.correct_candidate.info_fetched():
+            return False
+
+        return True
 
     def pretty_print(self):
         print(f"Results for '{self.mention}':")
@@ -133,3 +153,9 @@ class Column:
 
         for t in threads:
             t.join()
+    
+    def all_cells_fetched(self) -> bool:
+        for cell in self.cells:
+            if not cell.all_candidates_fetched():
+                return False
+        return True
