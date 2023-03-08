@@ -62,6 +62,8 @@ class CandidateSet:
             self.correct_id = int(correct_id[1:])
 
     def fetch_candidates(self):
+        if self.mention == "":
+            return
         # print(f"Fetching candidates for '{self.mention}'...")
         entity_ids = wikidata_entity_search(self.mention)
         # print(f"Found {len(entity_ids)} candidates.")
