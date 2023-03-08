@@ -27,7 +27,9 @@ def append_to_csv(filename: str, line: str):
 
 
 def generate_vals_csv():
-    cea_gt = get_csv_lines("./datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/cea_gt.csv")
+    cea_gt = get_csv_lines(
+        "./datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/cea_gt.csv"
+    )
 
     current_file_lines = []
     current_filename = ""
@@ -50,7 +52,10 @@ def generate_vals_csv():
         label = current_file_lines[int(row)][int(col)]
 
         # append_to_csv("./datasets/spellCheck/vals.csv", f'"{label}","{actual_label}"')
-        append_to_csv("./datasets/spellCheck/vals_labeled.csv", f'"{label}","{actual_label}","{id}"')
+        append_to_csv(
+            "./datasets/spellCheck/vals_labeled.csv",
+            f'"{label}","{actual_label}","{id}"',
+        )
 
         percent_done = (cea_gt.index(line) / len(cea_gt)) * 100
         print(f"{percent_done:.2f}%   {label} -> {actual_label}")
@@ -90,7 +95,9 @@ def check_spellchecker(func, case_sensitive: bool = False, only_hard: bool = Fal
     print(f"Accuracy: {correct / total * 100:.2f}%")
 
 
-def check_spellchecker_threaded(func, case_sensitive: bool = False, only_hard: bool = False, num_threads: int = 20):
+def check_spellchecker_threaded(
+    func, case_sensitive: bool = False, only_hard: bool = False, num_threads: int = 20
+):
     vals = get_csv_lines("./datasets/spellCheck/vals.csv")
 
     if only_hard:
@@ -101,15 +108,17 @@ def check_spellchecker_threaded(func, case_sensitive: bool = False, only_hard: b
 
     def check_line(line):
         label, actual_label = line
+        if label == "former alpenhotel boedele" "":
+            print("here")
         if not case_sensitive:
             label = label.lower()
             actual_label = actual_label.lower()
-
-        try:
-            prediction = func(label)
-        except:
-            print(f"ERROR: {label} -> {actual_label}")
-            return
+        prediction = func(label)
+        # try:
+        #     prediction = func(label)
+        # except:
+        #     print(f"ERROR: {label} -> {actual_label}")
+        #     return
 
         if prediction is not None:
             prediction = prediction.lower()

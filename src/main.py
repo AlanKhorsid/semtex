@@ -34,7 +34,7 @@ labels_regr = pickle_load("all_correct-spelling_labels-regr")
 
 # ----- Train regressor -----
 # random_forest_regression(flatten_list(features), flatten_list(labels_regr))
-# ensemble_gradient_boost_regression(flatten_list(features), flatten_list(labels_regr))
+#ensemble_gradient_boost_regression(flatten_list(features), flatten_list(labels_regr))
 ensemble_hist_gradient_boost_regression(
     flatten_list(features), flatten_list(labels_regr)
 )

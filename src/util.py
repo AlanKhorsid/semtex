@@ -35,14 +35,13 @@ def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
 
     # Hyperparameters for HistGradientBoostingRegressor
     hgb_params = {
-        "max_iter": 500,
+        "max_iter": 100,
         "learning_rate": 0.1,
         "max_depth": 8,
         "min_samples_leaf": 5,
         "l2_regularization": 0.01,
         "random_state": 42,
     }
-
     # Create a HistGradientBoostingRegressor with max_iter iterations
     hgb = HistGradientBoostingRegressor(**hgb_params)
 
@@ -67,11 +66,11 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
 
     # Hyperparameters for Gradient Boosting Regressor
     gbr_params = {
-        "n_estimators": 500,
+        "n_estimators": 800,
         "learning_rate": 0.01,
-        "subsample": 0.5,
-        "max_depth": 4,
-        "min_samples_split": 6,
+        "subsample": 0.8,
+        "max_depth": 8,
+        "min_samples_split": 2,
         "loss": "squared_error",
         "random_state": 42,
     }
