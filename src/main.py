@@ -26,7 +26,7 @@ def flatten_list(nested_list: list[list[any]]) -> list[any]:
 
 # ----- Open dataset -----
 # cols = open_dataset(use_test_data=True)
-cols = pickle_load("08-03_13-27-58", is_dump=True)
+cols = pickle_load("08-03_13-44-13", is_dump=True)
 
 # ----- Fetch candidates -----
 # cols = cols[:1]
