@@ -3,6 +3,7 @@ from util import (
     ensemble_hist_gradient_boost_regression,
     open_dataset,
     pickle_load,
+    pickle_save,
     random_forest_regression,
 )
 from tqdm import tqdm
@@ -24,14 +25,15 @@ def flatten_list(nested_list: list[list[any]]) -> list[any]:
 
 
 # ----- Open dataset -----
-cols = open_dataset(use_test_data=True)
+# cols = open_dataset(use_test_data=True)
+cols = pickle_load("08-03_13-27-58", is_dump=True)
 
 # ----- Fetch candidates -----
 # cols = cols[:1]
 for col in tqdm(cols):
     col.fetch_cells()
+    pickle_save(cols)
 
-x = 0
 
 # # ----- Open dataset -----
 # dataset = open_dataset(correct_spelling=True)

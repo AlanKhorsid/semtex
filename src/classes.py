@@ -14,13 +14,17 @@ import threading
 
 class Candidate:
     id: int
-    title: str
-    description: str
-    instances: list[int]
-    subclasses: list[int]
+    title: Union[str, None]
+    description: Union[str, None]
+    instances: Union[list[int], None]
+    subclasses: Union[list[int], None]
 
     def __init__(self, id: int):
         self.id = id
+        self.title = None
+        self.description = None
+        self.instances = None
+        self.subclasses = None
 
     def fetch_info(self):
         entity_data = wikidata_get_entity(self.id)
@@ -52,30 +56,34 @@ class Candidate:
 
 class CandidateSet:
     mention: str
-    candidates: list[Candidate]
+    candidates: Union[list[Candidate], None]
     correct_candidate: Union[Candidate, None]
     correct_id: Union[int, None]
 
     def __init__(self, mention: str, correct_id: Union[str, None] = None):
         self.mention = mention
-        self.candidates = []
+        self.candidates = None
+        self.correct_candidate = None
         if correct_id is not None:
             self.correct_id = int(correct_id[1:])
+        else:
+            self.correct_id = None
 
     def fetch_candidates(self):
-        if self.mention == "":
+        if self.mention == "" or self.candidates is not None:
             return
-        # print(f"Fetching candidates for '{self.mention}'...")
+
         entity_ids = wikidata_entity_search(self.mention)
-        # print(f"Found {len(entity_ids)} candidates.")
+
+        candidates = []
         for entity_id in entity_ids:
-            self.candidates.append(Candidate(int(entity_id[1:])))
+            candidates.append(Candidate(int(entity_id[1:])))
+        self.candidates = candidates
 
     def fetch_candidate_info(self):
         for candidate in self.candidates:
-            # print(f"Fetching info for 'Q{candidate.id}'...")
-            candidate.fetch_info()
-            # print(f"Found entity '{candidate.title}'")
+            if candidate.title is None:
+                candidate.fetch_info()
 
     def fetch_correct_candidate(self) -> None:
         if self.correct_id is None:
@@ -108,14 +116,20 @@ class Column:
         self.cells.append(cell)
 
     def fetch_cells(self):
-        def fetch_worker(cell):
+        def fetch_worker(cell: CandidateSet):
             try:
                 cell.fetch_candidates()
                 cell.fetch_candidate_info()
                 cell.fetch_correct_candidate()
-            except RateLimitException:
-                print("Oh shit it happened")
                 return
-            return
+            except RateLimitException:
+                return
+
+        threads = []
         for cell in self.cells:
-            threading.Thread(target=fetch_worker, args=[cell]).start()
+            t = threading.Thread(target=fetch_worker, args=[cell])
+            t.start()
+            threads.append(t)
+
+        for t in threads:
+            t.join()
