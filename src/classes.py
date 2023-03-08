@@ -1,4 +1,4 @@
-from _requests import wikidata_entity_search, wikidata_get_entity
+from _requests import wikidata_entity_search, wikidata_get_entity, RateLimitException
 from util import (
     parse_entity_description,
     parse_entity_properties,
@@ -9,6 +9,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from typing import Union
 import Levenshtein
+import threading
 
 
 class Candidate:
@@ -107,7 +108,14 @@ class Column:
         self.cells.append(cell)
 
     def fetch_cells(self):
+        def fetch_worker(cell):
+            try:
+                cell.fetch_candidates()
+                cell.fetch_candidate_info()
+                cell.fetch_correct_candidate()
+            except RateLimitException:
+                print("Oh shit it happened")
+                return
+            return
         for cell in self.cells:
-            cell.fetch_candidates()
-            cell.fetch_candidate_info()
-            cell.fetch_correct_candidate()
+            threading.Thread(target=fetch_worker, args=[cell]).start()
