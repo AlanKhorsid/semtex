@@ -4,6 +4,7 @@ from util import (
     parse_entity_properties,
     parse_entity_title,
     remove_stopwords,
+    timeit,
 )
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -19,12 +20,21 @@ class Candidate:
     instances: Union[list[int], None]
     subclasses: Union[list[int], None]
 
+    instance_overlap: Union[int, None]
+    subclass_overlap: Union[int, None]
+    description_overlap: Union[float, None]
+    lex_score: Union[float, None]
+
     def __init__(self, id: int):
         self.id = id
         self.title = None
         self.description = None
         self.instances = None
         self.subclasses = None
+        self.instance_overlap = None
+        self.subclass_overlap = None
+        self.description_overlap = None
+        self.lex_score = None
 
     def fetch_info(self):
         entity_data = wikidata_get_entity(self.id)
@@ -35,15 +45,6 @@ class Candidate:
         self.instances = [int(prop[1][1:]) for prop in properties if prop[0] == "P31"]
         self.subclasses = [int(prop[1][1:]) for prop in properties if prop[0] == "P279"]
 
-    def lex_score(self, other: str) -> float:
-        return Levenshtein.ratio(self.title, other)
-
-    def instance_overlap(self, other: "Candidate") -> tuple[int, int]:
-        return (len(set(self.instances).intersection(other.instances)), len(other.instances))
-
-    def subclass_overlap(self, other: "Candidate") -> tuple[int, int]:
-        return (len(set(self.subclasses).intersection(other.subclasses)), len(other.subclasses))
-
     def description_overlap(self, other: "Candidate"):
         if len(self.description) == 0 or len(other.description) == 0:
             return 0.0
@@ -52,7 +53,31 @@ class Candidate:
         )
         cosine_sim = cosine_similarity(vectorizer)
         return cosine_sim[0][1]
-    
+
+    def compute_features(
+        self, correct: "Candidate", other: list["Candidate"], instance_total: int, subclass_total: int
+    ):
+        self.lex_score = Levenshtein.ratio(self.title, correct.title)
+
+        instance_overlap = 0
+        subclass_overlap = 0
+        description_overlaps = []
+        for other_candidate in other:
+            if other_candidate.id == self.id:
+                continue
+            instance_overlap += len(set(self.instances).intersection(other_candidate.instances))
+            subclass_overlap += len(set(self.subclasses).intersection(other_candidate.subclasses))
+            description_overlaps.append(self.description_overlap(other_candidate))
+
+        self.instance_overlap = instance_overlap / instance_total if instance_total > 0 else 0
+        self.subclass_overlap = subclass_overlap / subclass_total if subclass_total > 0 else 0
+        self.description_overlap = (
+            sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0
+        )
+
+    def features(self):
+        return [self.id, self.lex_score, self.instance_overlap, self.subclass_overlap, self.description_overlap]
+
     def info_fetched(self) -> bool:
         return self.title is not None
 
@@ -103,7 +128,20 @@ class CandidateSet:
 
         self.correct_candidate = Candidate(self.correct_id)
         self.correct_candidate.fetch_info()
-    
+
+    # @timeit
+    def compute_features(self, col: "Column"):
+        other_candidates: list[Candidate] = []
+        for cell in col.cells:
+            if cell.correct_id != self.correct_id:
+                other_candidates.extend(cell.candidates)
+
+        instance_total = sum([len(candidate.instances) for candidate in other_candidates])
+        subclass_total = sum([len(candidate.subclasses) for candidate in other_candidates])
+
+        for candidate in self.candidates:
+            candidate.compute_features(self.correct_candidate, other_candidates, instance_total, subclass_total)
+
     def all_candidates_fetched(self) -> bool:
         if self.candidates is None:
             return False
@@ -111,7 +149,7 @@ class CandidateSet:
         for candidate in self.candidates:
             if not candidate.info_fetched():
                 return False
-        
+
         if not self.correct_candidate.info_fetched():
             return False
 
@@ -128,9 +166,11 @@ class CandidateSet:
 
 class Column:
     cells: list[CandidateSet]
+    features_fetched: bool
 
     def __init__(self):
         self.cells = []
+        self.features_fetched = False
 
     def add_cell(self, cell: CandidateSet):
         self.cells.append(cell)
@@ -153,7 +193,36 @@ class Column:
 
         for t in threads:
             t.join()
-    
+
+    # @timeit
+    def compute_features(self):
+        for cell in self.cells:
+            cell.compute_features(self)
+        self.features_fetched = True
+
+    def feature_vectors(self):
+        if not self.features_fetched:
+            raise Exception("Features not yet computed!")
+
+        vectors = []
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                vectors.append(candidate.features())
+        return vectors
+
+    def label_vectors(self):
+        if not self.features_fetched:
+            raise Exception("Features not yet computed!")
+
+        labels = []
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                if candidate.id == cell.correct_id:
+                    labels.append(1.0)
+                else:
+                    labels.append(0.0)
+        return labels
+
     def all_cells_fetched(self) -> bool:
         for cell in self.cells:
             if not cell.all_candidates_fetched():

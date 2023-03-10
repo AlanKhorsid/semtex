@@ -15,6 +15,8 @@ from sklearn.metrics import accuracy_score, explained_variance_score, mean_squar
 from sklearn.tree import export_text
 import pickle
 from datetime import datetime
+from functools import wraps
+import time
 
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
@@ -327,17 +329,19 @@ def parse_entity_properties(entity_data: dict) -> dict:
     return properties
 
 
-def pickle_save(obj):
+def pickle_save(obj, filename: Union[str, None] = None):
     if os.path.isdir("./src/pickle-dumps") == False:
         os.mkdir("./src/pickle-dumps")
 
-    now = datetime.now()
-    filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
-
-    i = 1
-    while os.path.isfile(filename):
-        filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
-        i += 1
+    if filename is not None:
+        filename = f"src/pickle-dumps/{filename}.pickle"
+    else:
+        now = datetime.now()
+        filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+        i = 1
+        while os.path.isfile(filename):
+            filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
+            i += 1
 
     with open(filename, "wb") as f:
         pickle.dump(obj, f)
@@ -399,3 +403,16 @@ def generate_features(candidate_sets: list[object]) -> tuple[list, list[bool], l
         total_labels_regr.append(labels_regr)
 
     return total_features, total_labels_clas, total_labels_regr
+
+
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        print(f"Function {func.__name__} Took {total_time:.4f} seconds")
+        return result
+
+    return timeit_wrapper
