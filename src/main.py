@@ -27,7 +27,7 @@ def flatten_list(nested_list: list[list[any]]) -> list[any]:
 
 # ----- Open dataset -----
 # cols = open_dataset(use_test_data=True)
-cols: list[Column] = pickle_load("cols-features-9", is_dump=True)
+cols: list[Column] = pickle_load("test-data_cols-features")
 
 # ----- Fetch candidates -----
 for col in tqdm(cols):
