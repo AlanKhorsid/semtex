@@ -6,8 +6,10 @@ import html
 from decouple import config
 from bestmatch import get_best_title_match
 from preprocesschecker import check_spellchecker_threaded
+from pathlib import Path
 
-src_folder = "/Users/alankhorsid/Documents/semtex/datasets/BingSearchResults"
+rootpath = str(Path(__file__).parent.parent.parent)
+src_folder = f"{rootpath}/datasets/BingSearchResults"
 
 
 def search_for_JSON(query_string):

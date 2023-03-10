@@ -1,7 +1,8 @@
 import csv
 import requests
 import threading
-
+from pathlib import Path
+rootpath = str(Path(__file__).parent.parent.parent)
 
 def get_csv_lines(filename: str) -> list[list[str]]:
     with open(filename, "r", encoding="utf-8") as f:
@@ -28,7 +29,7 @@ def append_to_csv(filename: str, line: str):
 
 def generate_vals_csv():
     cea_gt = get_csv_lines(
-        "./datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/cea_gt.csv"
+        f"{rootpath}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/cea_gt.csv"
     )
 
     current_file_lines = []
@@ -44,7 +45,7 @@ def generate_vals_csv():
         if current_filename != filename:
             current_filename = filename
             current_file_lines = get_csv_lines(
-                f"./datasets/HardTablesR1/DataSets/HardTablesR1/Valid/tables/{filename}.csv"
+                f"{rootpath}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/tables/{filename}.csv"
             )
 
         id = get_id_from_url(url)
@@ -53,7 +54,7 @@ def generate_vals_csv():
 
         # append_to_csv("./datasets/spellCheck/vals.csv", f'"{label}","{actual_label}"')
         append_to_csv(
-            "./datasets/spellCheck/vals_labeled.csv",
+            f"{rootpath}/datasets/spellCheck/vals_labeled.csv",
             f'"{label}","{actual_label}","{id}"',
         )
 
@@ -62,7 +63,7 @@ def generate_vals_csv():
 
 
 def check_spellchecker(func, case_sensitive: bool = False, only_hard: bool = False):
-    vals = get_csv_lines("./datasets/spellCheck/vals.csv")
+    vals = get_csv_lines(f"{rootpath}/datasets/spellCheck/vals.csv")
 
     if only_hard:
         vals = [line for line in vals if line[0] != line[1]]
@@ -98,7 +99,7 @@ def check_spellchecker(func, case_sensitive: bool = False, only_hard: bool = Fal
 def check_spellchecker_threaded(
     func, case_sensitive: bool = False, only_hard: bool = False, num_threads: int = 20
 ):
-    vals = get_csv_lines("./datasets/spellCheck/vals.csv")
+    vals = get_csv_lines(f"{rootpath}/datasets/spellCheck/vals.csv")
 
     if only_hard:
         vals = [line for line in vals if line[0] != line[1]]
