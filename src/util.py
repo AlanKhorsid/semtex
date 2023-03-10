@@ -3,7 +3,8 @@ import os
 from typing import Union
 from nltk.corpus import stopwords
 import string
-from sklearn.datasets import make_regression
+import numpy as np
+import pandas as pd
 from tqdm import tqdm
 from sklearn.ensemble import (
     GradientBoostingRegressor,
@@ -11,7 +12,14 @@ from sklearn.ensemble import (
     RandomForestRegressor,
 )
 from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn.metrics import accuracy_score, explained_variance_score, mean_squared_error
+from sklearn.metrics import (
+    accuracy_score,
+    explained_variance_score,
+    f1_score,
+    mean_absolute_error,
+    mean_squared_error,
+    r2_score,
+)
 from sklearn.tree import export_text
 import pickle
 from datetime import datetime
@@ -25,6 +33,18 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import HistGradientBoostingRegressor
+
+from sklearn.model_selection import learning_curve
+import matplotlib.pyplot as plt
+import numpy as np
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import precision_recall_curve
+import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+from sklearn.metrics import r2_score
+import matplotlib.pyplot as plt
 
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
@@ -81,14 +101,111 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
     # Train the model on the training set
     gb.fit(X_train, y_train)
 
-    mse = mean_squared_error(y_test, gb.predict(X_test))
-    print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
+    # Predict the test set labels
+    y_pred = gb.predict(X_test)
 
-    # cross validation
-    scores = cross_val_score(
-        gb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
+    # Compute the test set MSE
+    mse_test = mean_squared_error(y_test, y_pred)
+
+    print("Test set MSE of gb: {:.3f}".format(mse_test))
+
+    # pickle_save(gb)
+
+    # scatter_plot(gb, X_test, y_test)
+
+
+def scatter_plot(model, X_test, y_test):
+    # Make predictions on the test set
+    y_pred = model.predict(X_test)
+
+    # Create a scatter plot of the actual vs predicted values
+    plt.scatter(y_test, y_pred)
+
+    # Add labels and title
+    plt.xlabel("Actual Values")
+    plt.ylabel("Predicted Values")
+    plt.title("Scatter Plot of Actual vs Predicted Values")
+
+    # Set x-axis limits
+    plt.xlim(0, 100)
+
+    # Calculate and add the R-squared value as a text annotation
+    r2 = r2_score(y_test, y_pred)
+    plt.annotate(f"R-squared = {r2:.2f}", xy=(0.05, 0.95), xycoords="axes fraction")
+
+    # Show the plot
+    plt.show()
+
+
+def plot_feature_importance(model, data):
+    # Convert the data list to a DataFrame
+    data_df = pd.DataFrame(data)
+    # Calculate the feature importances
+    feature_importances = model.feature_importances_
+    # Convert the data list to a DataFrame
+    data_df = pd.DataFrame(data)
+
+    # Manually assign column names
+    data_df.columns = [
+        "Id",
+        "Lex Score",
+        "Inst. Overlap",
+        "SubC. Overlap",
+        "Desc. Overlap",
+    ]
+
+    # Get the names of the features
+    feature_names = list(data_df.columns)
+
+    # Plot the feature importances
+    plt.figure(figsize=(10, 6))
+    plt.barh(feature_names, feature_importances)
+    plt.title("Feature Importances")
+    plt.xlabel("Importance")
+    plt.ylabel("Feature")
+    plt.show()
+
+
+def plot_learning_curve(model, X, y):
+    train_sizes, train_scores, test_scores = learning_curve(
+        model,
+        X,
+        y,
+        cv=5,
+        scoring="neg_mean_squared_error",
+        train_sizes=np.linspace(0.1, 1.0, 10),
     )
-    print("Cross-validated scores:", scores)
+
+    train_scores_mean = -np.mean(train_scores, axis=1)
+    train_scores_std = np.std(train_scores, axis=1)
+    test_scores_mean = -np.mean(test_scores, axis=1)
+    test_scores_std = np.std(test_scores, axis=1)
+
+    plt.figure(figsize=(8, 6))
+    plt.title("Learning Curve")
+    plt.xlabel("Training Examples")
+    plt.ylabel("Score")
+    plt.grid()
+    plt.fill_between(
+        train_sizes,
+        train_scores_mean - train_scores_std,
+        train_scores_mean + train_scores_std,
+        alpha=0.1,
+        color="r",
+    )
+    plt.fill_between(
+        train_sizes,
+        test_scores_mean - test_scores_std,
+        test_scores_mean + test_scores_std,
+        alpha=0.1,
+        color="g",
+    )
+    plt.plot(train_sizes, train_scores_mean, "o-", color="r", label="Training score")
+    plt.plot(
+        train_sizes, test_scores_mean, "o-", color="g", label="Cross-validation score"
+    )
+    plt.legend(loc="best")
+    plt.show()
 
 
 def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
