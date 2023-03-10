@@ -81,13 +81,6 @@ model = pickle_load("10-03_08-26-46", is_dump=True)
 total_correct = 0
 total_incorrect = 0
 
-cnt = 0
-dict = {}
-for col in cols:
-    for cell in col.cells:
-        mention = cell.mention
-        json_res = 123
-
 for col in tqdm(cols):
     for cell in col.cells:
         cell_features = []
@@ -98,16 +91,16 @@ for col in tqdm(cols):
         if len(cell_features) == 0:
             continue
 
-        cp = []
-        for f in cell_features:
-            cp.append(sum(f[1:]))
+        # cp = []
+        # for f in cell_features:
+        #     cp.append(sum(f[1:]))
 
-        cell_predictions = list(zip(cp, cell.candidates))
-        cell_predictions.sort(key=lambda x: x[0], reverse=True)
-
-        # cell_predictions = model.predict(cell_features)
-        # cell_predictions = list(zip(cell_predictions, cell.candidates))
+        # cell_predictions = list(zip(cp, cell.candidates))
         # cell_predictions.sort(key=lambda x: x[0], reverse=True)
+
+        cell_predictions = model.predict(cell_features)
+        cell_predictions = list(zip(cell_predictions, cell.candidates))
+        cell_predictions.sort(key=lambda x: x[0], reverse=True)
 
         # print(f"Predictions for mention: '{cell.mention}'")
         # print(f"Candidates:")
