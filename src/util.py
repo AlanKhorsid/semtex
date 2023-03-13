@@ -27,7 +27,9 @@ import matplotlib.pyplot as plt
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
 
     # Hyperparameters for HistGradientBoostingRegressor
     hgb_params = {
@@ -51,13 +53,17 @@ def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
     print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
 
     # Cross validation
-    scores = cross_val_score(hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error")
+    scores = cross_val_score(
+        hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
+    )
     print("Cross-validated scores:", scores)
 
 
 def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
 
     # Hyperparameters for Gradient Boosting Regressor
     gbr_params = {
@@ -82,13 +88,17 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
     print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
 
     # cross validation
-    scores = cross_val_score(gb, X_train, y_train, cv=5, scoring="neg_mean_squared_error")
+    scores = cross_val_score(
+        gb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
+    )
     print("Cross-validated scores:", scores)
 
 
 def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size
+    )
     rf = RandomForestRegressor(
         n_estimators=500,
         min_samples_split=6,
@@ -156,7 +166,9 @@ def remove_stopwords(unfiltered_string: str) -> str:
     translator = str.maketrans("", "", string.punctuation)
     filtered_words = unfiltered_string.translate(translator)
     stop_words = set(stopwords.words("english"))
-    filtered_words = [word for word in filtered_words.split() if word.lower() not in stop_words]
+    filtered_words = [
+        word for word in filtered_words.split() if word.lower() not in stop_words
+    ]
     return " ".join(filtered_words)
 
 
@@ -386,3 +398,10 @@ def pickle_load(filename, is_dump: bool = False):
     file = f"src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
     with open(file, "rb") as f:
         return pickle.load(f)
+
+
+# Merge two dictionaries and keep values of common keys in list
+def merge_dict():
+    dict1 = pickle_load("13-03_00-37-17", is_dump=True)
+    dict2 = pickle_load("13-03_09-50-24", is_dump=True)
+    pickle_save({**dict1, **dict2})
