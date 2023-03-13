@@ -217,12 +217,6 @@ def open_dataset(correct_spelling: bool = False, use_test_data: bool = False):
 
     return cols
 
-    # vals = get_csv_lines("./datasets/spellCheck/vals_labeled2.csv")
-    # if correct_spelling:
-    #     return [(line[1], line[2], line[3]) for line in vals]
-    # else:
-    #     return [(line[0], line[2], line[3]) for line in vals]
-
 
 def parse_entity_title(entity_data: dict) -> Union[str, None]:
     """
