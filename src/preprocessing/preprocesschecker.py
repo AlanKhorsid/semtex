@@ -1,7 +1,8 @@
 import csv
 import requests
 import threading
-
+from pathlib import Path
+rootpath = str(Path(__file__).parent.parent.parent)
 
 def get_csv_lines(filename: str) -> list[list[str]]:
     with open(filename, "r", encoding="utf-8") as f:
@@ -27,7 +28,9 @@ def append_to_csv(filename: str, line: str):
 
 
 def generate_vals_csv():
-    cea_gt = get_csv_lines("./datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/cea_gt.csv")
+    cea_gt = get_csv_lines(
+        f"{rootpath}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/cea_gt.csv"
+    )
 
     current_file_lines = []
     current_filename = ""
@@ -42,7 +45,7 @@ def generate_vals_csv():
         if current_filename != filename:
             current_filename = filename
             current_file_lines = get_csv_lines(
-                f"./datasets/HardTablesR1/DataSets/HardTablesR1/Valid/tables/{filename}.csv"
+                f"{rootpath}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/tables/{filename}.csv"
             )
 
         id = get_id_from_url(url)
@@ -50,14 +53,17 @@ def generate_vals_csv():
         label = current_file_lines[int(row)][int(col)]
 
         # append_to_csv("./datasets/spellCheck/vals.csv", f'"{label}","{actual_label}"')
-        append_to_csv("./datasets/spellCheck/vals_labeled.csv", f'"{label}","{actual_label}","{id}"')
+        append_to_csv(
+            f"{rootpath}/datasets/spellCheck/vals_labeled.csv",
+            f'"{label}","{actual_label}","{id}"',
+        )
 
         percent_done = (cea_gt.index(line) / len(cea_gt)) * 100
         print(f"{percent_done:.2f}%   {label} -> {actual_label}")
 
 
 def check_spellchecker(func, case_sensitive: bool = False, only_hard: bool = False):
-    vals = get_csv_lines("./datasets/spellCheck/vals.csv")
+    vals = get_csv_lines(f"{rootpath}/datasets/spellCheck/vals.csv")
 
     if only_hard:
         vals = [line for line in vals if line[0] != line[1]]
@@ -90,8 +96,10 @@ def check_spellchecker(func, case_sensitive: bool = False, only_hard: bool = Fal
     print(f"Accuracy: {correct / total * 100:.2f}%")
 
 
-def check_spellchecker_threaded(func, case_sensitive: bool = False, only_hard: bool = False, num_threads: int = 20):
-    vals = get_csv_lines("./datasets/spellCheck/vals.csv")
+def check_spellchecker_threaded(
+    func, case_sensitive: bool = False, only_hard: bool = False, num_threads: int = 20
+):
+    vals = get_csv_lines(f"{rootpath}/datasets/spellCheck/vals.csv")
 
     if only_hard:
         vals = [line for line in vals if line[0] != line[1]]
@@ -101,15 +109,17 @@ def check_spellchecker_threaded(func, case_sensitive: bool = False, only_hard: b
 
     def check_line(line):
         label, actual_label = line
+        if label == "former alpenhotel boedele" "":
+            print("here")
         if not case_sensitive:
             label = label.lower()
             actual_label = actual_label.lower()
-
-        try:
-            prediction = func(label)
-        except:
-            print(f"ERROR: {label} -> {actual_label}")
-            return
+        prediction = func(label)
+        # try:
+        #     prediction = func(label)
+        # except:
+        #     print(f"ERROR: {label} -> {actual_label}")
+        #     return
 
         if prediction is not None:
             prediction = prediction.lower()

@@ -3,6 +3,9 @@ import os
 from typing import Union
 from nltk.corpus import stopwords
 import string
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
 from sklearn.ensemble import (
     GradientBoostingRegressor,
     HistGradientBoostingRegressor,
@@ -10,8 +13,16 @@ from sklearn.ensemble import (
 )
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.metrics import mean_squared_error
+from sklearn.tree import export_text
 import pickle
 from datetime import datetime
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import mean_squared_error
+from sklearn.ensemble import HistGradientBoostingRegressor
+import matplotlib.pyplot as plt
 
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
@@ -45,19 +56,6 @@ def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
 
 
 def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
-    """
-    Trains a Gradient Boosting ensemble on the input data and labels and prints the accuracy of the model.
-
-    Parameters:
-    data (list): A list of input data.
-    labels (list): A list of boolean labels corresponding to the input data.
-    test_size (float, optional): The proportion of the data to use for testing. Default is 0.3.
-    n_estimators (int, optional): The number of trees in the Gradient Boosting ensemble. Default is 100.
-
-    Returns:
-    None
-    """
-
     # Split the dataset into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
 
@@ -105,6 +103,35 @@ def random_forest_regression(data: list, labels: list[float], test_size: float =
     prediction = rf.predict(X_test)
     mse = mean_squared_error(y_test, prediction)
     print(mse)
+
+
+def plot_feature_importance(model, data):
+    # Convert the data list to a DataFrame
+    data_df = pd.DataFrame(data)
+    # Calculate the feature importances
+    feature_importances = model.feature_importances_
+    # Convert the data list to a DataFrame
+    data_df = pd.DataFrame(data)
+
+    # Manually assign column names
+    data_df.columns = [
+        "Id",
+        "Lex Score",
+        "Inst. Overlap",
+        "SubC. Overlap",
+        "Desc. Overlap",
+    ]
+
+    # Get the names of the features
+    feature_names = list(data_df.columns)
+
+    # Plot the feature importances
+    plt.figure(figsize=(10, 6))
+    plt.barh(feature_names, feature_importances)
+    plt.title("Feature Importances")
+    plt.xlabel("Importance")
+    plt.ylabel("Feature")
+    plt.show()
 
 
 def remove_stopwords(unfiltered_string: str) -> str:
@@ -316,6 +343,25 @@ def parse_entity_properties(entity_data: dict) -> dict:
                 print(claims)
 
     return properties
+
+
+def pickle_save_in_folder(obj, folder):
+    if os.path.isdir(f"./src/pickle-dumps/{folder}") == False:
+        os.mkdir(f"./src/pickle-dumps/{folder}")
+
+    now = datetime.now()
+    filename = f"src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+
+    # check if file already exists and if so, append a number to the filename
+    i = 1
+    while os.path.isfile(filename):
+        filename = (
+            f"src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
+        )
+        i += 1
+
+    with open(filename, "wb") as f:
+        pickle.dump(obj, f)
 
 
 def pickle_save(obj, filename: Union[str, None] = None):

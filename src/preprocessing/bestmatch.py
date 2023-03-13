@@ -2,13 +2,18 @@ import Levenshtein
 
 
 def generate_title_permutations(title):
-    """Generate permutations of a given title.
+    """
+    Generate permutations of a given title.
 
     Args:
         title (str): The title to generate permutations for.
 
     Returns:
         A list of title permutations.
+
+    Example:
+        >>> generate_title_permutations("I love eating")
+        ["I love eating", "I love", "I eating", "love eating", "I", "love", "eating"]
     """
 
     title = title.split()
@@ -23,7 +28,8 @@ def generate_title_permutations(title):
 
 
 def compare_title_permutations_with_query(title, query):
-    """Compare title permutations with a given query.
+    """
+    Compare title permutations with a given query.
 
     Args:
         title (str): The title to compare permutations for.
@@ -31,6 +37,11 @@ def compare_title_permutations_with_query(title, query):
 
     Returns:
         A list of tuples, where each tuple contains a title permutation and its Levenshtein distance from the query.
+
+    Example:
+        >>> compare_title_permutations_with_query("I love eating", "I love")
+        [("I love eating", 0.0), ("I love", 0.0), ("I eating", 0.5), ("love eating", 0.5), ("I", 0.6666666666666666), ("love", 0.0), ("eating", 0.6666666666666666)]
+
     """
 
     permutations = generate_title_permutations(title)
@@ -41,15 +52,15 @@ def compare_title_permutations_with_query(title, query):
     return results
 
 
-# Remove comma from best match
-def remove_comma_from_best_match(best_match):
-    if best_match[-1] == ",":
+def remove_symbol(best_match, symbol=","):
+    if best_match[-1] == symbol:
         best_match = best_match[:-1]
     return best_match
 
 
 def get_best_title_match(query, titles):
-    """Get the best title match for a given query.
+    """
+    Get the best matching title from a list of titles. The best matching title is the title with the lowest Levenshtein distance from the query to any of its permutations.
 
     Args:
         query (str): The query to match against.
@@ -67,5 +78,5 @@ def get_best_title_match(query, titles):
             if r[1] < best_distance:
                 best_distance = r[1]
                 best_match = r[0]
-    best_match = remove_comma_from_best_match(best_match)
+    best_match = remove_symbol(best_match, symbol=",")
     return best_match

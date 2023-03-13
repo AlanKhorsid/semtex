@@ -1,10 +1,12 @@
 from classes import Column
+from tqdm import tqdm
 from util import (
+    ensemble_gradient_boost_regression,
     ensemble_hist_gradient_boost_regression,
+    open_dataset,
     pickle_load,
     pickle_save,
 )
-from tqdm import tqdm
 
 
 # ----- Open dataset -----

@@ -1,100 +1,99 @@
 import re
 import json
-import requests
+from numpy import empty
+import os
+import html
 from decouple import config
 from bestmatch import get_best_title_match
 from preprocesschecker import check_spellchecker_threaded
+from pathlib import Path
+
+rootpath = str(Path(__file__).parent.parent.parent)
+src_folder = f"{rootpath}/datasets/BingSearchResults"
 
 
-def preprocess_query(query):
-    # Define the regex pattern for invalid characters in file names
-    pattern = r'[\\/*?:"<>|]'
+def search_for_JSON(query_string):
+    """
+    Searches for a JSON file containing the search results for a given query.
+    If the file is found, the JSON object is returned.
+    If the file is not found, the original query is returned.
 
-    # Replace invalid characters with an underscore
-    preprocessed_query = re.sub(pattern, "_", query)
-    # lowercase the filename
-    preprocessed_query = preprocessed_query.lower()
-    return preprocessed_query
+    Args:
+        query_string (str): The search query.
+
+    Returns:
+        dict: The JSON object containing the search results for the given query.
+
+    Example:
+        >>> search_for_JSON("Barack Obama")
+        {
+            "_type": "SearchResponse",
+            "queryContext": {
+                "originalQuery": "Barack Obama"
+            },  ...
+    """
+
+    for filename in os.listdir(src_folder):
+        if filename.endswith(".json"):
+            filepath = os.path.join(src_folder, filename)
+            with open(filepath, "r") as f:
+                json_data = json.load(f)
+                if (
+                    json_data["_type"] == "SearchResponse"
+                    and json_data["queryContext"]["originalQuery"].lower()
+                    == query_string.lower()
+                ):
+                    return json_data
+    return query_string
 
 
 def generate_suggestion(query):
     """
-    Preprocesses a search query by checking for spelling errors and suggesting alternatives.
-
+        Generates a suggested alternative search query based on the search results for the original query.
+        If the original query is not found in the JSON file, the original query is returned.
+        If the original query is found in the JSON file,
+        but no suggested alternative query is given,
+        the best match for the original query based on search result titles is returned.
+        If the original query is found in the JSON file,
+        and a suggested alternative query is given, the suggested alternative query is returned.
     Args:
         query (str): The original search query.
-        use_api (bool): A flag indicating whether to use the Bing search API or read from a JSON file in the webpages-json folder.
-                        Defaults to False.
 
     Returns:
         str: The suggested alternative search query, or the best match for the original query based on search result titles.
 
+    Example:
+        >>> generate_suggestion("Barak Obma")
+        "Barack Obama"
     """
-    # check if query has invalid characters
-    query_file = preprocess_query(query)
+
     try:
-        with open(
-            f"datasets/BingSearchFiles/{query_file}.json",
-            "r",
-        ) as f:
-            json_obj = json.load(f)
+        json_obj = search_for_JSON(query)
+        # print(f"Found query in JSON file: {query}")
     except FileNotFoundError:
-        print(f"File not found: {query_file}")
-    try:
+        print(f"File not found for: {query}")
+        return query
+
+    if not "webPages" in json_obj:
+        return query
+    elif "alteredQuery" in json_obj["queryContext"]:
+        # get the suggested query given by Bing
         suggestion = json_obj["queryContext"]["alteredQuery"]
-        # check if suggestion is contained in any of the titles
+        # check if the suggestion is contained in any of the titles, if so, return the suggestion
+        if "value" in json_obj["webPages"]:
+            results = json_obj["webPages"]["value"]
+            titles = [result["name"] for result in results]
+            for title in titles:
+                if query in title:
+                    return html.unescape(suggestion)
+        return html.unescape(get_best_title_match(query, titles))
+    elif "value" in json_obj["webPages"]:
+        # get all search result titles
         results = json_obj["webPages"]["value"]
         titles = [result["name"] for result in results]
-        for title in titles:
-            if query in title:
-                return suggestion
-        return get_best_title_match(query, titles)
-
-    except:
-        results = json_obj["webPages"]["value"]
-        titles = [result["name"] for result in results]
+        # get the best match for the original query based on the titles
         suggestion = get_best_title_match(query, titles)
-        # print(f"Found best match: {suggestion}")
-        return suggestion
+        return html.unescape(suggestion)
 
 
-subscription_key = config("subscription_key", default="")
-search_url = "https://api.bing.microsoft.com/v7.0/search"
-headers = {"Ocp-Apim-Subscription-Key": subscription_key}
-
-
-def generate_suggestion_from_api(query):
-    """
-    Preprocesses a search query by checking for spelling errors and suggesting alternatives.
-
-    Args:
-        query (str): The original search query.
-
-    Returns:
-        str: The suggested alternative search query, or the best match for the original query based on search result titles.
-
-    """
-    params = {"q": query, "textDecorations": True, "textFormat": "HTML"}
-    try:
-        response = requests.get(search_url, headers=headers, params=params)
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        # print(f"HTTP error occurred: {e}")
-        return None
-
-    search_results = response.json()
-    try:
-        suggestion = search_results["queryContext"]["alteredQuery"]
-        return suggestion
-    except:
-        results = search_results["webPages"]["value"]
-        titles = [result["name"] for result in results]
-        suggestion = get_best_title_match(query, titles)
-        # print(f"Found best match: {suggestion}")
-        return suggestion
-
-
-check_spellchecker_threaded(generate_suggestion, num_threads=100, only_hard=True)
-
-# generate_suggestion("john adolph flemer")
-# generate_suggestion("yttrium-103")
+# check_spellchecker_threaded(generate_suggestion, num_threads=100, only_hard=True)
