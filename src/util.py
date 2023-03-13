@@ -12,39 +12,18 @@ from sklearn.ensemble import (
     RandomForestRegressor,
 )
 from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn.metrics import (
-    accuracy_score,
-    explained_variance_score,
-    f1_score,
-    mean_absolute_error,
-    mean_squared_error,
-    r2_score,
-)
+from sklearn.metrics import mean_squared_error
 from sklearn.tree import export_text
 import pickle
 from datetime import datetime
-
-# from classes import Candidate, CandidateSet
-
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_squared_error
-
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import HistGradientBoostingRegressor
-
-from sklearn.model_selection import learning_curve
 import matplotlib.pyplot as plt
 import numpy as np
-
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn.metrics import precision_recall_curve
-import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
-from sklearn.metrics import r2_score
-import matplotlib.pyplot as plt
 
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
@@ -111,30 +90,24 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
 
     # pickle_save(gb)
 
-    # scatter_plot(gb, X_test, y_test)
 
+def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size
+    )
+    rf = RandomForestRegressor(
+        n_estimators=500,
+        min_samples_split=6,
+        max_depth=4,
+        criterion="squared_error",
+        random_state=42,
+    )
+    rf.fit(X_train, y_train)
 
-def scatter_plot(model, X_test, y_test):
-    # Make predictions on the test set
-    y_pred = model.predict(X_test)
-
-    # Create a scatter plot of the actual vs predicted values
-    plt.scatter(y_test, y_pred)
-
-    # Add labels and title
-    plt.xlabel("Actual Values")
-    plt.ylabel("Predicted Values")
-    plt.title("Scatter Plot of Actual vs Predicted Values")
-
-    # Set x-axis limits
-    plt.xlim(0, 100)
-
-    # Calculate and add the R-squared value as a text annotation
-    r2 = r2_score(y_test, y_pred)
-    plt.annotate(f"R-squared = {r2:.2f}", xy=(0.05, 0.95), xycoords="axes fraction")
-
-    # Show the plot
-    plt.show()
+    prediction = rf.predict(X_test)
+    mse = mean_squared_error(y_test, prediction)
+    print(mse)
 
 
 def plot_feature_importance(model, data):
@@ -164,67 +137,6 @@ def plot_feature_importance(model, data):
     plt.xlabel("Importance")
     plt.ylabel("Feature")
     plt.show()
-
-
-def plot_learning_curve(model, X, y):
-    train_sizes, train_scores, test_scores = learning_curve(
-        model,
-        X,
-        y,
-        cv=5,
-        scoring="neg_mean_squared_error",
-        train_sizes=np.linspace(0.1, 1.0, 10),
-    )
-
-    train_scores_mean = -np.mean(train_scores, axis=1)
-    train_scores_std = np.std(train_scores, axis=1)
-    test_scores_mean = -np.mean(test_scores, axis=1)
-    test_scores_std = np.std(test_scores, axis=1)
-
-    plt.figure(figsize=(8, 6))
-    plt.title("Learning Curve")
-    plt.xlabel("Training Examples")
-    plt.ylabel("Score")
-    plt.grid()
-    plt.fill_between(
-        train_sizes,
-        train_scores_mean - train_scores_std,
-        train_scores_mean + train_scores_std,
-        alpha=0.1,
-        color="r",
-    )
-    plt.fill_between(
-        train_sizes,
-        test_scores_mean - test_scores_std,
-        test_scores_mean + test_scores_std,
-        alpha=0.1,
-        color="g",
-    )
-    plt.plot(train_sizes, train_scores_mean, "o-", color="r", label="Training score")
-    plt.plot(
-        train_sizes, test_scores_mean, "o-", color="g", label="Cross-validation score"
-    )
-    plt.legend(loc="best")
-    plt.show()
-
-
-def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
-    # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        data, labels, test_size=test_size
-    )
-    rf = RandomForestRegressor(
-        n_estimators=500,
-        min_samples_split=6,
-        max_depth=4,
-        criterion="squared_error",
-        random_state=42,
-    )
-    rf.fit(X_train, y_train)
-
-    prediction = rf.predict(X_test)
-    mse = mean_squared_error(y_test, prediction)
-    print(mse)
 
 
 def remove_stopwords(unfiltered_string: str) -> str:
@@ -413,6 +325,26 @@ def parse_entity_properties(entity_data: dict) -> dict:
                 print(claims)
 
     return properties
+
+
+# Create a pickle_save where i can define a new folder to save the pickle file
+def pickle_save_in_folder(obj, folder):
+    if os.path.isdir(f"./src/pickle-dumps/{folder}") == False:
+        os.mkdir(f"./src/pickle-dumps/{folder}")
+
+    now = datetime.now()
+    filename = f"src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+
+    # check if file already exists and if so, append a number to the filename
+    i = 1
+    while os.path.isfile(filename):
+        filename = (
+            f"src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
+        )
+        i += 1
+
+    with open(filename, "wb") as f:
+        pickle.dump(obj, f)
 
 
 def pickle_save(obj):
