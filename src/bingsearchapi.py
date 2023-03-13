@@ -40,7 +40,7 @@ def pickle_search_results():
         else:
             print(f"Processed {i+1}/{len(cells)} mentions; already in pickle file")
     print(f"Now proceeding to save all search results to one pickle file")
-    # pickle_save(search_results)
+    pickle_save(search_results)
     print(f"Finished processing all mentions")
 
 
