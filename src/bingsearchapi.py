@@ -44,4 +44,8 @@ def pickle_search_results():
     print(f"Finished processing all mentions")
 
 
-pickle_search_results()
+# pickle_search_results()
+
+
+def call_manually(query: str):
+    return get_webpage(query)

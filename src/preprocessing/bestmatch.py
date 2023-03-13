@@ -15,7 +15,9 @@ def generate_title_permutations(title):
         >>> generate_title_permutations("I love eating")
         ["I love eating", "I love", "I eating", "love eating", "I", "love", "eating"]
     """
-
+    if len(title.split()) > 20:
+        print(f"Title too long: {title}")
+        return [title]
     title = title.split()
     n = len(title)
     result = [

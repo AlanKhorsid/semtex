@@ -12,12 +12,13 @@ from util import (
 # ----- Open dataset -----
 print("Opening dataset...")
 # cols = open_dataset(use_test_data=True)
-cols: list[Column] = pickle_load("test-data_cols-features")
+cols: list[Column] = pickle_load("13-03_11-17-31")
 
 # ----- Preprocess dataset -----
 print("Preprocessing dataset...")
 for col in tqdm(cols):
     col.get_spellchecked_mentions()
+pickle_save(cols)
 
 # ----- Fetch candidates -----
 print("Fetching candidates...")

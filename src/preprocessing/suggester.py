@@ -4,11 +4,13 @@ from numpy import empty
 import os
 import html
 from decouple import config
+
+from bingsearchapi import call_manually
 from .bestmatch import get_best_title_match
 from .preprocesschecker import check_spellchecker_threaded
 from pathlib import Path
 
-from util import pickle_load
+from util import pickle_load, pickle_save
 
 rootpath = str(Path(__file__).parent.parent.parent)
 src_folder = f"{rootpath}/datasets/BingSearchResults"
@@ -42,13 +44,14 @@ def search_for_JSON(query_string):
                 json_data = json.load(f)
                 if (
                     json_data["_type"] == "SearchResponse"
-                    and json_data["queryContext"]["originalQuery"].lower() == query_string.lower()
+                    and json_data["queryContext"]["originalQuery"].lower()
+                    == query_string.lower()
                 ):
                     return json_data
     return query_string
 
 
-all_search_results = pickle_load("all_test_cells_search_results")
+all_search_results = pickle_load("all-test-cells-search-results", is_dump=True)
 
 
 def generate_suggestion(query):
@@ -72,6 +75,12 @@ def generate_suggestion(query):
     """
 
     json_obj = all_search_results[query]
+
+    if json_obj is None:
+        print(f"Query {query} not found in JSON file. Called manually.")
+        json_obj = call_manually(query)
+        all_search_results[query] = json_obj
+        pickle_save(all_search_results)
 
     if not "webPages" in json_obj:
         return query
