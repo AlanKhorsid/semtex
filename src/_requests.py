@@ -4,6 +4,10 @@ from util import pickle_save
 
 API_URL = "https://www.wikidata.org/w/api.php"
 
+# Request limit exception
+class RateLimitException(Exception):
+    pass
+
 
 def wikidata_entity_search(query: str, limit: int = 30, lang: str = "en") -> list[str]:
     """
@@ -37,9 +41,11 @@ def wikidata_entity_search(query: str, limit: int = 30, lang: str = "en") -> lis
         "limit": f"{limit}",
     }
     data = requests.get(API_URL, params=params)
+    if data.status_code == 429:
+        raise RateLimitException()
 
     res = data.json()
-    if "search-continue" in res:   
+    if "search-continue" in res:
         res["search_continue"] = res.pop("search-continue")
     res: WikiDataSearchEntitiesResponse = res
 
@@ -49,7 +55,7 @@ def wikidata_entity_search(query: str, limit: int = 30, lang: str = "en") -> lis
     #     print('Error validating wikidata search entities response!!!!')
     #     print(e)
     #     pickle_save(res)
-    
+
     search_results = res["search"]
     entity_ids = [result["id"] for result in search_results]
 
@@ -85,4 +91,7 @@ def wikidata_get_entity(entity_id: int, lang: str = "en") -> dict:
     }
 
     data = requests.get(API_URL, params=params)
+    if data.status_code == 429:
+        raise RateLimitException()
+
     return data.json()["entities"][f"Q{entity_id}"]
