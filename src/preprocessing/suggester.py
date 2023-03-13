@@ -4,8 +4,8 @@ from numpy import empty
 import os
 import html
 from decouple import config
-from bestmatch import get_best_title_match
-from preprocesschecker import check_spellchecker_threaded
+from .bestmatch import get_best_title_match
+from .preprocesschecker import check_spellchecker_threaded
 from pathlib import Path
 
 from util import pickle_load
@@ -42,8 +42,7 @@ def search_for_JSON(query_string):
                 json_data = json.load(f)
                 if (
                     json_data["_type"] == "SearchResponse"
-                    and json_data["queryContext"]["originalQuery"].lower()
-                    == query_string.lower()
+                    and json_data["queryContext"]["originalQuery"].lower() == query_string.lower()
                 ):
                     return json_data
     return query_string

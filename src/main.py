@@ -10,11 +10,17 @@ from util import (
 
 
 # ----- Open dataset -----
+print("Opening dataset...")
 # cols = open_dataset(use_test_data=True)
 cols: list[Column] = pickle_load("test-data_cols-features")
 
+# ----- Preprocess dataset -----
+print("Preprocessing dataset...")
+for col in tqdm(cols):
+    col.get_spellchecked_mentions()
 
 # ----- Fetch candidates -----
+print("Fetching candidates...")
 for col in tqdm(cols):
     if col.all_cells_fetched():
         continue
@@ -23,6 +29,7 @@ for col in tqdm(cols):
 
 
 # ----- Generate features -----
+print("Generating features...")
 i = 1
 for col in tqdm(cols):
     if col.features_fetched:
@@ -33,6 +40,7 @@ for col in tqdm(cols):
 
 features = []
 labels = []
+print("Generating feature vectors...")
 for col in tqdm(cols):
     feature_vector = col.feature_vectors()
     label_vector = col.label_vectors()
@@ -41,6 +49,7 @@ for col in tqdm(cols):
 
 
 # ----- Train regressor -----
+print("Training model...")
 model = ensemble_hist_gradient_boost_regression(features, labels)
 
 
