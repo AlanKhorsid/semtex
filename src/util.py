@@ -23,14 +23,11 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import HistGradientBoostingRegressor
 import matplotlib.pyplot as plt
-import numpy as np
 
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        data, labels, test_size=test_size, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
 
     # Hyperparameters for HistGradientBoostingRegressor
     hgb_params = {
@@ -41,27 +38,26 @@ def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
         "l2_regularization": 0.01,
         "random_state": 42,
     }
+
     # Create a HistGradientBoostingRegressor with max_iter iterations
     hgb = HistGradientBoostingRegressor(**hgb_params)
 
     # Train the model on the training set
     hgb.fit(X_train, y_train)
 
+    return hgb
+
     mse = mean_squared_error(y_test, hgb.predict(X_test))
     print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
 
     # Cross validation
-    scores = cross_val_score(
-        hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
-    )
+    scores = cross_val_score(hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error")
     print("Cross-validated scores:", scores)
 
 
 def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        data, labels, test_size=test_size, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
 
     # Hyperparameters for Gradient Boosting Regressor
     gbr_params = {
@@ -80,22 +76,19 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
     # Train the model on the training set
     gb.fit(X_train, y_train)
 
-    # Predict the test set labels
-    y_pred = gb.predict(X_test)
+    return gb
 
-    # Compute the test set MSE
-    mse_test = mean_squared_error(y_test, y_pred)
+    mse = mean_squared_error(y_test, gb.predict(X_test))
+    print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
 
-    print("Test set MSE of gb: {:.3f}".format(mse_test))
-
-    # pickle_save(gb)
+    # cross validation
+    scores = cross_val_score(gb, X_train, y_train, cv=5, scoring="neg_mean_squared_error")
+    print("Cross-validated scores:", scores)
 
 
 def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        data, labels, test_size=test_size
-    )
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
     rf = RandomForestRegressor(
         n_estimators=500,
         min_samples_split=6,
@@ -104,6 +97,8 @@ def random_forest_regression(data: list, labels: list[float], test_size: float =
         random_state=42,
     )
     rf.fit(X_train, y_train)
+
+    return rf
 
     prediction = rf.predict(X_test)
     mse = mean_squared_error(y_test, prediction)
@@ -161,9 +156,7 @@ def remove_stopwords(unfiltered_string: str) -> str:
     translator = str.maketrans("", "", string.punctuation)
     filtered_words = unfiltered_string.translate(translator)
     stop_words = set(stopwords.words("english"))
-    filtered_words = [
-        word for word in filtered_words.split() if word.lower() not in stop_words
-    ]
+    filtered_words = [word for word in filtered_words.split() if word.lower() not in stop_words]
     return " ".join(filtered_words)
 
 
@@ -196,7 +189,7 @@ def get_csv_lines(filename: str) -> list[list[str]]:
         return list(reader)
 
 
-def open_dataset(correct_spelling: bool = False) -> list[tuple[str, str]]:
+def open_dataset(correct_spelling: bool = False, use_test_data: bool = False):
     """
     Opens the dataset and returns a list of (mention, id) tuples.
 
@@ -205,26 +198,51 @@ def open_dataset(correct_spelling: bool = False) -> list[tuple[str, str]]:
     correct_spelling : bool, optional
         Whether to return the correctly preprocessed mentions or the mentions
 
+    use_test_data : bool, optional
+        Whether to use the test data or the validation data
+
     Returns
     -------
-    list[tuple[str, str]]
-        A list of (mention, id) tuples.
-
-    Example
-    -------
-    >>> open_dataset()
-    [
-        ('Lincoln Township', 'Q7996268'),
-        ('Stony Creek Township', 'Q7996260'),
-        ...
-    ]
+    list[Column]
     """
 
-    vals = get_csv_lines("./datasets/spellCheck/vals_labeled2.csv")
-    if correct_spelling:
-        return [(line[1], line[2], line[3]) for line in vals]
-    else:
-        return [(line[0], line[2], line[3]) for line in vals]
+    from classes import CandidateSet, Column
+
+    file_path = (
+        "./datasets/HardTablesR1/DataSets/HardTablesR1/Test"
+        if use_test_data
+        else "./datasets/HardTablesR1/DataSets/HardTablesR1/Valid"
+    )
+    gt_lines = get_csv_lines(f"{file_path}/gt/cea_gt.csv")
+    gt_lines = [[l[0], int(l[1]), int(l[2]), l[3]] for l in gt_lines]
+
+    current_filename = ""
+    lines = []
+    cols: list[Column] = []
+    for filename, _, _, _ in gt_lines:
+        if filename == current_filename:
+            continue
+        current_filename = filename
+
+        file = get_csv_lines(f"{file_path}/tables/{filename}.csv")
+
+        lines = [l for l in gt_lines if l[0] == filename]
+        lines.sort(key=lambda x: (x[2], x[1]))
+
+        current_col = -1
+        new_cols: list[Column] = []
+        for _, row, col, entity_url in lines:
+            if col != current_col:
+                current_col = col
+                new_cols.append(Column())
+
+            mention = file[row][col]
+            entity_id = entity_url.split("/")[-1]
+            new_cols[-1].add_cell(CandidateSet(mention, correct_id=entity_id))
+
+        cols.extend(new_cols)
+
+    return cols
 
 
 def parse_entity_title(entity_data: dict) -> Union[str, None]:
@@ -327,7 +345,6 @@ def parse_entity_properties(entity_data: dict) -> dict:
     return properties
 
 
-# Create a pickle_save where i can define a new folder to save the pickle file
 def pickle_save_in_folder(obj, folder):
     if os.path.isdir(f"./src/pickle-dumps/{folder}") == False:
         os.mkdir(f"./src/pickle-dumps/{folder}")
@@ -347,18 +364,19 @@ def pickle_save_in_folder(obj, folder):
         pickle.dump(obj, f)
 
 
-def pickle_save(obj):
+def pickle_save(obj, filename: Union[str, None] = None):
     if os.path.isdir("./src/pickle-dumps") == False:
         os.mkdir("./src/pickle-dumps")
 
-    now = datetime.now()
-    filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
-
-    # check if file already exists and if so, append a number to the filename
-    i = 1
-    while os.path.isfile(filename):
-        filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
-        i += 1
+    if filename is not None:
+        filename = f"src/pickle-dumps/{filename}.pickle"
+    else:
+        now = datetime.now()
+        filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+        i = 1
+        while os.path.isfile(filename):
+            filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
+            i += 1
 
     with open(filename, "wb") as f:
         pickle.dump(obj, f)
@@ -368,81 +386,3 @@ def pickle_load(filename, is_dump: bool = False):
     file = f"src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
     with open(file, "rb") as f:
         return pickle.load(f)
-
-
-def candidates_iter(candidate_sets: list[object], skip_index: int = -1) -> list[object]:
-    for i, candidate_set in enumerate(candidate_sets):
-        if i == skip_index:
-            continue
-        for candidate in candidate_set.candidates:
-            yield candidate
-
-
-def generate_features(
-    candidate_sets: list[object],
-) -> tuple[list, list[bool], list[float]]:
-    total_features = []
-    total_labels_clas = []
-    total_labels_regr = []
-    for i, candidate_set in tqdm(enumerate(candidate_sets), position=1, leave=False):
-        features = []
-        labels_clas = []
-        labels_regr = []
-        for candidate in candidate_set.candidates:
-            instance_total = 0
-            instance_overlap = 0
-            subclass_total = 0
-            subclass_overlap = 0
-            description_overlaps = []
-
-            for other_candidate in candidates_iter(candidate_sets, i):
-                (overlap, total) = candidate.instance_overlap(other_candidate)
-                instance_total += total
-                instance_overlap += overlap
-
-                (overlap, total) = candidate.subclass_overlap(other_candidate)
-                subclass_total += total
-                subclass_overlap += overlap
-
-                description_overlaps.append(
-                    candidate.description_overlap(other_candidate)
-                )
-
-            labels_clas.append(candidate.is_correct)
-            labels_regr.append(1.0 if candidate.is_correct else 0.0)
-            features.append(
-                [
-                    candidate.id,
-                    candidate.lex_score(candidate_set.mention),
-                    instance_overlap / instance_total if instance_total > 0 else 0,
-                    subclass_overlap / subclass_total if subclass_total > 0 else 0,
-                    sum(description_overlaps) / len(description_overlaps)
-                    if len(description_overlaps) > 0
-                    else 0,
-                ]
-            )
-        total_features.append(features)
-        total_labels_clas.append(labels_clas)
-        total_labels_regr.append(labels_regr)
-
-    return total_features, total_labels_clas, total_labels_regr
-
-
-def flatten_list(nested_list: list[list[any]]) -> list[any]:
-    """
-    Takes a nested list of lists and returns a flattened list.
-
-    Args:
-        nested_list (list[list[T]]): The nested list to be flattened.
-
-    Returns:
-        list[T]: A flattened list containing all elements from the nested list.
-
-    Example:
-        >>> nested_list = [[[1],[2],[3]], [[4],[5],[6]], [[7],[8],[9]]]
-        >>> flatten_list(nested_list)
-        [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    """
-    return [
-        num for sublist1 in nested_list for sublist2 in sublist1 for num in sublist2
-    ]
