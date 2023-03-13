@@ -25,6 +25,10 @@ class Candidate:
     description_overlap: Union[float, None]
     lex_score: Union[float, None]
 
+    instance_overlap_spellchecked: Union[int, None]
+    subclass_overlap_spellchecked: Union[int, None]
+    description_overlap_spellchecked: Union[float, None]
+
     def __init__(self, id: int):
         self.id = id
         self.title = None
@@ -45,7 +49,7 @@ class Candidate:
         self.instances = [int(prop[1][1:]) for prop in properties if prop[0] == "P31"]
         self.subclasses = [int(prop[1][1:]) for prop in properties if prop[0] == "P279"]
 
-    def description_overlap(self, other: "Candidate"):
+    def get_description_overlap(self, other: "Candidate"):
         if len(self.description) == 0 or len(other.description) == 0:
             return 0.0
         vectorizer = CountVectorizer().fit_transform(
@@ -67,11 +71,28 @@ class Candidate:
                 continue
             instance_overlap += len(set(self.instances).intersection(other_candidate.instances))
             subclass_overlap += len(set(self.subclasses).intersection(other_candidate.subclasses))
-            description_overlaps.append(self.description_overlap(other_candidate))
+            description_overlaps.append(self.get_description_overlap(other_candidate))
 
         self.instance_overlap = instance_overlap / instance_total if instance_total > 0 else 0
         self.subclass_overlap = subclass_overlap / subclass_total if subclass_total > 0 else 0
         self.description_overlap = (
+            sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0
+        )
+    
+    def compute_features_spellchecked(self, other: list["Candidate"], instance_total: int, subclass_total: int):
+        instance_overlap = 0
+        subclass_overlap = 0
+        description_overlaps = []
+        for other_candidate in other:
+            if other_candidate.id == self.id:
+                continue
+            instance_overlap += len(set(self.instances).intersection(other_candidate.instances))
+            subclass_overlap += len(set(self.subclasses).intersection(other_candidate.subclasses))
+            description_overlaps.append(self.get_description_overlap(other_candidate))
+
+        self.instance_overlap_spellchecked = instance_overlap / instance_total if instance_total > 0 else 0
+        self.subclass_overlap_spellchecked = subclass_overlap / subclass_total if subclass_total > 0 else 0
+        self.description_overlap_spellchecked = (
             sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0
         )
 
@@ -143,7 +164,8 @@ class CandidateSet:
         for candidate in self.candidates:
             if candidate.title is None:
                 candidate.fetch_info()
-
+                
+    def fetch_candidate_info_spellchecked(self):
         if self.mention == self.mention_spellchecked:
             self.candidates_spellchecked = self.candidates
         else:
@@ -174,6 +196,18 @@ class CandidateSet:
 
         for candidate in self.candidates:
             candidate.compute_features(self.correct_candidate, other_candidates, instance_total, subclass_total)
+    
+    def compute_features_spellchecked(self, col: "Column"):
+        other_candidates: list[Candidate] = []
+        for cell in col.cells:
+            if cell.correct_id != self.correct_id:
+                other_candidates.extend(cell.candidates_spellchecked)
+
+        instance_total = sum([len(candidate.instances) for candidate in other_candidates])
+        subclass_total = sum([len(candidate.subclasses) for candidate in other_candidates])
+
+        for candidate in self.candidates_spellchecked:
+            candidate.compute_features_spellchecked(other_candidates, instance_total, subclass_total)
 
     def all_candidates_fetched(self) -> bool:
         if self.candidates is None:
@@ -185,6 +219,16 @@ class CandidateSet:
 
         if not self.correct_candidate.info_fetched():
             return False
+
+        return True
+
+    def all_candidates_fetched_spellchecked(self) -> bool:
+        if self.candidates_spellchecked is None:
+            return False
+
+        for candidate in self.candidates_spellchecked:
+            if not candidate.info_fetched():
+                return False
 
         return True
 
@@ -200,10 +244,12 @@ class CandidateSet:
 class Column:
     cells: list[CandidateSet]
     features_fetched: bool
+    features_fetched_spellchecked: bool
 
     def __init__(self):
         self.cells = []
         self.features_fetched = False
+        self.features_fetched_spellchecked = False
 
     def add_cell(self, cell: CandidateSet):
         self.cells.append(cell)
@@ -230,10 +276,33 @@ class Column:
 
         for t in threads:
             t.join()
+    
+    def fetch_cells_spellchecked(self):
+        def fetch_worker(cell: CandidateSet):
+            try:
+                cell.fetch_candidates_spellchecked()
+                cell.fetch_candidate_info_spellchecked()
+                return
+            except RateLimitException:
+                return
+
+        threads = []
+        for cell in self.cells:
+            t = threading.Thread(target=fetch_worker, args=[cell])
+            t.start()
+            threads.append(t)
+
+        for t in threads:
+            t.join()
 
     def compute_features(self):
         for cell in self.cells:
             cell.compute_features(self)
+        self.features_fetched = True
+    
+    def compute_features_spellchecked(self):
+        for cell in self.cells:
+            cell.compute_features_spellchecked(self)
         self.features_fetched = True
 
     def feature_vectors(self):
@@ -262,5 +331,11 @@ class Column:
     def all_cells_fetched(self) -> bool:
         for cell in self.cells:
             if not cell.all_candidates_fetched():
+                return False
+        return True
+
+    def all_cells_fetched_spellchecked(self) -> bool:
+        for cell in self.cells:
+            if not cell.all_candidates_fetched_spellchecked():
                 return False
         return True

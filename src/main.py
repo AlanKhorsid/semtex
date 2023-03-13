@@ -12,7 +12,7 @@ from util import (
 # ----- Open dataset -----
 print("Opening dataset...")
 # cols = open_dataset(use_test_data=True)
-cols: list[Column] = pickle_load("13-03_11-17-31")
+cols: list[Column] = pickle_load("test-data_cols-features")
 
 # ----- Preprocess dataset -----
 print("Preprocessing dataset...")
@@ -27,6 +27,13 @@ for col in tqdm(cols):
         col.fetch_cells()
         pickle_save(cols)
 
+print("Fetching spellchecked candidates...")
+i = 1
+for col in tqdm(cols):
+    if not col.all_cells_fetched_spellchecked():
+        col.fetch_cells_spellchecked()
+        pickle_save(cols, f"spellchecked-{i}")
+        i = i + 1 if i < 9 else 1
 
 # ----- Generate features -----
 print("Generating features...")
@@ -38,9 +45,18 @@ for col in tqdm(cols):
     pickle_save(cols, f"cols-features-{i}")
     i = i + 1 if i < 9 else 1
 
+print("Generating spellchecked features...")
+i = 1
+for col in tqdm(cols):
+    if col.features_fetched_spellchecked:
+        continue
+    col.compute_features_spellchecked()
+    pickle_save(cols, f"spellchecked-features-{i}")
+    i = i + 1 if i < 9 else 1
+
 features = []
 labels = []
-print("Generating feature vectors...")
+print("Getting feature vectors...")
 for col in tqdm(cols):
     feature_vector = col.feature_vectors()
     label_vector = col.label_vectors()
