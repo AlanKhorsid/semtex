@@ -4,7 +4,6 @@ from util import (
     parse_entity_properties,
     parse_entity_title,
     remove_stopwords,
-    timeit,
 )
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -129,7 +128,6 @@ class CandidateSet:
         self.correct_candidate = Candidate(self.correct_id)
         self.correct_candidate.fetch_info()
 
-    # @timeit
     def compute_features(self, col: "Column"):
         other_candidates: list[Candidate] = []
         for cell in col.cells:
@@ -194,7 +192,6 @@ class Column:
         for t in threads:
             t.join()
 
-    # @timeit
     def compute_features(self):
         for cell in self.cells:
             cell.compute_features(self)

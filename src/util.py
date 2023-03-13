@@ -3,20 +3,15 @@ import os
 from typing import Union
 from nltk.corpus import stopwords
 import string
-from sklearn.datasets import make_regression
-from tqdm import tqdm
 from sklearn.ensemble import (
     GradientBoostingRegressor,
     HistGradientBoostingRegressor,
     RandomForestRegressor,
 )
 from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn.metrics import accuracy_score, explained_variance_score, mean_squared_error
-from sklearn.tree import export_text
+from sklearn.metrics import mean_squared_error
 import pickle
 from datetime import datetime
-from functools import wraps
-import time
 
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
@@ -351,68 +346,3 @@ def pickle_load(filename, is_dump: bool = False):
     file = f"src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
     with open(file, "rb") as f:
         return pickle.load(f)
-
-
-def candidates_iter(candidate_sets: list[object], skip_index: int = -1) -> list[object]:
-    for i, candidate_set in enumerate(candidate_sets):
-        if i == skip_index:
-            continue
-        for candidate in candidate_set.candidates:
-            yield candidate
-
-
-def generate_features(candidate_sets: list[object]) -> tuple[list, list[bool], list[float]]:
-    total_features = []
-    total_labels_clas = []
-    total_labels_regr = []
-    for i, candidate_set in tqdm(enumerate(candidate_sets), position=1, leave=False):
-        features = []
-        labels_clas = []
-        labels_regr = []
-        for candidate in candidate_set.candidates:
-            instance_total = 0
-            instance_overlap = 0
-            subclass_total = 0
-            subclass_overlap = 0
-            description_overlaps = []
-
-            for other_candidate in candidates_iter(candidate_sets, i):
-                (overlap, total) = candidate.instance_overlap(other_candidate)
-                instance_total += total
-                instance_overlap += overlap
-
-                (overlap, total) = candidate.subclass_overlap(other_candidate)
-                subclass_total += total
-                subclass_overlap += overlap
-
-                description_overlaps.append(candidate.description_overlap(other_candidate))
-
-            labels_clas.append(candidate.is_correct)
-            labels_regr.append(1.0 if candidate.is_correct else 0.0)
-            features.append(
-                [
-                    candidate.id,
-                    candidate.lex_score(candidate_set.mention),
-                    instance_overlap / instance_total if instance_total > 0 else 0,
-                    subclass_overlap / subclass_total if subclass_total > 0 else 0,
-                    sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0,
-                ]
-            )
-        total_features.append(features)
-        total_labels_clas.append(labels_clas)
-        total_labels_regr.append(labels_regr)
-
-    return total_features, total_labels_clas, total_labels_regr
-
-
-def timeit(func):
-    @wraps(func)
-    def timeit_wrapper(*args, **kwargs):
-        start_time = time.perf_counter()
-        result = func(*args, **kwargs)
-        end_time = time.perf_counter()
-        total_time = end_time - start_time
-        print(f"Function {func.__name__} Took {total_time:.4f} seconds")
-        return result
-
-    return timeit_wrapper
