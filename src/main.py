@@ -1,28 +1,10 @@
 from classes import Column
 from util import (
-    ensemble_gradient_boost_regression,
     ensemble_hist_gradient_boost_regression,
-    open_dataset,
     pickle_load,
     pickle_save,
-    random_forest_regression,
 )
 from tqdm import tqdm
-
-
-def flatten_list(nested_list: list[list[any]]) -> list[any]:
-    """
-    Takes a nested list of lists and returns a flattened list.
-    Args:
-        nested_list (list[list[T]]): The nested list to be flattened.
-    Returns:
-        list[T]: A flattened list containing all elements from the nested list.
-    Example:
-        >>> nested_list = [[[1],[2],[3]], [[4],[5],[6]], [[7],[8],[9]]]
-        >>> flatten_list(nested_list)
-        [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    """
-    return [num for sublist1 in nested_list for sublist2 in sublist1 for num in sublist2]
 
 
 # ----- Open dataset -----
