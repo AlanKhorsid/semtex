@@ -1,4 +1,5 @@
 from _requests import wikidata_entity_search, wikidata_get_entity, RateLimitException
+from preprocessing.suggester import generate_suggestion
 from util import (
     parse_entity_description,
     parse_entity_properties,
@@ -83,6 +84,7 @@ class Candidate:
 
 class CandidateSet:
     mention: str
+    mention_spellchecked: Union[str, None]
     candidates: Union[list[Candidate], None]
     correct_candidate: Union[Candidate, None]
     correct_id: Union[int, None]
@@ -91,10 +93,15 @@ class CandidateSet:
         self.mention = mention
         self.candidates = None
         self.correct_candidate = None
+        self.mention_spellchecked = None
         if correct_id is not None:
             self.correct_id = int(correct_id[1:])
         else:
             self.correct_id = None
+
+    def get_spellchecked_mention(self):
+        if self.mention_spellchecked is None:
+            self.mention_spellchecked = generate_suggestion(self.mention)
 
     def fetch_candidates(self):
         if self.mention == "":
@@ -172,6 +179,10 @@ class Column:
 
     def add_cell(self, cell: CandidateSet):
         self.cells.append(cell)
+
+    def get_spellchecked_mentions(self):
+        for cell in self.cells:
+            cell.get_spellchecked_mention()
 
     def fetch_cells(self):
         def fetch_worker(cell: CandidateSet):
