@@ -86,6 +86,7 @@ class CandidateSet:
     mention: str
     mention_spellchecked: Union[str, None]
     candidates: Union[list[Candidate], None]
+    candidates_spellchecked: Union[list[Candidate], None]
     correct_candidate: Union[Candidate, None]
     correct_id: Union[int, None]
 
@@ -94,6 +95,7 @@ class CandidateSet:
         self.candidates = None
         self.correct_candidate = None
         self.mention_spellchecked = None
+        self.candidates_spellchecked = None
         if correct_id is not None:
             self.correct_id = int(correct_id[1:])
         else:
@@ -118,10 +120,36 @@ class CandidateSet:
             candidates.append(Candidate(int(entity_id[1:])))
         self.candidates = candidates
 
+    def fetch_candidates_spellchecked(self):
+        if self.mention_spellchecked == "":
+            self.candidates_spellchecked = []
+            return
+
+        if self.candidates_spellchecked is not None:
+            return
+
+        if self.mention_spellchecked == self.mention:
+            self.candidates_spellchecked = self.candidates
+            return
+
+        entity_ids = wikidata_entity_search(self.mention_spellchecked)
+
+        candidates = []
+        for entity_id in entity_ids:
+            candidates.append(Candidate(int(entity_id[1:])))
+        self.candidates_spellchecked = candidates
+
     def fetch_candidate_info(self):
         for candidate in self.candidates:
             if candidate.title is None:
                 candidate.fetch_info()
+
+        if self.mention == self.mention_spellchecked:
+            self.candidates_spellchecked = self.candidates
+        else:
+            for candidate in self.candidates_spellchecked:
+                if candidate.title is None:
+                    candidate.fetch_info()
 
     def fetch_correct_candidate(self) -> None:
         if self.correct_id is None or self.correct_candidate is not None:

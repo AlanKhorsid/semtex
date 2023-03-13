@@ -22,10 +22,9 @@ for col in tqdm(cols):
 # ----- Fetch candidates -----
 print("Fetching candidates...")
 for col in tqdm(cols):
-    if col.all_cells_fetched():
-        continue
-    col.fetch_cells()
-    pickle_save(cols)
+    if not col.all_cells_fetched():
+        col.fetch_cells()
+        pickle_save(cols)
 
 
 # ----- Generate features -----
