@@ -82,7 +82,11 @@ class Candidate:
             sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0
         )
 
-    def compute_features_spellchecked(self, other: list["Candidate"], instance_total: int, subclass_total: int):
+    def compute_features_spellchecked(
+        self, correct: "Candidate", other: list["Candidate"], instance_total: int, subclass_total: int
+    ):
+        self.lex_score = Levenshtein.ratio(self.title, correct.title)
+
         instance_overlap = 0
         subclass_overlap = 0
         description_overlaps = []
@@ -219,7 +223,9 @@ class CandidateSet:
         subclass_total = sum([len(candidate.subclasses) for candidate in other_candidates])
 
         for candidate in self.candidates_spellchecked:
-            candidate.compute_features_spellchecked(other_candidates, instance_total, subclass_total)
+            candidate.compute_features_spellchecked(
+                self.correct_candidate, other_candidates, instance_total, subclass_total
+            )
 
     def all_candidates_fetched(self) -> bool:
         if self.candidates is None:
@@ -321,17 +327,17 @@ class Column:
         if not self.features_fetched:
             raise Exception("Features not yet computed!")
 
-        vectors = []
+        vectors: list[tuple[Candidate, list]] = []
         for cell in self.cells:
             for candidate in cell.candidates:
-                vectors.append(candidate.features())
+                vectors.append((candidate, candidate.features()))
 
-        vectors_spellchecked = []
+        vectors_spellchecked: list[tuple[Candidate, list]] = []
         for cell in self.cells:
             for candidate in cell.candidates_spellchecked:
-                vectors_spellchecked.append(candidate.features_spellchecked())
+                vectors_spellchecked.append((candidate, candidate.features_spellchecked()))
 
-        return [vectors, vectors_spellchecked]
+        return (vectors, vectors_spellchecked)
 
     def label_vectors(self):
         if not self.features_fetched:
