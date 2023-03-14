@@ -39,6 +39,9 @@ class Candidate:
         self.subclass_overlap = None
         self.description_overlap = None
         self.lex_score = None
+        self.instance_overlap_spellchecked = None
+        self.subclass_overlap_spellchecked = None
+        self.description_overlap_spellchecked = None
 
     def fetch_info(self):
         entity_data = wikidata_get_entity(self.id)
@@ -78,7 +81,7 @@ class Candidate:
         self.description_overlap = (
             sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0
         )
-    
+
     def compute_features_spellchecked(self, other: list["Candidate"], instance_total: int, subclass_total: int):
         instance_overlap = 0
         subclass_overlap = 0
@@ -98,6 +101,15 @@ class Candidate:
 
     def features(self):
         return [self.id, self.lex_score, self.instance_overlap, self.subclass_overlap, self.description_overlap]
+
+    def features_spellchecked(self):
+        return [
+            self.id,
+            self.lex_score,
+            self.instance_overlap_spellchecked,
+            self.subclass_overlap_spellchecked,
+            self.description_overlap_spellchecked,
+        ]
 
     def info_fetched(self) -> bool:
         return self.title is not None
@@ -164,7 +176,7 @@ class CandidateSet:
         for candidate in self.candidates:
             if candidate.title is None:
                 candidate.fetch_info()
-                
+
     def fetch_candidate_info_spellchecked(self):
         if self.mention == self.mention_spellchecked:
             self.candidates_spellchecked = self.candidates
@@ -196,7 +208,7 @@ class CandidateSet:
 
         for candidate in self.candidates:
             candidate.compute_features(self.correct_candidate, other_candidates, instance_total, subclass_total)
-    
+
     def compute_features_spellchecked(self, col: "Column"):
         other_candidates: list[Candidate] = []
         for cell in col.cells:
@@ -276,7 +288,7 @@ class Column:
 
         for t in threads:
             t.join()
-    
+
     def fetch_cells_spellchecked(self):
         def fetch_worker(cell: CandidateSet):
             try:
@@ -299,11 +311,11 @@ class Column:
         for cell in self.cells:
             cell.compute_features(self)
         self.features_fetched = True
-    
+
     def compute_features_spellchecked(self):
         for cell in self.cells:
             cell.compute_features_spellchecked(self)
-        self.features_fetched = True
+        self.features_fetched_spellchecked = True
 
     def feature_vectors(self):
         if not self.features_fetched:
@@ -313,7 +325,13 @@ class Column:
         for cell in self.cells:
             for candidate in cell.candidates:
                 vectors.append(candidate.features())
-        return vectors
+
+        vectors_spellchecked = []
+        for cell in self.cells:
+            for candidate in cell.candidates_spellchecked:
+                vectors_spellchecked.append(candidate.features_spellchecked())
+
+        return [vectors, vectors_spellchecked]
 
     def label_vectors(self):
         if not self.features_fetched:
@@ -326,7 +344,16 @@ class Column:
                     labels.append(1.0)
                 else:
                     labels.append(0.0)
-        return labels
+
+        labels_spellchecked = []
+        for cell in self.cells:
+            for candidate in cell.candidates_spellchecked:
+                if candidate.id == cell.correct_id:
+                    labels_spellchecked.append(1.0)
+                else:
+                    labels_spellchecked.append(0.0)
+
+        return [labels, labels_spellchecked]
 
     def all_cells_fetched(self) -> bool:
         for cell in self.cells:
