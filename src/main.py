@@ -83,59 +83,73 @@ print("Evaluating model...")
 total_correct = 0
 total_incorrect = 0
 
-for (candidate, features) in tqdm(features_spellchecked):
-    prediction = model.predict([features])
-
-
 for col in tqdm(cols):
     for cell in col.cells:
-        cell_features = []
-        # for candidate in cell.candidates:
+        best_candidate = None
+        best_score = float("-inf")
         for candidate in cell.candidates_spellchecked:
-            # feature = next(feature for feature in features if feature[0] == candidate.id)
-            feature = next(feature for feature in features_spellchecked if feature[0] == candidate.id)
-            cell_features.append(feature)
-
-        if len(cell_features) == 0:
-            continue
-
-        # cp = []
-        # for f in cell_features:
-        #     cp.append(sum(f[1:]))
-
-        # cell_predictions = list(zip(cp, cell.candidates))
-        # cell_predictions.sort(key=lambda x: x[0], reverse=True)
-
-        cell_predictions = model.predict(cell_features)
-        # cell_predictions = list(zip(cell_predictions, cell.candidates))
-        cell_predictions = list(zip(cell_predictions, cell.candidates_spellchecked))
-        cell_predictions.sort(key=lambda x: x[0], reverse=True)
-
-        # print(f"Predictions for mention: '{cell.mention}'")
-        # print(f"Candidates:")
-        # for pred in cell_predictions:
-        #     print(f"    {pred[0]}: {pred[1].title} ({pred[1].description})")
-
-        # print(f"Prediction:")
-        if cell_predictions[0][1].id == cell.correct_candidate.id:
-            # print(f"    CORRECT: {cell_predictions[0][1].title} ({cell_predictions[0][1].description})")
+            features = candidate.features_spellchecked()
+            prediction = model.predict([features])[0]
+            if prediction > best_score:
+                best_score = prediction
+                best_candidate = candidate
+        if best_candidate is None:
+            print("WTF")
+        elif best_candidate.id == cell.correct_candidate.id:
             total_correct += 1
         else:
-            try:
-                correct_candidate = next(
-                    # candidate for candidate in cell.candidates if candidate.id == cell.correct_candidate.id
-                    candidate
-                    for candidate in cell.candidates_spellchecked
-                    if candidate.id == cell.correct_candidate.id
-                )
-                # print(f"    INCORRECT - Should have been: {correct_candidate.title} ({correct_candidate.description})")
-            except StopIteration:
-                # print(f"    INCORRECT - No correct candidate found :)")
-                pass
             total_incorrect += 1
 
-        # print()
-        # print()
+
+# for col in tqdm(cols):
+#     for cell in col.cells:
+#         cell_features = []
+#         # for candidate in cell.candidates:
+#         for candidate in cell.candidates_spellchecked:
+#             # feature = next(feature for feature in features if feature[0] == candidate.id)
+#             feature = next(feature for feature in features_spellchecked if feature[0] == candidate.id)
+#             cell_features.append(feature)
+
+#         if len(cell_features) == 0:
+#             continue
+
+#         # cp = []
+#         # for f in cell_features:
+#         #     cp.append(sum(f[1:]))
+
+#         # cell_predictions = list(zip(cp, cell.candidates))
+#         # cell_predictions.sort(key=lambda x: x[0], reverse=True)
+
+#         cell_predictions = model.predict(cell_features)
+#         # cell_predictions = list(zip(cell_predictions, cell.candidates))
+#         cell_predictions = list(zip(cell_predictions, cell.candidates_spellchecked))
+#         cell_predictions.sort(key=lambda x: x[0], reverse=True)
+
+#         # print(f"Predictions for mention: '{cell.mention}'")
+#         # print(f"Candidates:")
+#         # for pred in cell_predictions:
+#         #     print(f"    {pred[0]}: {pred[1].title} ({pred[1].description})")
+
+#         # print(f"Prediction:")
+#         if cell_predictions[0][1].id == cell.correct_candidate.id:
+#             # print(f"    CORRECT: {cell_predictions[0][1].title} ({cell_predictions[0][1].description})")
+#             total_correct += 1
+#         else:
+#             try:
+#                 correct_candidate = next(
+#                     # candidate for candidate in cell.candidates if candidate.id == cell.correct_candidate.id
+#                     candidate
+#                     for candidate in cell.candidates_spellchecked
+#                     if candidate.id == cell.correct_candidate.id
+#                 )
+#                 # print(f"    INCORRECT - Should have been: {correct_candidate.title} ({correct_candidate.description})")
+#             except StopIteration:
+#                 # print(f"    INCORRECT - No correct candidate found :)")
+#                 pass
+#             total_incorrect += 1
+
+#         # print()
+#         # print()
 
 print(f"Total correct: {total_correct}")
 print(f"Total incorrect: {total_incorrect}")
