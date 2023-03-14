@@ -1,3 +1,4 @@
+import Levenshtein
 from classes import Column
 from tqdm import tqdm
 from util import (
@@ -59,8 +60,8 @@ labels = []
 labels_spellchecked = []
 print("Getting feature vectors...")
 for col in tqdm(cols):
-    [feature_vector, features_vector_spellchecked] = col.feature_vectors()
-    [label_vector, label_vector_spellchecked] = col.label_vectors()
+    (feature_vector, features_vector_spellchecked) = col.feature_vectors()
+    (label_vector, label_vector_spellchecked) = col.label_vectors()
     features.extend(feature_vector)
     features_spellchecked.extend(features_vector_spellchecked)
     labels.extend(label_vector)
@@ -81,6 +82,10 @@ print("Evaluating model...")
 
 total_correct = 0
 total_incorrect = 0
+
+for (candidate, features) in tqdm(features_spellchecked):
+    prediction = model.predict([features])
+
 
 for col in tqdm(cols):
     for cell in col.cells:
