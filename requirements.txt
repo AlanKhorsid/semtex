@@ -56,3 +56,4 @@ tqdm==4.64.1
 typing_extensions==4.5.0
 urllib3==1.26.14
 zipp==3.15.0
+spacy==3.5.1

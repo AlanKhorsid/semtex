@@ -23,6 +23,10 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import HistGradientBoostingRegressor
 import matplotlib.pyplot as plt
+import spacy
+from collections import Counter
+import en_core_web_sm
+from _types import SpacyTypes
 
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
@@ -399,6 +403,15 @@ def pickle_load(filename, is_dump: bool = False):
     with open(file, "rb") as f:
         return pickle.load(f)
 
+def name_entity_recognition_labels(title : str, description : str) -> list[int]:
+    nlp = en_core_web_sm.load()
+    labels = []
+    results = nlp(f"{title} - {description}")
+    for r in results.ents:
+        labels.append(r.label_)
+    labels = list(set(labels))
+    labels = [SpacyTypes[label].value for label in labels]
+    return labels
 
 # Merge two dictionaries and keep values of common keys in list
 def merge_dict():
