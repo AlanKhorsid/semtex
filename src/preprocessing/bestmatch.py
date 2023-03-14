@@ -41,8 +41,8 @@ def compare_title_permutations_with_query(title, query):
         A list of tuples, where each tuple contains a title permutation and its Levenshtein distance from the query.
 
     Example:
-        >>> compare_title_permutations_with_query("I love eating", "I love")
-        [("I love eating", 0.0), ("I love", 0.0), ("I eating", 0.5), ("love eating", 0.5), ("I", 0.6666666666666666), ("love", 0.0), ("eating", 0.6666666666666666)]
+        >>> compare_title_permutations_with_query("I love python", "love python")
+        [('love python', 0.0), ('I love python', 0.25), ('I love', 0.5), ('I python', 0.5), ('I', 0.75), ('love', 0.75), ('python', 0.75)]
 
     """
 
@@ -81,4 +81,18 @@ def get_best_title_match(query, titles):
                 best_distance = r[1]
                 best_match = r[0]
     best_match = remove_symbol(best_match, symbol=",")
+    best_match = remove_symbol(best_match, symbol=":")
+    best_match = remove_symbol(best_match, symbol=";")
+    best_match = remove_symbol(best_match, symbol="-")
+
+    if not is_acceptable_match(best_match):
+        return query
     return best_match
+
+
+# If the best match has "..." at the end, then the query is the best match
+def is_acceptable_match(suggestion):
+    if suggestion[-3:] == "...":
+        return False
+    else:
+        return True

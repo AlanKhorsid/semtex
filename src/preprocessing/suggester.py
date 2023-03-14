@@ -5,7 +5,7 @@ import os
 import html
 from decouple import config
 
-from bingsearchapi import call_manually
+# from bingsearchapi import call_manually
 from .bestmatch import get_best_title_match
 from .preprocesschecker import check_spellchecker_threaded
 from pathlib import Path
@@ -76,11 +76,11 @@ def generate_suggestion(query):
 
     json_obj = all_search_results[query]
 
-    if json_obj is None:
-        print(f"Query {query} not found in JSON file. Called manually.")
-        json_obj = call_manually(query)
-        all_search_results[query] = json_obj
-        pickle_save(all_search_results)
+    # if json_obj is None:
+    #     print(f"Query {query} not found in JSON file. Called manually.")
+    #     json_obj = call_manually(query)
+    #     all_search_results[query] = json_obj
+    #     pickle_save(all_search_results)
 
     if not "webPages" in json_obj:
         return query

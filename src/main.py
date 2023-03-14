@@ -8,7 +8,6 @@ from util import (
     pickle_save,
 )
 
-
 # ----- Open dataset -----
 print("Opening dataset...")
 # cols = open_dataset(use_test_data=True)
