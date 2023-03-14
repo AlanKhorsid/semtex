@@ -10,7 +10,7 @@ from util import (
 
 # ----- Open dataset -----
 print("Opening dataset...")
-#cols = open_dataset(use_test_data=True)
+# cols = open_dataset(use_test_data=True)
 cols: list[Column] = pickle_load("test-data_cols-features")
 
 # ----- Preprocess dataset -----
@@ -75,9 +75,9 @@ model = pickle_load("10-03_08-26-46")
 
 # ----- Evaluate regressor -----
 print("Evaluating model...")
-max_id = max(features, key=lambda x: x[0])[0]
-for feature in features:
-    feature[0] = feature[0] / max_id
+# max_id = max(features, key=lambda x: x[0])[0]
+# for feature in features:
+#     feature[0] = feature[0] / max_id
 
 total_correct = 0
 total_incorrect = 0
@@ -85,8 +85,10 @@ total_incorrect = 0
 for col in tqdm(cols):
     for cell in col.cells:
         cell_features = []
-        for candidate in cell.candidates:
-            feature = next(feature for feature in features if feature[0] == candidate.id)
+        # for candidate in cell.candidates:
+        for candidate in cell.candidates_spellchecked:
+            # feature = next(feature for feature in features if feature[0] == candidate.id)
+            feature = next(feature for feature in features_spellchecked if feature[0] == candidate.id)
             cell_features.append(feature)
 
         if len(cell_features) == 0:
@@ -100,7 +102,8 @@ for col in tqdm(cols):
         # cell_predictions.sort(key=lambda x: x[0], reverse=True)
 
         cell_predictions = model.predict(cell_features)
-        cell_predictions = list(zip(cell_predictions, cell.candidates))
+        # cell_predictions = list(zip(cell_predictions, cell.candidates))
+        cell_predictions = list(zip(cell_predictions, cell.candidates_spellchecked))
         cell_predictions.sort(key=lambda x: x[0], reverse=True)
 
         # print(f"Predictions for mention: '{cell.mention}'")
@@ -115,7 +118,10 @@ for col in tqdm(cols):
         else:
             try:
                 correct_candidate = next(
-                    candidate for candidate in cell.candidates if candidate.id == cell.correct_candidate.id
+                    # candidate for candidate in cell.candidates if candidate.id == cell.correct_candidate.id
+                    candidate
+                    for candidate in cell.candidates_spellchecked
+                    if candidate.id == cell.correct_candidate.id
                 )
                 # print(f"    INCORRECT - Should have been: {correct_candidate.title} ({correct_candidate.description})")
             except StopIteration:

@@ -31,6 +31,7 @@ from pathlib import Path
 
 ROOTPATH = Path(__file__).parent.parent
 
+
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(
@@ -368,14 +369,14 @@ def pickle_save_in_folder(obj, folder):
         os.mkdir(f"{ROOTPATH}/src/pickle-dumps/{folder}")
 
     now = datetime.now()
-    filename = f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+    filename = (
+        f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+    )
 
     # check if file already exists and if so, append a number to the filename
     i = 1
     while os.path.isfile(filename):
-        filename = (
-            f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
-        )
+        filename = f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
         i += 1
 
     with open(filename, "wb") as f:
@@ -390,7 +391,9 @@ def pickle_save(obj, filename: Union[str, None] = None):
         filename = f"{ROOTPATH}/src/pickle-dumps/{filename}.pickle"
     else:
         now = datetime.now()
-        filename = f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+        filename = (
+            f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+        )
         i = 1
         while os.path.isfile(filename):
             filename = f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
@@ -401,11 +404,14 @@ def pickle_save(obj, filename: Union[str, None] = None):
 
 
 def pickle_load(filename, is_dump: bool = False):
-    file = f"{ROOTPATH}/src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
+    file = (
+        f"{ROOTPATH}/src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
+    )
     with open(file, "rb") as f:
         return pickle.load(f)
 
-def name_entity_recognition_labels(title : str, description : str) -> list[int]:
+
+def name_entity_recognition_labels(title: str, description: str) -> list[int]:
     nlp = en_core_web_sm.load()
     labels = []
     results = nlp(f"{title} - {description}")
@@ -415,8 +421,7 @@ def name_entity_recognition_labels(title : str, description : str) -> list[int]:
     labels = [SpacyTypes[label].value for label in labels]
     return labels
 
+
 # Merge two dictionaries and keep values of common keys in list
 def merge_dict():
-    dict1 = pickle_load("13-03_00-37-17", is_dump=True)
-    dict2 = pickle_load("13-03_09-50-24", is_dump=True)
     pickle_save({**dict1, **dict2})
