@@ -23,7 +23,13 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import HistGradientBoostingRegressor
 import matplotlib.pyplot as plt
+import spacy
+from collections import Counter
+import en_core_web_sm
+from _types import SpacyTypes
+from pathlib import Path
 
+ROOTPATH = Path(__file__).parent.parent
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
@@ -188,7 +194,7 @@ def get_csv_lines(filename: str) -> list[list[str]]:
 
     Example
     -------
-    >>> get_csv_lines("./datasets/spellCheck/vals_labeled.csv")
+    >>> get_csv_lines("{ROOTPATH}/datasets/spellCheck/vals_labeled.csv")
     [
         ["Lincoln Township", "Lincoln Township", "Q7996268"],
         ["Stony Creek Township", "Stony Creek Township", "Q7996260"],
@@ -221,9 +227,9 @@ def open_dataset(correct_spelling: bool = False, use_test_data: bool = False):
     from classes import CandidateSet, Column
 
     file_path = (
-        "./datasets/HardTablesR1/DataSets/HardTablesR1/Test"
+        f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Test"
         if use_test_data
-        else "./datasets/HardTablesR1/DataSets/HardTablesR1/Valid"
+        else f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid"
     )
     gt_lines = get_csv_lines(f"{file_path}/gt/cea_gt.csv")
     gt_lines = [[l[0], int(l[1]), int(l[2]), l[3]] for l in gt_lines]
@@ -358,17 +364,17 @@ def parse_entity_properties(entity_data: dict) -> dict:
 
 
 def pickle_save_in_folder(obj, folder):
-    if os.path.isdir(f"./src/pickle-dumps/{folder}") == False:
-        os.mkdir(f"./src/pickle-dumps/{folder}")
+    if os.path.isdir(f"{ROOTPATH}/src/pickle-dumps/{folder}") == False:
+        os.mkdir(f"{ROOTPATH}/src/pickle-dumps/{folder}")
 
     now = datetime.now()
-    filename = f"src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+    filename = f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
 
     # check if file already exists and if so, append a number to the filename
     i = 1
     while os.path.isfile(filename):
         filename = (
-            f"src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
+            f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
         )
         i += 1
 
@@ -377,17 +383,17 @@ def pickle_save_in_folder(obj, folder):
 
 
 def pickle_save(obj, filename: Union[str, None] = None):
-    if os.path.isdir("./src/pickle-dumps") == False:
-        os.mkdir("./src/pickle-dumps")
+    if os.path.isdir(f"{ROOTPATH}/src/pickle-dumps") == False:
+        os.mkdir(f"{ROOTPATH}/src/pickle-dumps")
 
     if filename is not None:
-        filename = f"src/pickle-dumps/{filename}.pickle"
+        filename = f"{ROOTPATH}/src/pickle-dumps/{filename}.pickle"
     else:
         now = datetime.now()
-        filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+        filename = f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
         i = 1
         while os.path.isfile(filename):
-            filename = f"src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
+            filename = f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
             i += 1
 
     with open(filename, "wb") as f:
@@ -395,10 +401,19 @@ def pickle_save(obj, filename: Union[str, None] = None):
 
 
 def pickle_load(filename, is_dump: bool = False):
-    file = f"src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
+    file = f"{ROOTPATH}/src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
     with open(file, "rb") as f:
         return pickle.load(f)
 
+def name_entity_recognition_labels(title : str, description : str) -> list[int]:
+    nlp = en_core_web_sm.load()
+    labels = []
+    results = nlp(f"{title} - {description}")
+    for r in results.ents:
+        labels.append(r.label_)
+    labels = list(set(labels))
+    labels = [SpacyTypes[label].value for label in labels]
+    return labels
 
 # Merge two dictionaries and keep values of common keys in list
 def merge_dict():

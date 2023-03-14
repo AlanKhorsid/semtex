@@ -51,9 +51,6 @@ def search_for_JSON(query_string):
     return query_string
 
 
-all_search_results = pickle_load("all-test-cells-search-results", is_dump=True)
-
-
 def generate_suggestion(query):
     """
         Generates a suggested alternative search query based on the search results for the original query.
@@ -74,6 +71,7 @@ def generate_suggestion(query):
         "Barack Obama"
     """
 
+    all_search_results = pickle_load("all-test-cells-search-results", is_dump=True)
     json_obj = all_search_results[query]
 
     # if json_obj is None:
