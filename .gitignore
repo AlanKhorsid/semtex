@@ -4,3 +4,4 @@ env/
 src/__pycache__/
 .env
 src/pickle-dumps/*
+*.pyc
