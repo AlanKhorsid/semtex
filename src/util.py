@@ -1,6 +1,9 @@
 import csv
+import json
 import os
-from typing import Union
+import threading
+import time
+from typing import Literal, Union
 from nltk.corpus import stopwords
 import string
 import numpy as np
@@ -28,6 +31,7 @@ from collections import Counter
 import en_core_web_sm
 from _types import SpacyTypes
 from pathlib import Path
+
 
 ROOTPATH = Path(__file__).parent.parent
 
@@ -208,30 +212,17 @@ def get_csv_lines(filename: str) -> list[list[str]]:
         return list(reader)
 
 
-def open_dataset(correct_spelling: bool = False, use_test_data: bool = False):
-    """
-    Opens the dataset and returns a list of (mention, id) tuples.
-
-    Parameters
-    ----------
-    correct_spelling : bool, optional
-        Whether to return the correctly preprocessed mentions or the mentions
-
-    use_test_data : bool, optional
-        Whether to use the test data or the validation data
-
-    Returns
-    -------
-    list[Column]
-    """
-
+def open_dataset(dataset: Literal["test", "validation"] = "validation", disable_spellcheck: bool = False):
     from classes import CandidateSet, Column
+    from preprocessing.suggester import generate_suggestion
 
-    file_path = (
-        f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Test"
-        if use_test_data
-        else f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid"
-    )
+    if dataset == "test":
+        file_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Test"
+    elif dataset == "validation":
+        file_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid"
+    else:
+        raise ValueError(f"Invalid dataset: {dataset}")
+
     gt_lines = get_csv_lines(f"{file_path}/gt/cea_gt.csv")
     gt_lines = [[l[0], int(l[1]), int(l[2]), l[3]] for l in gt_lines]
 
@@ -256,6 +247,8 @@ def open_dataset(correct_spelling: bool = False, use_test_data: bool = False):
                 new_cols.append(Column())
 
             mention = file[row][col]
+            if not disable_spellcheck:
+                mention = generate_suggestion(mention)
             entity_id = entity_url.split("/")[-1]
             new_cols[-1].add_cell(CandidateSet(mention, correct_id=entity_id))
 
@@ -425,3 +418,30 @@ def name_entity_recognition_labels(title: str, description: str) -> list[int]:
 # Merge two dictionaries and keep values of common keys in list
 def merge_dict():
     pickle_save({**dict1, **dict2})
+
+
+
+
+
+class JsonUpdater:
+    def __init__(self, filename):
+        self.filename = f"{ROOTPATH}{filename}"
+        self.lock = threading.Lock()
+        self.data = self.load_data()
+        self.last_save_time = time.time()
+
+    def load_data(self):
+        with open(self.filename, 'r') as f:
+            return json.load(f)
+
+    def update_data(self, key, value):
+        with self.lock:
+            self.data[key] = value
+            current_time = time.time()
+            if current_time - self.last_save_time > 120:
+                self.save_data()
+                self.last_save_time = current_time
+
+    def save_data(self):
+        with open(self.filename, 'w') as f:
+            json.dump(self.data, f)

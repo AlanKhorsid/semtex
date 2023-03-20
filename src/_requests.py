@@ -1,12 +1,16 @@
 import requests
 from _types import WikiDataSearchEntitiesResponse, validate_wikidata_search_entities_response
-from util import pickle_save
+from util import parse_entity_description, parse_entity_properties, parse_entity_title, pickle_save, pickle_load, JsonUpdater
+import threading
 
 API_URL = "https://www.wikidata.org/w/api.php"
 
 # Request limit exception
 class RateLimitException(Exception):
     pass
+
+entity_search_updater = JsonUpdater('/datasets/wikidata_entity_search_cache.json')
+get_entity_updater = JsonUpdater('/datasets/wikidata_get_entity_cache.json')
 
 
 def wikidata_entity_search(query: str, limit: int = 30, lang: str = "en") -> list[str]:
@@ -33,6 +37,9 @@ def wikidata_entity_search(query: str, limit: int = 30, lang: str = "en") -> lis
     ['Q76', 'Q47513588', 'Q59661289']
     """
 
+    if query in entity_search_updater.data:
+        return entity_search_updater.data[query]
+
     params = {
         "action": "wbsearchentities",
         "language": lang,
@@ -49,15 +56,10 @@ def wikidata_entity_search(query: str, limit: int = 30, lang: str = "en") -> lis
         res["search_continue"] = res.pop("search-continue")
     res: WikiDataSearchEntitiesResponse = res
 
-    # try:
-    #     validate_wikidata_search_entities_response(res)
-    # except Exception as e:
-    #     print('Error validating wikidata search entities response!!!!')
-    #     print(e)
-    #     pickle_save(res)
-
     search_results = res["search"]
     entity_ids = [result["id"] for result in search_results]
+
+    entity_search_updater.update_data(query, entity_ids)
 
     return entity_ids
 
@@ -83,6 +85,9 @@ def wikidata_get_entity(entity_id: int, lang: str = "en") -> dict:
     >>> wikidata_get_entity(76)
     """
 
+    if f"{entity_id}" in get_entity_updater.data:
+        return get_entity_updater.data[f"{entity_id}"]
+
     params = {
         "action": "wbgetentities",
         "languages": lang,
@@ -93,5 +98,15 @@ def wikidata_get_entity(entity_id: int, lang: str = "en") -> dict:
     data = requests.get(API_URL, params=params)
     if data.status_code == 429:
         raise RateLimitException()
+    
+    entity = data.json()["entities"][f"Q{entity_id}"]
 
-    return data.json()["entities"][f"Q{entity_id}"]
+    entity_data = {
+        "title": parse_entity_title(entity) or "",
+        "description": parse_entity_description(entity) or "",
+        "properties": parse_entity_properties(entity),
+    }
+
+    get_entity_updater.update_data(entity_id, entity_data)
+
+    return entity_data
