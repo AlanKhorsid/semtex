@@ -6,10 +6,10 @@ PICKLE_FILE_NAME = "validation"
 
 # ----- Open dataset -----
 print("Opening dataset...")
-# cols = open_dataset(dataset="validation", disable_spellcheck=True)
-# pickle_save(cols, f"{PICKLE_FILE_NAME}-{i}")
-# i = i + 1 if i < 9 else 1
-cols = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=True)
+cols = open_dataset(dataset="validation", disable_spellcheck=True)
+pickle_save(cols, f"{PICKLE_FILE_NAME}-{i}")
+i = i + 1 if i < 9 else 1
+# cols = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=True)
 
 # ----- Fetch candidates -----
 print("Fetching candidates...")

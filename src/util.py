@@ -38,9 +38,7 @@ ROOTPATH = Path(__file__).parent.parent
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        data, labels, test_size=test_size, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
 
     # Hyperparameters for HistGradientBoostingRegressor
     hgb_params = {
@@ -64,17 +62,13 @@ def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
     print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
 
     # Cross validation
-    scores = cross_val_score(
-        hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
-    )
+    scores = cross_val_score(hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error")
     print("Cross-validated scores:", scores)
 
 
 def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        data, labels, test_size=test_size, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
 
     # Hyperparameters for Gradient Boosting Regressor
     gbr_params = {
@@ -99,17 +93,13 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
     print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
 
     # cross validation
-    scores = cross_val_score(
-        gb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
-    )
+    scores = cross_val_score(gb, X_train, y_train, cv=5, scoring="neg_mean_squared_error")
     print("Cross-validated scores:", scores)
 
 
 def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        data, labels, test_size=test_size
-    )
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
     rf = RandomForestRegressor(
         n_estimators=500,
         min_samples_split=6,
@@ -177,9 +167,7 @@ def remove_stopwords(unfiltered_string: str) -> str:
     translator = str.maketrans("", "", string.punctuation)
     filtered_words = unfiltered_string.translate(translator)
     stop_words = set(stopwords.words("english"))
-    filtered_words = [
-        word for word in filtered_words.split() if word.lower() not in stop_words
-    ]
+    filtered_words = [word for word in filtered_words.split() if word.lower() not in stop_words]
     return " ".join(filtered_words)
 
 
@@ -362,9 +350,7 @@ def pickle_save_in_folder(obj, folder):
         os.mkdir(f"{ROOTPATH}/src/pickle-dumps/{folder}")
 
     now = datetime.now()
-    filename = (
-        f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
-    )
+    filename = f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
 
     # check if file already exists and if so, append a number to the filename
     i = 1
@@ -384,9 +370,7 @@ def pickle_save(obj, filename: Union[str, None] = None):
         filename = f"{ROOTPATH}/src/pickle-dumps/{filename}.pickle"
     else:
         now = datetime.now()
-        filename = (
-            f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
-        )
+        filename = f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
         i = 1
         while os.path.isfile(filename):
             filename = f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
@@ -397,9 +381,7 @@ def pickle_save(obj, filename: Union[str, None] = None):
 
 
 def pickle_load(filename, is_dump: bool = False):
-    file = (
-        f"{ROOTPATH}/src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
-    )
+    file = f"{ROOTPATH}/src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
     with open(file, "rb") as f:
         return pickle.load(f)
 
@@ -420,9 +402,6 @@ def merge_dict():
     pickle_save({**dict1, **dict2})
 
 
-
-
-
 class JsonUpdater:
     def __init__(self, filename):
         self.filename = f"{ROOTPATH}{filename}"
@@ -431,17 +410,17 @@ class JsonUpdater:
         self.last_save_time = time.time()
 
     def load_data(self):
-        with open(self.filename, 'r') as f:
+        with open(self.filename, "r") as f:
             return json.load(f)
 
     def update_data(self, key, value):
         with self.lock:
             self.data[key] = value
             current_time = time.time()
-            if current_time - self.last_save_time > 120:
+            if current_time - self.last_save_time > 30:
                 self.save_data()
                 self.last_save_time = current_time
 
     def save_data(self):
-        with open(self.filename, 'w') as f:
+        with open(self.filename, "w") as f:
             json.dump(self.data, f)
