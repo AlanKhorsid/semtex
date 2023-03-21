@@ -160,6 +160,14 @@ class CandidateSet:
         for candidate in self.candidates:
             candidate.compute_features(self.correct_candidate, other_candidates, instance_total, subclass_total)
 
+    @property
+    def features(self) -> list[list]:
+        return [candidate.features for candidate in self.candidates]
+
+    @property
+    def labels(self) -> list[int]:
+        return [1.0 if candidate.id == self.correct_id else 0.0 for candidate in self.candidates]
+
 
 class Column:
     cells: list[CandidateSet]
@@ -204,3 +212,20 @@ class Column:
         for cell in self.cells:
             cell.compute_features(self)
         self.features_computed = True
+
+    @property
+    def features(self) -> list[list]:
+        if not self.features_computed:
+            self.compute_features()
+        return [x for cell in self.cells for x in cell.features]
+        # features = []
+        # for cell in self.cells:
+        #     x = cell.features
+        #     features.extend(x)
+        # return features
+
+    @property
+    def labels(self) -> list[int]:
+        if not self.features_computed:
+            self.compute_features()
+        return [x for cell in self.cells for x in cell.labels]
