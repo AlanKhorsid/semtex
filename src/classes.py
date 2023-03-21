@@ -19,6 +19,7 @@ class Candidate:
     description: Union[str, None]
     instances: Union[list[int], None]
     subclasses: Union[list[int], None]
+    num_statements: Union[int, None]
 
     instance_overlap: Union[int, None]
     subclass_overlap: Union[int, None]
@@ -31,23 +32,25 @@ class Candidate:
         self.description = None
         self.instances = None
         self.subclasses = None
+        self.num_statements = None
         self.instance_overlap = None
         self.subclass_overlap = None
         self.description_overlap = None
         self.lex_score = None
-    
+
     @property
     def info_fetched(self) -> bool:
         return self.title is not None
-    
+
     def fetch_info(self):
         entity_data = wikidata_get_entity(self.id)
         self.title = entity_data["title"]
         self.description = entity_data["description"]
 
+        self.num_statements = len(entity_data["properties"])
         self.instances = [int(prop[1][1:]) for prop in entity_data["properties"] if prop[0] == "P31"]
         self.subclasses = [int(prop[1][1:]) for prop in entity_data["properties"] if prop[0] == "P279"]
-    
+
     def get_description_overlap(self, other: "Candidate"):
         if len(self.description) == 0 or len(other.description) == 0:
             return 0.0
@@ -56,7 +59,7 @@ class Candidate:
         )
         cosine_sim = cosine_similarity(vectorizer)
         return cosine_sim[0][1]
-    
+
     def compute_features(
         self, correct: "Candidate", other: list["Candidate"], instance_total: int, subclass_total: int
     ):
@@ -78,6 +81,10 @@ class Candidate:
             sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0
         )
 
+    @property
+    def features(self) -> list:
+        return [self.id, self.num_statements, self.instance_overlap, self.subclass_overlap, self.description_overlap]
+
 
 class CandidateSet:
     mention: str
@@ -93,7 +100,7 @@ class CandidateSet:
             self.correct_id = int(correct_id[1:])
         else:
             self.correct_id = None
-    
+
     @property
     def candidates_fetched(self) -> bool:
         return self.candidates is not None
@@ -140,7 +147,7 @@ class CandidateSet:
 
         self.correct_candidate = Candidate(self.correct_id)
         self.correct_candidate.fetch_info()
-    
+
     def compute_features(self, col: "Column"):
         other_candidates: list[Candidate] = []
         for cell in col.cells:
@@ -153,6 +160,7 @@ class CandidateSet:
         for candidate in self.candidates:
             candidate.compute_features(self.correct_candidate, other_candidates, instance_total, subclass_total)
 
+
 class Column:
     cells: list[CandidateSet]
     features_computed: bool
@@ -160,10 +168,10 @@ class Column:
     def __init__(self):
         self.cells = []
         self.features_computed = False
-    
+
     def add_cell(self, cell: CandidateSet):
         self.cells.append(cell)
-    
+
     def fetch_cells(self):
         def fetch_worker(cell: CandidateSet):
             try:
@@ -191,7 +199,7 @@ class Column:
             if not (cell.candidates_fetched and cell.candidate_info_fetched and cell.correct_candidate_info_fetched):
                 return False
         return True
-    
+
     def compute_features(self):
         for cell in self.cells:
             cell.compute_features(self)
