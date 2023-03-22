@@ -97,25 +97,14 @@ def xgb_regression_hyperparameter_tuning(data, labels, test_size=0.3, xgb_params
     return xgb_model
 
 
-def ensemble_xgboost_regression(data, labels, test_size=0.3):
+def ensemble_xgboost_regression(data, labels, xgb_params, test_size=0.3):
     # Split the dataset into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(
         data, labels, test_size=test_size, random_state=42
     )
 
-    # Hyperparameters for XGBoost Regressor
-    xgb_params = {
-        "n_estimators": 800,
-        "learning_rate": 0.01,
-        "subsample": 0.8,
-        "max_depth": 8,
-        "min_child_weight": 1,
-        "objective": "reg:squarederror",
-        "random_state": 42,
-    }
-
     # Create an XGBoost Regressor with n_estimators trees
-    xgb_model = xgb.XGBRegressor(**xgb_params)
+    xgb_model = xgb.XGBRegressor(xgb_params)
 
     # Train the model on the training set
     xgb_model.fit(X_train, y_train)
