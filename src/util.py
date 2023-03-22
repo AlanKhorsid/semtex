@@ -421,6 +421,11 @@ class JsonUpdater:
                 self.save_data()
                 self.last_save_time = current_time
 
+    def delete_data(self, key):
+        with self.lock:
+            del self.data[key]
+            self.save_data()
+
     def save_data(self):
         with open(self.filename, "w") as f:
             json.dump(self.data, f)

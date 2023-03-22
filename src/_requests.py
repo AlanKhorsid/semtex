@@ -9,8 +9,11 @@ from util import (
     JsonUpdater,
 )
 import threading
+import re
 
 API_URL = "https://www.wikidata.org/w/api.php"
+
+ENTITY_RE = r"^Q\d+$"
 
 # Request limit exception
 class RateLimitException(Exception):
@@ -24,7 +27,12 @@ get_entity_updater = JsonUpdater("/datasets/wikidata_get_entity_cache.json")
 
 def wikidata_entity_query(query: str) -> list[str]:
     if query in entity_query_updater.data:
-        return entity_query_updater.data[query]
+        entities = entity_query_updater.data[query]
+        if not all([bool(re.match(ENTITY_RE, e)) for e in entities]):
+            print(f"Found invalid entity ID in cache: {entities}... Removing from cache.")
+            entity_query_updater.delete_data(query)
+        else:
+            return entity_query_updater.data[query]
 
     params = {
         "action": "query",
@@ -44,6 +52,7 @@ def wikidata_entity_query(query: str) -> list[str]:
             return []
 
         entity_ids = [result["title"] for result in res["query"]["search"]]
+        entity_ids = [e for e in entity_ids if bool(re.match(ENTITY_RE, e))]
 
         entity_query_updater.update_data(query, entity_ids)
 
@@ -80,7 +89,12 @@ def wikidata_entity_search(query: str, limit: int = 30, lang: str = "en") -> lis
     other_ids = wikidata_entity_query(query)
 
     if query in entity_search_updater.data:
-        return list(set(other_ids + entity_search_updater.data[query]))
+        entities = entity_query_updater.data[query]
+        if not all([bool(re.match(ENTITY_RE, e)) for e in entities]):
+            print(f"Found invalid entity ID in cache: {entities}... Removing from cache.")
+            entity_search_updater.delete_data(query)
+        else:
+            return list(set(other_ids + entity_search_updater.data[query]))
 
     params = {
         "action": "wbsearchentities",
@@ -100,6 +114,7 @@ def wikidata_entity_search(query: str, limit: int = 30, lang: str = "en") -> lis
 
     search_results = res["search"]
     entity_ids = [result["id"] for result in search_results]
+    entity_ids = [e for e in entity_ids if bool(re.match(ENTITY_RE, e))]
 
     entity_search_updater.update_data(query, entity_ids)
 
