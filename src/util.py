@@ -31,9 +31,32 @@ from collections import Counter
 import en_core_web_sm
 from _types import SpacyTypes
 from pathlib import Path
-
+import xgboost as xgb
 
 ROOTPATH = Path(__file__).parent.parent
+
+
+def ensemble_xgboost_regression(data, labels, test_size=0.3):
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+
+    # Hyperparameters for XGBoost Regressor
+    xgb_params = {
+        "n_estimators": 800,
+        "learning_rate": 0.01,
+        "subsample": 0.8,
+        "max_depth": 8,
+        "min_child_weight": 1,
+        "objective": "reg:squarederror",
+        "random_state": 42,
+    }
+
+    # Create an XGBoost Regressor with n_estimators trees
+    xgb_model = xgb.XGBRegressor(**xgb_params)
+
+    # Train the model on the training set
+    xgb_model.fit(X_train, y_train)
+    return xgb_model
 
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
@@ -217,7 +240,7 @@ def open_dataset(dataset: Literal["test", "validation"] = "validation", disable_
     current_filename = ""
     lines = []
     cols: list[Column] = []
-    for filename, _, _, _ in gt_lines:
+    for filename, _, _, _ in tqdm(gt_lines):
         if filename == current_filename:
             continue
         current_filename = filename
@@ -397,9 +420,35 @@ def name_entity_recognition_labels(title: str, description: str) -> list[int]:
     return labels
 
 
-# Merge two dictionaries and keep values of common keys in list
-def merge_dict():
-    pickle_save({**dict1, **dict2})
+def evaluate_model(model, columns):
+    num_correct_annotations = 0
+    num_submitted_annotations = 0
+    num_ground_truth_annotations = 0
+    for col in tqdm(columns):
+        for cell in col.cells:
+            num_ground_truth_annotations += 1
+            if len(cell.candidates) == 0:
+                continue
+
+            num_submitted_annotations += 1
+
+            best_candidate = None
+            best_score = float("-inf")
+            for candidate in cell.candidates:
+                prediction = model.predict([candidate.features])[0]
+                if prediction > best_score:
+                    best_score = prediction
+                    best_candidate = candidate
+            if best_candidate is None:
+                raise Exception("No candidate found")
+            elif best_candidate.id == cell.correct_candidate.id:
+                num_correct_annotations += 1
+
+    precision = num_correct_annotations / num_submitted_annotations if num_submitted_annotations > 0 else 0
+    recall = num_correct_annotations / num_ground_truth_annotations if num_ground_truth_annotations > 0 else 0
+    f1 = 2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0
+
+    return precision, recall, f1
 
 
 class JsonUpdater:
