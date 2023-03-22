@@ -82,15 +82,15 @@ for n_estimators in param_grid["n_estimators"]:
                             for reg_alpha in param_grid["reg_alpha"]:
                                 for reg_lambda in param_grid["reg_lambda"]:
                                     params = {
-                                        n_estimators,
-                                        learning_rate,
-                                        max_depth,
-                                        min_child_weight,
-                                        subsample,
-                                        gamma,
-                                        colsample_bytree,
-                                        reg_alpha,
-                                        reg_lambda,
+                                        "n_estimators": n_estimators,
+                                        "learning_rate": learning_rate,
+                                        "max_depth": max_depth,
+                                        "min_child_weight": min_child_weight,
+                                        "subsample": subsample,
+                                        "gamma": gamma,
+                                        "colsample_bytree": colsample_bytree,
+                                        "reg_alpha": reg_alpha,
+                                        "reg_lambda": reg_lambda,
                                     }
                                     model = ensemble_xgboost_regression(
                                         features, labels, params

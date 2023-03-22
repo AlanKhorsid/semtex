@@ -66,4 +66,4 @@ def generate_suggestion(query):
             return query
 
 
-check_spellchecker(generate_suggestion, only_hard=True)
+# check_spellchecker(generate_suggestion, only_hard=True)
