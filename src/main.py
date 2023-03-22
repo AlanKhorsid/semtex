@@ -9,10 +9,11 @@ from util import (
     random_forest_regression,
     pickle_save,
     pickle_load,
+    xgb_regression_hyperparameter_tuning,
 )
 
 i = 0
-PICKLE_FILE_NAME = "validation-2022"
+PICKLE_FILE_NAME = "validation-2022-bing"
 
 # ----- Open dataset -----
 print("Opening dataset...")
@@ -50,12 +51,72 @@ for col in tqdm(cols):
 # max_id = max([i[0] for i in features])
 # features = [[x[0] / max_id] + x[1:] for x in features]
 
-model = ensemble_gradient_boost_regression(features, labels)
+param_grid = {
+    "n_estimators": [500, 800, 1000, 1200],
+    "learning_rate": [0.01],
+    "max_depth": [8, 12],
+    "min_child_weight": [1],
+    "subsample": [0.8],
+    "gamma": [0.1, 0.2, 0.3],
+    "colsample_bytree": [0.6, 0.8, 1.0],
+    "reg_alpha": [0.1, 0.5, 1],
+    "reg_lambda": [1, 1.5, 2],
+}
+
+# calculate number of combinations of parameters
+# n_combinations = 1
+# for key in param_grid:
+#     n_combinations *= len(param_grid[key])
+
+# print(f"Number of combinations: {n_combinations}")
+
+# compute all combinations of parameters
+f1_prev = 0
+for n_estimators in param_grid["n_estimators"]:
+    for learning_rate in param_grid["learning_rate"]:
+        for max_depth in param_grid["max_depth"]:
+            for min_child_weight in param_grid["min_child_weight"]:
+                for subsample in param_grid["subsample"]:
+                    for gamma in param_grid["gamma"]:
+                        for colsample_bytree in param_grid["colsample_bytree"]:
+                            for reg_alpha in param_grid["reg_alpha"]:
+                                for reg_lambda in param_grid["reg_lambda"]:
+                                    params = {
+                                        n_estimators,
+                                        learning_rate,
+                                        max_depth,
+                                        min_child_weight,
+                                        subsample,
+                                        gamma,
+                                        colsample_bytree,
+                                        reg_alpha,
+                                        reg_lambda,
+                                    }
+                                    model = ensemble_xgboost_regression(
+                                        features, labels, params
+                                    )
+                                    # ----- Evaluate model -----
+                                    precision, recall, f1 = evaluate_model(model, cols)
+                                    if f1 > f1_prev:
+                                        f1_prev = f1
+                                        print(f"Precision: {precision}")
+                                        print(f"Recall: {recall}")
+                                        print(f"F1: {f1}")
+                                        pickle_save(
+                                            {
+                                                "model": model,
+                                                "prediction": precision,
+                                                "recall": recall,
+                                                "f1": f1,
+                                            }
+                                        )
+
+# model = ensemble_gradient_boost_regression(features, labels)
 
 # ----- Evaluate model -----
-precision, recall, f1 = evaluate_model(model, cols)
+# precision, recall, f1 = evaluate_model(model, cols)
 
 
-print(f"Precision: {precision}")
-print(f"Recall: {recall}")
-print(f"F1: {f1}")
+# print(f"Precision: {precision}")
+# print(f"Recall: {recall}")
+# print(f"F1: {f1}")

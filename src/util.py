@@ -45,64 +45,56 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import make_scorer
 
 
-# Your custom metric function
-def custom_metric(y_true, y_pred):
-    # Compute your custom metric here
-    # ...
-    score = ...
-    return score
+def f1_score_evaluator(y_true, y_pred):
+    num_correct_annotations = 0
+    num_submitted_annotations = 0
+    num_ground_truth_annotations = len(y_true)
+
+    for i in range(num_ground_truth_annotations):
+        if y_pred[i] == y_true[i]:
+            num_correct_annotations += 1
+            num_submitted_annotations += 1
+
+    precision = (
+        num_correct_annotations / num_submitted_annotations
+        if num_submitted_annotations > 0
+        else 0
+    )
+    recall = (
+        num_correct_annotations / num_ground_truth_annotations
+        if num_ground_truth_annotations > 0
+        else 0
+    )
+    f1 = (
+        2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0
+    )
+
+    return f1
 
 
-def xgb_regression_hyperparameter_tuning(data, labels, test_size=0.3):
-    # Split the dataset into training and testing sets
+def xgb_regression_hyperparameter_tuning(data, labels, test_size=0.3, xgb_params=None):
     X_train, X_test, y_train, y_test = train_test_split(
         data, labels, test_size=test_size, random_state=42
     )
 
-    # Create an XGBoost Regressor
-    xgb_model = xgb.XGBRegressor(objective="reg:squarederror", random_state=42)
-
-    # Hyperparameters for Grid Search
     param_grid = {
-        "n_estimators": [500, 800, 1000],
-        "learning_rate": [0.01, 0.05, 0.1],
-        "max_depth": [8, 10, 12],
-        "min_child_weight": [1, 3, 5],
-        "subsample": [0.6, 0.8, 1.0],
+        "n_estimators": [500, 800, 1000, 1200],
+        "learning_rate": [0.01],
+        "max_depth": [8, 12],
+        "min_child_weight": [1],
+        "subsample": [0.8],
         "gamma": [0.1, 0.2, 0.3],
         "colsample_bytree": [0.6, 0.8, 1.0],
         "reg_alpha": [0.1, 0.5, 1],
         "reg_lambda": [1, 1.5, 2],
     }
 
-    # Create a custom scorer using your custom metric function
-    custom_scorer = make_scorer(custom_metric, greater_is_better=True)
+    # Create an XGBoost Regressor with n_estimators trees
+    xgb_model = xgb.XGBRegressor(**xgb_params)
 
-    # Create a GridSearchCV instance with the XGBoost model and parameter grid
-    grid_search = GridSearchCV(
-        estimator=xgb_model,
-        param_grid=param_grid,
-        cv=5,
-        scoring=custom_scorer,
-        n_jobs=-1,
-        verbose=2,
-    )
-
-    # Perform Grid Search on the training set
-    grid_search.fit(X_train, y_train)
-
-    # Print the best hyperparameters
-    print("Best hyperparameters:", grid_search.best_params_)
-
-    # Train the model with the best hyperparameters on the training set
-    best_xgb_model = grid_search.best_estimator_
-
-    # Evaluate the model on the test set
-    y_pred = best_xgb_model.predict(X_test)
-    score = custom_metric(y_test, y_pred)
-    print("Custom metric on test set: {:.4f}".format(score))
-
-    return best_xgb_model
+    # Train the model on the training set
+    xgb_model.fit(X_train, y_train)
+    return xgb_model
 
 
 def ensemble_xgboost_regression(data, labels, test_size=0.3):
@@ -175,7 +167,7 @@ def gbr_hyperparameters_tuning(data, labels, test_size=0.3):
     }
 
     # Use your custom metric to evaluate the model
-    scoring = make_scorer(custom_metric, greater_is_better=True)
+    scoring = make_scorer(f1_score_evaluator, greater_is_better=True)
 
     # Create GridSearchCV object
     grid_search = GridSearchCV(
@@ -191,6 +183,14 @@ def gbr_hyperparameters_tuning(data, labels, test_size=0.3):
     # Train the final model with the best parameters
     best_gb = GradientBoostingRegressor(**best_params, random_state=42)
     best_gb.fit(X_train, y_train)
+    print("Best hyperparameters:", best_params)
+
+    best_xgb_model = grid_search.best_estimator_
+
+    y_pred = best_xgb_model.predict(X_test)
+
+    score = f1_score_evaluator(y_test, y_pred)
+    print("Custom metric on test set: {:.4f}".format(score))
 
     return best_gb
 
