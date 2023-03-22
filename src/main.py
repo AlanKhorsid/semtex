@@ -9,7 +9,6 @@ from util import (
     random_forest_regression,
     pickle_save,
     pickle_load,
-    xgb_regression_hyperparameter_tuning,
 )
 
 i = 0
@@ -71,45 +70,95 @@ param_grid = {
 # print(f"Number of combinations: {n_combinations}")
 
 # compute all combinations of parameters
+# f1_prev = 0
+# for n_estimators in param_grid["n_estimators"]:
+#     for learning_rate in param_grid["learning_rate"]:
+#         for max_depth in param_grid["max_depth"]:
+#             for min_child_weight in param_grid["min_child_weight"]:
+#                 for subsample in param_grid["subsample"]:
+#                     for gamma in param_grid["gamma"]:
+#                         for colsample_bytree in param_grid["colsample_bytree"]:
+#                             for reg_alpha in param_grid["reg_alpha"]:
+#                                 for reg_lambda in param_grid["reg_lambda"]:
+#                                     params = {
+#                                         "n_estimators": n_estimators,
+#                                         "learning_rate": learning_rate,
+#                                         "max_depth": max_depth,
+#                                         "min_child_weight": min_child_weight,
+#                                         "subsample": subsample,
+#                                         "gamma": gamma,
+#                                         "colsample_bytree": colsample_bytree,
+#                                         "reg_alpha": reg_alpha,
+#                                         "reg_lambda": reg_lambda,
+#                                     }
+#                                     model = ensemble_xgboost_regression(
+#                                         features, labels, params
+#                                     )
+#                                     # ----- Evaluate model -----
+#                                     precision, recall, f1 = evaluate_model(model, cols)
+#                                     if f1 > f1_prev:
+#                                         f1_prev = f1
+#                                         print(f"Precision: {precision}")
+#                                         print(f"Recall: {recall}")
+#                                         print(f"F1: {f1}")
+#                                         pickle_save(
+#                                             {
+#                                                 "model": model,
+#                                                 "prediction": precision,
+#                                                 "recall": recall,
+#                                                 "f1": f1,
+#                                             }
+#                                         )
+param_grid_gbr = {
+    "n_estimators": [800, 1000, 1200],
+    "min_samples_split": [5, 10, 15],
+    "learning_rate": [0.01],
+    "max_depth": [8, 10, 12],
+    "max_features": ["sqrt", "log2"],
+    "max_leaf_nodes": [10, 20],
+    "subsample": [0.5, 0.8],
+    "loss": ["squared_error", "absolute_error", "quantile"],
+}
+
+# Now for grandient boosting regression (sklearn)
 f1_prev = 0
-for n_estimators in param_grid["n_estimators"]:
-    for learning_rate in param_grid["learning_rate"]:
-        for max_depth in param_grid["max_depth"]:
-            for min_child_weight in param_grid["min_child_weight"]:
-                for subsample in param_grid["subsample"]:
-                    for gamma in param_grid["gamma"]:
-                        for colsample_bytree in param_grid["colsample_bytree"]:
-                            for reg_alpha in param_grid["reg_alpha"]:
-                                for reg_lambda in param_grid["reg_lambda"]:
-                                    params = {
-                                        "n_estimators": n_estimators,
-                                        "learning_rate": learning_rate,
-                                        "max_depth": max_depth,
-                                        "min_child_weight": min_child_weight,
-                                        "subsample": subsample,
-                                        "gamma": gamma,
-                                        "colsample_bytree": colsample_bytree,
-                                        "reg_alpha": reg_alpha,
-                                        "reg_lambda": reg_lambda,
-                                    }
-                                    model = ensemble_xgboost_regression(
-                                        features, labels, params
+for n_estimators in param_grid_gbr["n_estimators"]:
+    for min_samples_split in param_grid_gbr["min_samples_split"]:
+        for learning_rate in param_grid_gbr["learning_rate"]:
+            for max_depth in param_grid_gbr["max_depth"]:
+                for max_features in param_grid_gbr["max_features"]:
+                    for max_leaf_nodes in param_grid_gbr["max_leaf_nodes"]:
+                        for subsample in param_grid_gbr["subsample"]:
+                            for loss in param_grid_gbr["loss"]:
+                                params = {
+                                    "n_estimators": n_estimators,
+                                    "min_samples_split": min_samples_split,
+                                    "learning_rate": learning_rate,
+                                    "max_depth": max_depth,
+                                    "max_features": max_features,
+                                    "max_leaf_nodes": max_leaf_nodes,
+                                    "subsample": subsample,
+                                    "loss": loss,
+                                }
+                                model = ensemble_gradient_boost_regression(
+                                    features, labels, params
+                                )
+                                # ----- Evaluate model -----
+                                precision, recall, f1 = evaluate_model(model, cols)
+                                if f1 > f1_prev:
+                                    f1_prev = f1
+                                    print("")
+                                    print(f"Precision: {precision}")
+                                    print(f"Recall: {recall}")
+                                    print(f"F1: {f1}")
+                                    pickle_save(
+                                        {
+                                            "model": model,
+                                            "prediction": precision,
+                                            "recall": recall,
+                                            "f1": f1,
+                                        }
                                     )
-                                    # ----- Evaluate model -----
-                                    precision, recall, f1 = evaluate_model(model, cols)
-                                    if f1 > f1_prev:
-                                        f1_prev = f1
-                                        print(f"Precision: {precision}")
-                                        print(f"Recall: {recall}")
-                                        print(f"F1: {f1}")
-                                        pickle_save(
-                                            {
-                                                "model": model,
-                                                "prediction": precision,
-                                                "recall": recall,
-                                                "f1": f1,
-                                            }
-                                        )
 
 # model = ensemble_gradient_boost_regression(features, labels)
 
