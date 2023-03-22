@@ -31,6 +31,75 @@ from pathlib import Path
 
 ROOTPATH = Path(__file__).parent.parent
 
+import numpy as np
+import xgboost as xgb
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
+from sklearn.metrics import mean_squared_error
+import numpy as np
+import xgboost as xgb
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import make_scorer
+
+
+# Your custom metric function
+def custom_metric(y_true, y_pred):
+    # Compute your custom metric here
+    # ...
+    score = ...
+    return score
+
+
+def xgb_regression_hyperparameter_tuning(data, labels, test_size=0.3):
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
+
+    # Create an XGBoost Regressor
+    xgb_model = xgb.XGBRegressor(objective="reg:squarederror", random_state=42)
+
+    # Hyperparameters for Grid Search
+    param_grid = {
+        "n_estimators": [500, 800, 1000],
+        "learning_rate": [0.01, 0.05, 0.1],
+        "max_depth": [8, 10, 12],
+        "min_child_weight": [1, 3, 5],
+        "subsample": [0.6, 0.8, 1.0],
+        "gamma": [0.1, 0.2, 0.3],
+        "colsample_bytree": [0.6, 0.8, 1.0],
+        "reg_alpha": [0.1, 0.5, 1],
+        "reg_lambda": [1, 1.5, 2],
+    }
+
+    # Create a custom scorer using your custom metric function
+    custom_scorer = make_scorer(custom_metric, greater_is_better=True)
+
+    # Create a GridSearchCV instance with the XGBoost model and parameter grid
+    grid_search = GridSearchCV(
+        estimator=xgb_model,
+        param_grid=param_grid,
+        cv=5,
+        scoring=custom_scorer,
+        n_jobs=-1,
+        verbose=2,
+    )
+
+    # Perform Grid Search on the training set
+    grid_search.fit(X_train, y_train)
+
+    # Print the best hyperparameters
+    print("Best hyperparameters:", grid_search.best_params_)
+
+    # Train the model with the best hyperparameters on the training set
+    best_xgb_model = grid_search.best_estimator_
+
+    # Evaluate the model on the test set
+    y_pred = best_xgb_model.predict(X_test)
+    score = custom_metric(y_test, y_pred)
+    print("Custom metric on test set: {:.4f}".format(score))
+
+    return best_xgb_model
+
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
@@ -56,14 +125,45 @@ def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
 
     return hgb
 
-    mse = mean_squared_error(y_test, hgb.predict(X_test))
-    print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
 
-    # Cross validation
-    scores = cross_val_score(
-        hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
+def gbr_hyperparameters_tuning(data, labels, test_size=0.3):
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
     )
-    print("Cross-validated scores:", scores)
+
+    # Create a Gradient Boosting Regressor
+    gb = GradientBoostingRegressor(random_state=42)
+
+    # Define a parameter grid for tuning
+    param_grid = {
+        "n_estimators": [800, 900, 1000, 1200],
+        "learning_rate": [0.001, 0.01, 0.1],
+        "subsample": [0.6, 0.8, 1.0],
+        "max_depth": [3, 6, 8, 10],
+        "min_samples_split": [2, 5, 10],
+        "loss": ["squared_error", "absolute_error", "huber", "quantile"],
+    }
+
+    # Use your custom metric to evaluate the model
+    scoring = make_scorer(custom_metric, greater_is_better=True)
+
+    # Create GridSearchCV object
+    grid_search = GridSearchCV(
+        gb, param_grid, scoring=scoring, cv=5, n_jobs=-1, verbose=1
+    )
+
+    # Train the model on the training set
+    grid_search.fit(X_train, y_train)
+
+    # Get the best parameters
+    best_params = grid_search.best_params_
+
+    # Train the final model with the best parameters
+    best_gb = GradientBoostingRegressor(**best_params, random_state=42)
+    best_gb.fit(X_train, y_train)
+
+    return best_gb
 
 
 def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
@@ -91,15 +191,6 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
 
     return gb
 
-    mse = mean_squared_error(y_test, gb.predict(X_test))
-    print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
-
-    # cross validation
-    scores = cross_val_score(
-        gb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
-    )
-    print("Cross-validated scores:", scores)
-
 
 def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
     # Split the dataset into training and testing sets
@@ -116,10 +207,6 @@ def random_forest_regression(data: list, labels: list[float], test_size: float =
     rf.fit(X_train, y_train)
 
     return rf
-
-    prediction = rf.predict(X_test)
-    mse = mean_squared_error(y_test, prediction)
-    print(mse)
 
 
 def plot_feature_importance(model, data):

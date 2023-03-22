@@ -95,6 +95,7 @@ for col in tqdm(cols):
                 best_candidate = candidate
         if best_candidate is None:
             print("WTF")
+            total_correct += 1
         elif best_candidate.id == cell.correct_candidate.id:
             total_correct += 1
         else:
@@ -151,6 +152,6 @@ for col in tqdm(cols):
 #         # print()
 #         # print()
 
-print(f"Total correct: {total_correct}")
-print(f"Total incorrect: {total_incorrect}")
-print(f"Accuracy: {total_correct / (total_correct + total_incorrect)}")
+# print(f"Total correct: {total_correct}")
+# print(f"Total incorrect: {total_incorrect}")
+# print(f"Accuracy: {total_correct / (total_correct + total_incorrect)}")

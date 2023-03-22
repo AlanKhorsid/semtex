@@ -114,12 +114,12 @@ def check_spellchecker_threaded(
         if not case_sensitive:
             label = label.lower()
             actual_label = actual_label.lower()
-        prediction = func(label)
-        # try:
-        #     prediction = func(label)
-        # except:
-        #     print(f"ERROR: {label} -> {actual_label}")
-        #     return
+        # prediction = func(label)
+        try:
+            prediction = func(label)
+        except:
+            print(f"ERROR: {label} -> {actual_label}")
+            return
 
         if prediction is not None:
             prediction = prediction.lower()
