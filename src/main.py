@@ -12,14 +12,14 @@ from util import (
 )
 
 i = 0
-PICKLE_FILE_NAME = "validation-2022-bing"
+PICKLE_FILE_NAME = "test-2022-bing"
 
 # ----- Open dataset -----
 print("Opening dataset...")
-cols = open_dataset(dataset="validation", disable_spellcheck=False)
-pickle_save(cols, f"{PICKLE_FILE_NAME}-{i}")
-i = i + 1 if i < 9 else 1
-# cols: list[Column] = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=True)
+# cols = open_dataset(dataset="validation", disable_spellcheck=False)
+# pickle_save(cols, f"{PICKLE_FILE_NAME}-{i}")
+# i = i + 1 if i < 9 else 1
+cols: list[Column] = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=True)
 
 # ----- Fetch candidates -----
 print("Fetching candidates...")
@@ -40,22 +40,23 @@ for col in tqdm(cols):
     pickle_save(cols, f"{PICKLE_FILE_NAME}-{i}")
     i = i + 1 if i < 9 else 1
 
-# # ----- Train model -----
-# print("Training model...")
-# features = []
-# labels = []
-# for col in tqdm(cols):
-#     features.extend(col.features)
-#     labels.extend(col.labels)
+# ----- Train model -----
+print("Training model...")
+features = []
+labels = []
+for col in tqdm(cols):
+    features.extend(col.features)
+    labels.extend(col.labels)
 # # max_id = max([i[0] for i in features])
 # # features = [[x[0] / max_id] + x[1:] for x in features]
 
-# model = random_forest_regression(features, labels)
+# model = ensemble_xgboost_regression(features, labels)
+model = pickle_load("model-validation-2022-bing", is_dump=True)
 
-# # ----- Evaluate model -----
-# precision, recall, f1 = evaluate_model(model, cols)
+# ----- Evaluate model -----
+precision, recall, f1 = evaluate_model(model, cols)
 
 
-# print(f"Precision: {precision}")
-# print(f"Recall: {recall}")
-# print(f"F1: {f1}")
+print(f"Precision: {precision}")
+print(f"Recall: {recall}")
+print(f"F1: {f1}")

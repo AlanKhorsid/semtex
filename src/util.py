@@ -42,12 +42,16 @@ def ensemble_xgboost_regression(data, labels, test_size=0.3):
 
     # Hyperparameters for XGBoost Regressor
     xgb_params = {
-        "n_estimators": 800,
+        "n_estimators": 1200,
         "learning_rate": 0.01,
         "subsample": 0.8,
-        "max_depth": 8,
+        "max_depth": 12,
         "min_child_weight": 1,
-        "objective": "reg:squarederror",
+        # "objective": "reg:squarederror",
+        "gamma": 0.1,
+        "colsample_bytree": 1.0,
+        "reg_alpha": 0.1,
+        "reg_lambda": 1,
         "random_state": 42,
     }
 
