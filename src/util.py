@@ -5,6 +5,7 @@ import threading
 import time
 from typing import Literal, Union
 from nltk.corpus import stopwords
+from rich.progress import TimeRemainingColumn, TaskProgressColumn, ProgressColumn, SpinnerColumn, TimeElapsedColumn, TextColumn, Progress, BarColumn, track
 import string
 import numpy as np
 import pandas as pd
@@ -34,6 +35,16 @@ import xgboost as xgb
 
 ROOTPATH = Path(__file__).parent.parent
 
+progress = Progress(
+    SpinnerColumn(),
+    TextColumn("[progress.description]{task.description}"),
+    BarColumn(),
+    TaskProgressColumn(),
+    TextColumn("[yellow]Elapsed:"),
+    TimeElapsedColumn(),
+    TextColumn("[cyan]ETA:"),
+    TimeRemainingColumn(),
+)
 
 def ensemble_xgboost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
@@ -243,7 +254,7 @@ def open_dataset(dataset: Literal["test", "validation"] = "validation", disable_
     current_filename = ""
     lines = []
     cols: list[Column] = []
-    for filename, _, _, _ in tqdm(gt_lines):
+    for filename, _, _, _ in progress.track(gt_lines, description="Opening dataset"):
         if filename == current_filename:
             continue
         current_filename = filename
@@ -427,7 +438,7 @@ def evaluate_model(model, columns):
     num_correct_annotations = 0
     num_submitted_annotations = 0
     num_ground_truth_annotations = 0
-    for col in tqdm(columns):
+    for col in progress.track(columns, description="Evaluating model"):
         for cell in col.cells:
             num_ground_truth_annotations += 1
             if len(cell.candidates) == 0:
