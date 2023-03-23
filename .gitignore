@@ -2,6 +2,7 @@ env/
 .DS_Store
 .vscode/
 src/__pycache__/
+src/preprocessing/__pycache__/
 .env
 src/pickle-dumps/*
 *.pyc

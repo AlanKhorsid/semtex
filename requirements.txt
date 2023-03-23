@@ -3,6 +3,7 @@ autocorrect==2.6.1
 beautifulsoup4==4.11.2
 black==23.1.0
 blis==0.7.9
+bs4==0.0.1
 catalogue==2.0.8
 certifi==2022.12.7
 charset-normalizer==3.0.1
@@ -26,8 +27,10 @@ langcodes==3.3.0
 Levenshtein==0.20.9
 llvmlite==0.39.1
 lxml==4.9.2
+markdown-it-py==2.2.0
 MarkupSafe==2.1.2
 matplotlib==3.7.0
+mdurl==0.1.2
 murmurhash==1.0.9
 mypy-extensions==1.0.0
 networkx==3.0
@@ -43,6 +46,7 @@ platformdirs==3.0.0
 preshed==3.0.8
 psutil==5.9.4
 pydantic==1.10.6
+Pygments==2.14.0
 pyparsing==3.0.9
 pyspellchecker==0.7.1
 python-dateutil==2.8.2
@@ -54,6 +58,7 @@ rapidfuzz==2.13.7
 rdflib==6.2.0
 regex==2022.10.31
 requests==2.28.2
+rich==13.3.2
 scikit-learn==1.2.1
 scipy==1.10.1
 six==1.16.0
@@ -66,7 +71,6 @@ srsly==2.4.6
 thinc==8.1.9
 threadpoolctl==3.1.0
 tomli==2.0.1
-tqdm==4.64.1
 typer==0.7.0
 typing_extensions==4.5.0
 urllib3==1.26.14
