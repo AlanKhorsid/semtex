@@ -1,5 +1,5 @@
-from tqdm import tqdm
 from classes import Column
+from rich.progress import TimeRemainingColumn, TaskProgressColumn, ProgressColumn, SpinnerColumn, TimeElapsedColumn, TextColumn, Progress, BarColumn, track
 from util import (
     ensemble_hist_gradient_boost_regression,
     ensemble_xgboost_regression,
@@ -9,6 +9,17 @@ from util import (
     random_forest_regression,
     pickle_save,
     pickle_load,
+)
+
+progress = Progress(
+    SpinnerColumn(),
+    TextColumn("[progress.description]{task.description}"),
+    BarColumn(),
+    TaskProgressColumn(),
+    TextColumn("[yellow]Elapsed:"),
+    TimeElapsedColumn(),
+    TextColumn("[cyan]ETA:"),
+    TimeRemainingColumn(),
 )
 
 i = 0
@@ -22,29 +33,28 @@ print("Opening dataset...")
 cols: list[Column] = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=True)
 
 # ----- Fetch candidates -----
-print("Fetching candidates...")
 while not all([col.all_cells_fetched for col in cols]):
-    for col in tqdm(cols):
-        if col.all_cells_fetched:
+    with progress:
+        for col in progress.track(cols, description="Fetching candidates"):
+            if col.all_cells_fetched:
+                continue
+            col.fetch_cells()
+            pickle_save(cols, f"{PICKLE_FILE_NAME}-{i}")
+            i = i + 1 if i < 9 else 1
+
+# ----- Generate features -----
+with progress:
+    for col in progress.track(cols, description="Generating features"):
+        if col.features_computed:
             continue
-        col.fetch_cells()
+        col.compute_features()
         pickle_save(cols, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
 
-# ----- Generate features -----
-print("Generating features...")
-for col in tqdm(cols):
-    if col.features_computed:
-        continue
-    col.compute_features()
-    pickle_save(cols, f"{PICKLE_FILE_NAME}-{i}")
-    i = i + 1 if i < 9 else 1
-
 # ----- Train model -----
-print("Training model...")
 features = []
 labels = []
-for col in tqdm(cols):
+for col in progress.track(cols, description="Training model"):
     features.extend(col.features)
     labels.extend(col.labels)
 # # max_id = max([i[0] for i in features])

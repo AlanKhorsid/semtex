@@ -8,7 +8,6 @@ from nltk.corpus import stopwords
 import string
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 from sklearn.ensemble import (
     GradientBoostingRegressor,
     HistGradientBoostingRegressor,
