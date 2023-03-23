@@ -5,7 +5,17 @@ import threading
 import time
 from typing import Literal, Union
 from nltk.corpus import stopwords
-from rich.progress import TimeRemainingColumn, TaskProgressColumn, ProgressColumn, SpinnerColumn, TimeElapsedColumn, TextColumn, Progress, BarColumn, track
+from rich.progress import (
+    TimeRemainingColumn,
+    TaskProgressColumn,
+    ProgressColumn,
+    SpinnerColumn,
+    TimeElapsedColumn,
+    TextColumn,
+    Progress,
+    BarColumn,
+    track,
+)
 import string
 import numpy as np
 import pandas as pd
@@ -40,11 +50,13 @@ progress = Progress(
     TextColumn("[progress.description]{task.description}"),
     BarColumn(),
     TaskProgressColumn(),
+    TextColumn("[red]{task.completed} of [red]{task.total} done"),
     TextColumn("[yellow]Elapsed:"),
     TimeElapsedColumn(),
     TextColumn("[cyan]ETA:"),
     TimeRemainingColumn(),
 )
+
 
 def ensemble_xgboost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets

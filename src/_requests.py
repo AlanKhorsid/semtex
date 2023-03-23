@@ -121,6 +121,41 @@ def wikidata_entity_search(query: str, limit: int = 30, lang: str = "en") -> lis
     return list(set(other_ids + entity_ids))
 
 
+def wikidata_get_entities(entity_ids: list[int], lang: str = "en") -> list[dict]:
+    res = []
+
+    for entity_id in entity_ids:
+        if f"{entity_id}" in get_entity_updater.data:
+            res.append({f"{entity_id}": get_entity_updater.data[f"{entity_id}"]})
+            entity_ids.remove(entity_id)
+            continue
+
+    params = {
+        "action": "wbgetentities",
+        "languages": lang,
+        "format": "json",
+        "ids": "|".join([f"Q{entity_id}" for entity_id in entity_ids]),
+    }
+
+    data = requests.get(API_URL, params=params)
+    if data.status_code == 429:
+        raise RateLimitException()
+
+    for entity_id in entity_ids:
+        entity = data.json()["entities"][f"Q{entity_id}"]
+
+        entity_data = {
+            "title": parse_entity_title(entity) or "",
+            "description": parse_entity_description(entity) or "",
+            "properties": parse_entity_properties(entity),
+        }
+
+        get_entity_updater.update_data(entity_id, entity_data)
+        res.append({f"{entity_id}": entity_data})
+
+    return res
+
+
 def wikidata_get_entity(entity_id: int, lang: str = "en") -> dict:
     """
     Fetches an entity from the Wikidata API.
