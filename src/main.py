@@ -66,16 +66,22 @@ import random
 #     "colsample_bytree": [0.8],
 # }
 
+
 param_grid = {
-    "iterations": [500],
-    "learning_rate": [0.01],
+    "bootstrap_type": ["Bernoulli"],
     "depth": [4],
+    "early_stopping_rounds": [10],
+    "grow_policy": ["Lossguide"],
+    "iterations": [500],
     "l2_leaf_reg": [0.5],
-    "random_strength": [1],
-    "bagging_temperature": [0.5],
-    "grow_policy": ["SymmetricTree", "Depthwise", "Lossguide"],
-    "bootstrap_type": ["Bayesian", "Bernoulli"],
+    "leaf_estimation_method": ["Newton"],
+    "learning_rate": [0.01],
+    "max_leaves": [100],
+    "min_data_in_leaf": [10],
+    "task_type": ["GPU"],
+    "devices": ["0:1"],
     "random_seed": [42],
+    "random_strength": [5],
     "verbose": [False],
 }
 # calculate number of combinations of parameters
@@ -85,8 +91,8 @@ print(f"Number of combinations: {n_combinations}")
 # iterate over the random hyperparameters
 f1_prev = 0
 for i, param in enumerate(ParameterGrid(param_grid)):
-    print(f"Training model {i + 1} with parameters:")
     print()
+    print(f"Training model {i + 1} with parameters:")
     print(param)
     model = ensemble_catboost_regression(features, labels, param)
     # ----- Evaluate model -----
