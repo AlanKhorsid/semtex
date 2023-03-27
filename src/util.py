@@ -44,6 +44,23 @@ import xgboost as xgb
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import make_scorer
 
+import catboost as cb
+
+
+def ensemble_catboost_regression(data, labels, cb_params, test_size=0.3):
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
+
+    # Create a CatBoost Regressor with n_estimators trees
+    cb_model = cb.CatBoostRegressor(**cb_params)
+
+    # Train the model on the training set
+    cb_model.fit(X_train, y_train, eval_set=(X_test, y_test))
+
+    return cb_model
+
 
 def ensemble_xgboost_regression(data, labels, xgb_params, test_size=0.3):
     # Split the dataset into training and testing sets

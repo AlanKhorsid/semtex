@@ -37,17 +37,17 @@ import os
 #     )
 # )
 
-from difflib import SequenceMatcher
+# from difflib import SequenceMatcher
 
 
-def similarity(a, b):
-    return SequenceMatcher(None, a, b).ratio()
+# def similarity(a, b):
+#     return SequenceMatcher(None, a, b).ratio()
 
 
-def best_suggestion(input_string, suggestions):
-    scores = [similarity(input_string, suggestion) for suggestion in suggestions]
-    best_match_index = scores.index(max(scores))
-    return suggestions[best_match_index]
+# def best_suggestion(input_string, suggestions):
+#     scores = [similarity(input_string, suggestion) for suggestion in suggestions]
+#     best_match_index = scores.index(max(scores))
+#     return suggestions[best_match_index]
 
 
 # input_string = "j. addams"
@@ -62,6 +62,11 @@ def best_suggestion(input_string, suggestions):
 #     "Irmgard Vilsmaier",
 # ]
 
-input_string = "e. e. velkiers"
-suggestions = ["Esther Elizabeth Velkiers", "Emil Volkers", "Edward Cecil Villiers"]
-print(best_suggestion(input_string, suggestions))
+# input_string = "e. e. velkiers"
+# suggestions = ["Esther Elizabeth Velkiers", "Emil Volkers", "Edward Cecil Villiers"]
+# print(best_suggestion(input_string, suggestions))
+
+x1 = pickle_load("25-03_10-27-34", is_dump=True)
+
+print(x1["model"].get_params())
+print(x1["f1"])

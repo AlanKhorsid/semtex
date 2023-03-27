@@ -10,7 +10,13 @@ headers = {"Ocp-Apim-Subscription-Key": subscription_key}
 # Define a function to get the webpage in JSON format
 def get_webpage(query: str):
     search_query = query + "site:www.wikidata.org"
-    params = {"q": search_query, "textDecorations": True, "textFormat": "HTML"}
+    params = {
+        "q": search_query,
+        "textDecorations": True,
+        "textFormat": "HTML",
+        "mkt": "en-US",
+        "setLang": "en",
+    }
     try:
         response = requests.get(search_url, headers=headers, params=params)
         response.raise_for_status()
