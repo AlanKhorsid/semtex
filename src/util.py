@@ -19,6 +19,7 @@ from rich.progress import (
 import string
 import numpy as np
 import pandas as pd
+import catboost as cb
 from sklearn.ensemble import (
     GradientBoostingRegressor,
     HistGradientBoostingRegressor,
@@ -56,6 +57,37 @@ progress = Progress(
     TextColumn("[cyan]ETA:"),
     TimeRemainingColumn(),
 )
+
+
+def ensemble_catboost_regression(data, labels, cb_params=None, test_size=0.3):
+
+    if not cb_params:
+        cb_params = {
+            "bootstrap_type": "Bernoulli",
+            "depth": 4,
+            "early_stopping_rounds": 10,
+            "grow_policy": "Lossguide",
+            "iterations": 500,
+            "l2_leaf_reg": 0.5,
+            "leaf_estimation_method": "Newton",
+            "learning_rate": 0.01,
+            "max_leaves": 100,
+            "min_data_in_leaf": 10,
+            "random_seed": 42,
+            "random_strength": 5,
+            "verbose": False,
+        }
+
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+
+    # Create a CatBoost Regressor with n_estimators trees
+    cb_model = cb.CatBoostRegressor(**cb_params)
+
+    # Train the model on the training set
+    cb_model.fit(X_train, y_train, eval_set=(X_test, y_test))
+
+    return cb_model
 
 
 def ensemble_xgboost_regression(data, labels, test_size=0.3):
@@ -450,25 +482,34 @@ def evaluate_model(model, columns):
     num_correct_annotations = 0
     num_submitted_annotations = 0
     num_ground_truth_annotations = 0
-    for col in progress.track(columns, description="Evaluating model"):
-        for cell in col.cells:
-            num_ground_truth_annotations += 1
-            if len(cell.candidates) == 0:
-                continue
+    with progress:
+        t1 = progress.add_task("Columns", total=len(columns))
+        t2 = progress.add_task("|-> Cells")
 
-            num_submitted_annotations += 1
+        for col in columns:
+            progress.update(task_id=t2, total=len(col.cells))
+            for cell in col.cells:
+                num_ground_truth_annotations += 1
+                if len(cell.candidates) == 0:
+                    continue
 
-            best_candidate = None
-            best_score = float("-inf")
-            for candidate in cell.candidates:
-                prediction = model.predict([candidate.features])[0]
-                if prediction > best_score:
-                    best_score = prediction
-                    best_candidate = candidate
-            if best_candidate is None:
-                raise Exception("No candidate found")
-            elif best_candidate.id == cell.correct_candidate.id:
-                num_correct_annotations += 1
+                num_submitted_annotations += 1
+
+                best_candidate = None
+                best_score = float("-inf")
+                for candidate in cell.candidates:
+                    prediction = model.predict([candidate.features])[0]
+                    if prediction > best_score:
+                        best_score = prediction
+                        best_candidate = candidate
+                if best_candidate is None:
+                    raise Exception("No candidate found")
+                elif best_candidate.id == cell.correct_candidate.id:
+                    num_correct_annotations += 1
+
+                progress.update(task_id=t2, advance=1)
+            progress.update(task_id=t2, completed=0)
+            progress.update(task_id=t1, advance=1)
 
     precision = num_correct_annotations / num_submitted_annotations if num_submitted_annotations > 0 else 0
     recall = num_correct_annotations / num_ground_truth_annotations if num_ground_truth_annotations > 0 else 0

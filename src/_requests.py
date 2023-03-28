@@ -23,6 +23,7 @@ class RateLimitException(Exception):
 entity_query_updater = JsonUpdater("/datasets/wikidata_entity_query_cache.json")
 entity_search_updater = JsonUpdater("/datasets/wikidata_entity_search_cache.json")
 get_entity_updater = JsonUpdater("/datasets/wikidata_get_entity_cache.json")
+get_property_updater = JsonUpdater("/datasets/wikidata_get_property_cache.json")
 
 
 def wikidata_entity_query(query: str) -> list[str]:
@@ -156,6 +157,51 @@ def wikidata_get_entities(entity_ids: list[int], lang: str = "en") -> list[dict]
     return res
 
 
+def wikidata_get_properties(property_ids: list[str], lang: str = "en") -> list[dict]:
+    res = []
+
+    for property_id in property_ids:
+        if f"{property_id}" in get_property_updater.data:
+            res.append({f"{property_id}": get_property_updater.data[f"{property_id}"]})
+            property_ids.remove(property_id)
+            continue
+
+    params = {
+        "action": "wbgetentities",
+        "languages": lang,
+        "format": "json",
+        "ids": "|".join([f"{property_id}" for property_id in property_ids]),
+    }
+
+    data = requests.get(API_URL, params=params)
+    if data.status_code == 429:
+        raise RateLimitException()
+
+    for property_id in property_ids:
+        json = data.json()
+        property = data.json()["entities"][f"{property_id}"]
+
+        if not "labels" in property:
+            continue
+
+        if not "en" in property["labels"]:
+            continue
+
+        if not "value" in property["labels"]["en"]:
+            continue
+
+        property_data = {
+            "label": property["labels"]["en"]["value"],
+        }
+
+        x = 1
+
+        get_property_updater.update_data(property_id, property_data)
+        res.append({f"{property_id}": property_data})
+
+    return res
+
+
 def wikidata_get_entity(entity_id: int, lang: str = "en") -> dict:
     """
     Fetches an entity from the Wikidata API.
@@ -202,3 +248,27 @@ def wikidata_get_entity(entity_id: int, lang: str = "en") -> dict:
     get_entity_updater.update_data(entity_id, entity_data)
 
     return entity_data
+
+
+def fetch_property_labels():
+    from util import progress
+
+    MAX_CACHE_SIZE = 50
+    current_cache = set()
+    cache_history = set()
+
+    with progress:
+        for entity in progress.track(get_entity_updater.data.values(), description="Fetching property labels"):
+            for p, _ in entity["properties"]:
+                if p in cache_history or p in current_cache:
+                    continue
+
+                current_cache.add(p)
+                cache_history.add(p)
+
+                if len(current_cache) >= MAX_CACHE_SIZE:
+                    wikidata_get_properties(list(current_cache))
+                    current_cache = set()
+
+
+fetch_property_labels()
