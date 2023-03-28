@@ -6,3 +6,8 @@ src/preprocessing/__pycache__/
 .env
 src/pickle-dumps/*
 *.pyc
+datasets/wikidata_entity_query_cache.json
+datasets/wikidata_entity_search_cache.json
+datasets/wikidata_get_entity_cache.json
+datasets/wikidata_get_property_cache.json
+.catboost_info
