@@ -9,4 +9,5 @@ datasets/wikidata_entity_query_cache.json
 datasets/wikidata_entity_search_cache.json
 datasets/wikidata_get_entity_cache.json
 datasets/wikidata_get_property_cache.json
-.catboost_info
+catboost_info/
+src/preprocessing/__pycache__/

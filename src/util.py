@@ -8,6 +8,7 @@ from nltk.corpus import stopwords
 import string
 import numpy as np
 import pandas as pd
+from sklearn.cluster import KMeans
 from tqdm import tqdm
 from sklearn.ensemble import (
     GradientBoostingRegressor,
@@ -45,6 +46,33 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import make_scorer
 
 import catboost as cb
+from sklearn.metrics import silhouette_score
+
+
+# Use clustering
+def cluster_data(data, n_clusters=5):
+    # Create a KMeans model with n_clusters
+    model = KMeans(n_clusters=n_clusters, random_state=42)
+
+    # Use fit_predict to cluster the dataset
+    labels = model.fit_predict(data)
+
+    # Create a DataFrame with labels and varieties as columns
+    df = pd.DataFrame({"labels": labels, "varieties": labels})
+
+    # Create crosstab: ct
+    ct = pd.crosstab(df["labels"], df["varieties"])
+
+    # print other metrics
+    print("Inertia: ", model.inertia_)
+
+    # silhouette score
+    print("Silhouette Score: ", silhouette_score(data, labels))
+
+    # Display ct
+    print(ct)
+
+    print(labels)
 
 
 def ensemble_catboost_regression(data, labels, cb_params, test_size=0.3):

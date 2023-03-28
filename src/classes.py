@@ -11,6 +11,13 @@ from sklearn.metrics.pairwise import cosine_similarity
 from typing import Union
 import Levenshtein
 import threading
+import torch
+import numpy as np
+from transformers import AutoTokenizer, AutoModel
+
+model_name = "bert-large-uncased"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModel.from_pretrained(model_name)
 
 
 class Candidate:
@@ -20,6 +27,7 @@ class Candidate:
     instances: Union[list[int], None]
     subclasses: Union[list[int], None]
     num_statements: Union[int, None]
+    sentence: Union[str, None]
 
     instance_overlap: Union[int, None]
     subclass_overlap: Union[int, None]
@@ -33,6 +41,7 @@ class Candidate:
         self.instances = None
         self.subclasses = None
         self.num_statements = None
+        self.sentence = None
         self.instance_overlap = None
         self.subclass_overlap = None
         self.description_overlap = None
@@ -108,6 +117,15 @@ class Candidate:
             self.subclass_overlap,
             self.description_overlap,
         ]
+
+    @property
+    def to_sentence(self) -> str:
+        if self.description is None:
+            if self.instances is None:
+                return self.title
+            return f"{self.title}, an instance of {self.instances}"
+        else:
+            return f"{self.title}, is a {self.description}"
 
 
 class CandidateSet:
@@ -202,6 +220,46 @@ class CandidateSet:
             1.0 if candidate.id == self.correct_id else 0.0
             for candidate in self.candidates
         ]
+
+    def get_best_candidate_BERT(self, groups):
+        # remove self.candidates from groups
+        my_names = [c.to_sentence for c in self.candidates]
+        all_names = [name for group in groups for name in group]
+        other_names = [name for name in all_names if name not in my_names]
+
+        # Define a function to get embeddings from the model
+        def get_embedding(text):
+            inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+            outputs = model(**inputs)
+            return outputs.last_hidden_state[:, 0, :].detach().numpy()
+
+        # Calculate embeddings for each name
+        embeddings = [get_embedding(name) for name in all_names]
+
+        # Construct the similarity matrix
+        similarity_matrix = np.zeros((len(all_names), len(all_names)))
+        for i, name1 in enumerate(my_names):
+            for j, name2 in enumerate(other_names):
+                emb1 = embeddings[i]
+                emb2 = embeddings[j]
+                # Cosine similarity
+                similarity_matrix[i][j] = torch.cosine_similarity(
+                    torch.tensor(emb1), torch.tensor(emb2)
+                )
+        # to_sentence all_names
+
+        max_similarity = -1
+        best_candidate = None
+        for i, name in enumerate(my_names):
+            indices = [j for j in range(len(all_names)) if all_names[j] not in my_names]
+            similarities = similarity_matrix[all_names.index(name), indices]
+            avg_similarity = np.mean(similarities)
+            if avg_similarity > max_similarity:
+                max_similarity = avg_similarity
+                best_candidate = name
+        print(f"Best candidate: {best_candidate}")
+
+        return best_candidate
 
 
 class Column:
