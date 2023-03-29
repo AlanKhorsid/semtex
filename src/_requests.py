@@ -157,6 +157,41 @@ def wikidata_get_entities(entity_ids: list[int], lang: str = "en") -> list[dict]
     return res
 
 
+def wikidata_get_properties(property_id: str, lang: str = "en") -> list[dict]:
+    if property_id in get_property_updater.data:
+        return get_property_updater.data[property_id]
+
+    params = {
+        "action": "wbgetentities",
+        "languages": lang,
+        "format": "json",
+        "ids": f"{property_id}",
+    }
+
+    data = requests.get(API_URL, params=params)
+    if data.status_code == 429:
+        raise RateLimitException()
+
+    property = data.json()["entities"][f"{property_id}"]
+
+    if not "labels" in property:
+        raise ValueError(f"Property {property_id} does not have a label.")
+
+    if not "en" in property["labels"]:
+        raise ValueError(f"Property {property_id} does not have an English label.")
+
+    if not "value" in property["labels"]["en"]:
+        raise ValueError(f"Property {property_id} does not have an English label value.")
+
+    property_data = {
+        "label": property["labels"]["en"]["value"],
+    }
+
+    get_property_updater.update_data(property_id, property_data)
+
+    return property_data
+
+
 def wikidata_get_properties(property_ids: list[str], lang: str = "en") -> list[dict]:
     res = []
 
@@ -193,8 +228,6 @@ def wikidata_get_properties(property_ids: list[str], lang: str = "en") -> list[d
         property_data = {
             "label": property["labels"]["en"]["value"],
         }
-
-        x = 1
 
         get_property_updater.update_data(property_id, property_data)
         res.append({f"{property_id}": property_data})
@@ -269,6 +302,3 @@ def fetch_property_labels():
                 if len(current_cache) >= MAX_CACHE_SIZE:
                     wikidata_get_properties(list(current_cache))
                     current_cache = set()
-
-
-fetch_property_labels()

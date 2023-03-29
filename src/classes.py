@@ -138,6 +138,41 @@ class Candidate:
             subclasses.update(sub)
         return list(instances), list(subclasses)
 
+    @property
+    def to_sentence(self) -> str:
+        x = ""
+
+        if self.title != "":
+            x += f"{self.title}."
+        if self.description != "":
+            x += f" {self.description}."
+
+        props = wikidata_get_entity(self.id)["properties"]
+        for prop in props:
+            if prop[0] != "P31" and prop[0] != "P279":
+                continue
+            prop_title = wikidata_get_entity(int(prop[1][1:]))["title"]
+            x += f" {prop_title}."
+
+        return x
+
+        # x = f"{self.title}{' is a ' + self.description if self.description != '' else ''}"
+
+        # props = wikidata_get_entity(self.id)["properties"]
+        # first = True
+        # for prop in props:
+        #     if prop[0] != "P31" and prop[0] != "P279":
+        #         continue
+        #     prop_title = wikidata_get_entity(int(prop[1][1:]))["title"]
+        #     if first:
+        #         x += f", and is {'an instance' if prop[0] == 'P31' else 'a subclass'} of {prop_title}"
+        #         first = False
+        #     else:
+        #         x += f", {prop_title}"
+        # x += "."
+
+        # return x
+
 
 class CandidateSet:
     mention: str
