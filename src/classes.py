@@ -1,4 +1,4 @@
-from _requests import wikidata_entity_search, wikidata_get_entity, RateLimitException
+from _requests import wikidata_entity_search, wikidata_get_entity, RateLimitException, wikidata_get_property
 from suggester import generate_suggestion
 from util import (
     parse_entity_description,
@@ -57,12 +57,8 @@ class Candidate:
         self.description = entity_data["description"]
 
         self.num_statements = len(entity_data["properties"])
-        self.instances = [
-            int(prop[1][1:]) for prop in entity_data["properties"] if prop[0] == "P31"
-        ]
-        self.subclasses = [
-            int(prop[1][1:]) for prop in entity_data["properties"] if prop[0] == "P279"
-        ]
+        self.instances = [int(prop[1][1:]) for prop in entity_data["properties"] if prop[0] == "P31"]
+        self.subclasses = [int(prop[1][1:]) for prop in entity_data["properties"] if prop[0] == "P279"]
 
     def get_description_overlap(self, other: "Candidate"):
         if len(self.description) == 0 or len(other.description) == 0:
@@ -88,24 +84,14 @@ class Candidate:
         for other_candidate in other:
             if other_candidate.id == self.id:
                 continue
-            instance_overlap += len(
-                set(self.instances).intersection(other_candidate.instances)
-            )
-            subclass_overlap += len(
-                set(self.subclasses).intersection(other_candidate.subclasses)
-            )
+            instance_overlap += len(set(self.instances).intersection(other_candidate.instances))
+            subclass_overlap += len(set(self.subclasses).intersection(other_candidate.subclasses))
             description_overlaps.append(self.get_description_overlap(other_candidate))
 
-        self.instance_overlap = (
-            instance_overlap / instance_total if instance_total > 0 else 0
-        )
-        self.subclass_overlap = (
-            subclass_overlap / subclass_total if subclass_total > 0 else 0
-        )
+        self.instance_overlap = instance_overlap / instance_total if instance_total > 0 else 0
+        self.subclass_overlap = subclass_overlap / subclass_total if subclass_total > 0 else 0
         self.description_overlap = (
-            sum(description_overlaps) / len(description_overlaps)
-            if len(description_overlaps) > 0
-            else 0
+            sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0
         )
 
     @property
@@ -120,12 +106,38 @@ class Candidate:
 
     @property
     def to_sentence(self) -> str:
-        if self.description is None:
-            if self.instances is None:
-                return self.title
-            return f"{self.title}, an instance of {self.instances}"
-        else:
-            return f"{self.title}, is a {self.description}"
+        x = ""
+
+        if self.title != "":
+            x += f"{self.title}."
+        if self.description != "":
+            x += f" {self.description}."
+
+        props = wikidata_get_entity(self.id)["properties"]
+        for prop in props:
+            if prop[0] != "P31" and prop[0] != "P279":
+                continue
+            prop_title = wikidata_get_entity(int(prop[1][1:]))["title"]
+            x += f" {prop_title}."
+
+        return x
+
+        # x = f"{self.title}{' is a ' + self.description if self.description != '' else ''}"
+
+        # props = wikidata_get_entity(self.id)["properties"]
+        # first = True
+        # for prop in props:
+        #     if prop[0] != "P31" and prop[0] != "P279":
+        #         continue
+        #     prop_title = wikidata_get_entity(int(prop[1][1:]))["title"]
+        #     if first:
+        #         x += f", and is {'an instance' if prop[0] == 'P31' else 'a subclass'} of {prop_title}"
+        #         first = False
+        #     else:
+        #         x += f", {prop_title}"
+        # x += "."
+
+        # return x
 
 
 class CandidateSet:
@@ -193,22 +205,14 @@ class CandidateSet:
     def compute_features(self, col: "Column"):
         other_candidates: list[Candidate] = []
         for cell in col.cells:
-            if (cell.correct_id is not None and cell.correct_id != self.correct_id) or (
-                cell.mention != self.mention
-            ):
+            if (cell.correct_id is not None and cell.correct_id != self.correct_id) or (cell.mention != self.mention):
                 other_candidates.extend(cell.candidates)
 
-        instance_total = sum(
-            [len(candidate.instances) for candidate in other_candidates]
-        )
-        subclass_total = sum(
-            [len(candidate.subclasses) for candidate in other_candidates]
-        )
+        instance_total = sum([len(candidate.instances) for candidate in other_candidates])
+        subclass_total = sum([len(candidate.subclasses) for candidate in other_candidates])
 
         for candidate in self.candidates:
-            candidate.compute_features(
-                self.correct_candidate, other_candidates, instance_total, subclass_total
-            )
+            candidate.compute_features(self.correct_candidate, other_candidates, instance_total, subclass_total)
 
     @property
     def features(self) -> list[list]:
@@ -216,10 +220,7 @@ class CandidateSet:
 
     @property
     def labels(self) -> list[int]:
-        return [
-            1.0 if candidate.id == self.correct_id else 0.0
-            for candidate in self.candidates
-        ]
+        return [1.0 if candidate.id == self.correct_id else 0.0 for candidate in self.candidates]
 
     def get_best_candidate_BERT(self, groups):
         # remove self.candidates from groups
@@ -243,9 +244,7 @@ class CandidateSet:
                 emb1 = embeddings[i]
                 emb2 = embeddings[j]
                 # Cosine similarity
-                similarity_matrix[i][j] = torch.cosine_similarity(
-                    torch.tensor(emb1), torch.tensor(emb2)
-                )
+                similarity_matrix[i][j] = torch.cosine_similarity(torch.tensor(emb1), torch.tensor(emb2))
         # to_sentence all_names
 
         max_similarity = -1
@@ -259,6 +258,24 @@ class CandidateSet:
                 best_candidate = name
         print(f"Best candidate: {best_candidate}")
 
+        return best_candidate
+
+    def predict_nlp(self, embeddings, other_cells):
+        max_similarity = -1
+        best_candidate = None
+        for candidate in self.candidates:
+            similarities = []
+            for other_cell in other_cells:
+                for other_candidate in other_cell.candidates:
+                    similarity = torch.cosine_similarity(
+                        torch.tensor(embeddings[candidate.id]), torch.tensor(embeddings[other_candidate.id])
+                    )
+                    similarities.append(similarity)
+
+            avg_similarity = np.mean([similarity.numpy() for similarity in similarities])
+            if avg_similarity > max_similarity:
+                max_similarity = avg_similarity
+                best_candidate = candidate
         return best_candidate
 
 
@@ -297,11 +314,7 @@ class Column:
     @property
     def all_cells_fetched(self) -> bool:
         for cell in self.cells:
-            if not (
-                cell.candidates_fetched
-                and cell.candidate_info_fetched
-                and cell.correct_candidate_info_fetched
-            ):
+            if not (cell.candidates_fetched and cell.candidate_info_fetched and cell.correct_candidate_info_fetched):
                 return False
         return True
 
@@ -326,3 +339,28 @@ class Column:
         if not self.features_computed:
             self.compute_features()
         return [x for cell in self.cells for x in cell.labels]
+
+    def predict_nlp(self, to_embedding):
+        embeddings = {
+            candidate.id: to_embedding(candidate.to_sentence) for cell in self.cells for candidate in cell.candidates
+        }
+
+        predictions = []
+
+        for i, cell in enumerate(self.cells):
+            if len(cell.candidates) == 0:
+                predictions.append(None)
+                continue
+
+            other_cells = self.cells[:i] + self.cells[i + 1 :]
+            predicted_candidate = cell.predict_nlp(embeddings, other_cells)
+            if predicted_candidate is None:
+                predictions.append(None)
+                continue
+            predictions.append(predicted_candidate)
+            correct = predicted_candidate.id == cell.correct_id
+            print(f"{'CORRECT ' if correct else '        '}{predicted_candidate.to_sentence}")
+        print("")
+        print("")
+
+        return predictions

@@ -23,6 +23,7 @@ class RateLimitException(Exception):
 entity_query_updater = JsonUpdater("/datasets/wikidata_entity_query_cache.json")
 entity_search_updater = JsonUpdater("/datasets/wikidata_entity_search_cache.json")
 get_entity_updater = JsonUpdater("/datasets/wikidata_get_entity_cache.json")
+get_property_updater = JsonUpdater("/datasets/wikidata_get_property_cache.json")
 
 
 def wikidata_entity_query(query: str) -> list[str]:
@@ -167,3 +168,40 @@ def wikidata_get_entity(entity_id: int, lang: str = "en") -> dict:
     get_entity_updater.update_data(entity_id, entity_data)
 
     return entity_data
+
+
+def wikidata_get_property(property_id: str, lang: str = "en") -> list[dict]:
+    if property_id in get_property_updater.data:
+        return get_property_updater.data[property_id]
+
+    raise NotImplementedError()
+
+    params = {
+        "action": "wbgetentities",
+        "languages": lang,
+        "format": "json",
+        "ids": f"{property_id}",
+    }
+
+    data = requests.get(API_URL, params=params)
+    if data.status_code == 429:
+        raise RateLimitException()
+
+    property = data.json()["entities"][f"{property_id}"]
+
+    if not "labels" in property:
+        raise ValueError(f"Property {property_id} does not have a label.")
+
+    if not "en" in property["labels"]:
+        raise ValueError(f"Property {property_id} does not have an English label.")
+
+    if not "value" in property["labels"]["en"]:
+        raise ValueError(f"Property {property_id} does not have an English label value.")
+
+    property_data = {
+        "label": property["labels"]["en"]["value"],
+    }
+
+    get_property_updater.update_data(property_id, property_data)
+
+    return property_data
