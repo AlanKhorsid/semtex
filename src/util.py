@@ -6,7 +6,6 @@ import time
 from typing import Literal, Union
 from nltk.corpus import stopwords
 import string
-import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
 from tqdm import tqdm
@@ -15,37 +14,18 @@ from sklearn.ensemble import (
     HistGradientBoostingRegressor,
     RandomForestRegressor,
 )
-from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn.metrics import mean_squared_error
-from sklearn.tree import export_text
 import pickle
 from datetime import datetime
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import HistGradientBoostingRegressor
 import matplotlib.pyplot as plt
-from collections import Counter
-import en_core_web_sm
-from _types import SpacyTypes
 from pathlib import Path
 import xgboost as xgb
-
-ROOTPATH = Path(__file__).parent.parent
-
-import numpy as np
-import xgboost as xgb
-from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
-from sklearn.metrics import mean_squared_error
-import numpy as np
-import xgboost as xgb
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.metrics import make_scorer
-
 import catboost as cb
 from sklearn.metrics import silhouette_score
+
+ROOTPATH = Path(__file__).parent.parent
 
 
 # Use clustering
@@ -463,17 +443,6 @@ def pickle_load(filename, is_dump: bool = False):
     )
     with open(file, "rb") as f:
         return pickle.load(f)
-
-
-def name_entity_recognition_labels(title: str, description: str) -> list[int]:
-    nlp = en_core_web_sm.load()
-    labels = []
-    results = nlp(f"{title} - {description}")
-    for r in results.ents:
-        labels.append(r.label_)
-    labels = list(set(labels))
-    labels = [SpacyTypes[label].value for label in labels]
-    return labels
 
 
 def evaluate_model(model, columns):
