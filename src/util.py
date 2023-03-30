@@ -59,47 +59,49 @@ progress = Progress(
 )
 
 
-def ensemble_catboost_regression(data, labels, cb_params=None, test_size=0.3):
+# def ensemble_catboost_regression(data, labels, cb_params=None, test_size=0.3):
 
-    if not cb_params:
-        cb_params = {
-            "bootstrap_type": "Bernoulli",
-            "depth": 4,
-            "early_stopping_rounds": 10,
-            "grow_policy": "Lossguide",
-            "iterations": 500,
-            "l2_leaf_reg": 0.5,
-            "leaf_estimation_method": "Newton",
-            "learning_rate": 0.01,
-            "max_leaves": 100,
-            "min_data_in_leaf": 10,
-            "random_seed": 42,
-            "random_strength": 5,
-            "verbose": False,
-        }
+#     if not cb_params:
+#         cb_params = {
+#             "bootstrap_type": "Bernoulli",
+#             "depth": 4,
+#             "early_stopping_rounds": 10,
+#             "grow_policy": "Lossguide",
+#             "iterations": 500,
+#             "l2_leaf_reg": 0.5,
+#             "leaf_estimation_method": "Newton",
+#             "learning_rate": 0.01,
+#             "max_leaves": 100,
+#             "min_data_in_leaf": 10,
+#             "random_seed": 42,
+#             "random_strength": 5,
+#             "verbose": False,
+#         }
 
-    # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+#     # Split the dataset into training and testing sets
+#     X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
 
-    learn_pool = cb.Pool(
-        X_train, y_train, cat_features=cat_features, text_features=text_features, feature_names=list(X_train)
-    )
-    test_pool = cb.Pool(
-        X_test, y_test, cat_features=cat_features, text_features=text_features, feature_names=list(X_train)
-    )
+#     learn_pool = cb.Pool(
+#         X_train, y_train, cat_features=cat_features, text_features=text_features, feature_names=list(X_train)
+#     )
+#     test_pool = cb.Pool(
+#         X_test, y_test, cat_features=cat_features, text_features=text_features, feature_names=list(X_train)
+#     )
 
-    # Create a CatBoost Regressor with n_estimators trees
-    cb_model = cb.CatBoostRegressor(**cb_params)
+#     # Create a CatBoost Regressor with n_estimators trees
+#     cb_model = cb.CatBoostRegressor(**cb_params)
 
-    # Train the model on the training set
-    cb_model.fit(X_train, y_train, eval_set=(X_test, y_test))
+#     # Train the model on the training set
+#     cb_model.fit(X_train, y_train, eval_set=(X_test, y_test))
 
-    return cb_model
+#     return cb_model
 
 
 def ensemble_xgboost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
 
     # Hyperparameters for XGBoost Regressor
     xgb_params = {
@@ -126,7 +128,9 @@ def ensemble_xgboost_regression(data, labels, test_size=0.3):
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
 
     # Hyperparameters for HistGradientBoostingRegressor
     hgb_params = {
@@ -150,13 +154,17 @@ def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
     print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
 
     # Cross validation
-    scores = cross_val_score(hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error")
+    scores = cross_val_score(
+        hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
+    )
     print("Cross-validated scores:", scores)
 
 
 def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
 
     # Hyperparameters for Gradient Boosting Regressor
     gbr_params = {
@@ -181,13 +189,17 @@ def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
     print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
 
     # cross validation
-    scores = cross_val_score(gb, X_train, y_train, cv=5, scoring="neg_mean_squared_error")
+    scores = cross_val_score(
+        gb, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
+    )
     print("Cross-validated scores:", scores)
 
 
 def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size
+    )
     rf = RandomForestRegressor(
         n_estimators=500,
         min_samples_split=6,
@@ -255,7 +267,9 @@ def remove_stopwords(unfiltered_string: str) -> str:
     translator = str.maketrans("", "", string.punctuation)
     filtered_words = unfiltered_string.translate(translator)
     stop_words = set(stopwords.words("english"))
-    filtered_words = [word for word in filtered_words.split() if word.lower() not in stop_words]
+    filtered_words = [
+        word for word in filtered_words.split() if word.lower() not in stop_words
+    ]
     return " ".join(filtered_words)
 
 
@@ -288,7 +302,10 @@ def get_csv_lines(filename: str) -> list[list[str]]:
         return list(reader)
 
 
-def open_dataset(dataset: Literal["test", "validation"] = "validation", disable_spellcheck: bool = False):
+def open_dataset(
+    dataset: Literal["test", "validation"] = "validation",
+    disable_spellcheck: bool = False,
+):
     from classes import CandidateSet, Column
     from preprocessing.suggester import generate_suggestion
 
@@ -438,7 +455,9 @@ def pickle_save_in_folder(obj, folder):
         os.mkdir(f"{ROOTPATH}/src/pickle-dumps/{folder}")
 
     now = datetime.now()
-    filename = f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+    filename = (
+        f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+    )
 
     # check if file already exists and if so, append a number to the filename
     i = 1
@@ -458,7 +477,9 @@ def pickle_save(obj, filename: Union[str, None] = None):
         filename = f"{ROOTPATH}/src/pickle-dumps/{filename}.pickle"
     else:
         now = datetime.now()
-        filename = f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+        filename = (
+            f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+        )
         i = 1
         while os.path.isfile(filename):
             filename = f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
@@ -469,7 +490,9 @@ def pickle_save(obj, filename: Union[str, None] = None):
 
 
 def pickle_load(filename, is_dump: bool = False):
-    file = f"{ROOTPATH}/src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
+    file = (
+        f"{ROOTPATH}/src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
+    )
     with open(file, "rb") as f:
         return pickle.load(f)
 
@@ -518,9 +541,19 @@ def evaluate_model(model, columns):
             progress.update(task_id=t2, completed=0)
             progress.update(task_id=t1, advance=1)
 
-    precision = num_correct_annotations / num_submitted_annotations if num_submitted_annotations > 0 else 0
-    recall = num_correct_annotations / num_ground_truth_annotations if num_ground_truth_annotations > 0 else 0
-    f1 = 2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0
+    precision = (
+        num_correct_annotations / num_submitted_annotations
+        if num_submitted_annotations > 0
+        else 0
+    )
+    recall = (
+        num_correct_annotations / num_ground_truth_annotations
+        if num_ground_truth_annotations > 0
+        else 0
+    )
+    f1 = (
+        2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0
+    )
 
     return precision, recall, f1
 

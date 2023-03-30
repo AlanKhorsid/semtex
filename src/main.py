@@ -1,14 +1,8 @@
 from catboost import CatBoostClassifier, CatBoostRegressor, Pool
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import ParameterGrid, train_test_split
 from classes import Column
 from util import (
-    ensemble_catboost_regression,
-    ensemble_hist_gradient_boost_regression,
-    ensemble_xgboost_regression,
-    ensemble_gradient_boost_regression,
     evaluate_model,
-    open_dataset,
-    random_forest_regression,
     pickle_save,
     pickle_load,
     progress,
@@ -91,29 +85,71 @@ y_train = train["label"]
 X_test = test.drop(["label"], axis=1)
 y_test = test["label"]
 
-train_pool = Pool(X_train, y_train, text_features=text_features, feature_names=list(X_train))
-test_pool = Pool(X_test, y_test, text_features=text_features, feature_names=list(X_train))
+train_pool = Pool(
+    X_train, y_train, text_features=text_features, feature_names=list(X_train)
+)
+test_pool = Pool(
+    X_test, y_test, text_features=text_features, feature_names=list(X_train)
+)
+
+bootstrap_type = ["Bayesian", "MVS", "Bernoulli"]
+depth = [4, 6, 8]
+early_stopping_rounds = [10]
+grow_policy = ["Lossguide", "SymmetricTree"]
+iterations = [500]
+l2_leaf_reg = [0.03, 0.2, 0.5]
+leaf_estimation_method = ["Newton"]
+learning_rate = [0.01, 0.03, 0.1]
+max_leaves = [500]
+min_data_in_leaf = [10]
+random_seed = [42]
+random_strength = [5, 10, 20]
+verbose = [False]
 
 cb_params = {
-    "bootstrap_type": "Bernoulli",
-    "depth": 4,
-    "early_stopping_rounds": 10,
-    "grow_policy": "Lossguide",
-    "iterations": 5000,
-    "l2_leaf_reg": 0.5,
-    "leaf_estimation_method": "Newton",
-    "learning_rate": 0.01,
-    "max_leaves": 100,
-    "min_data_in_leaf": 10,
-    "random_seed": 42,
-    "random_strength": 5,
-    "verbose": False,
+    "bootstrap_type": bootstrap_type,
+    "depth": depth,
+    "early_stopping_rounds": early_stopping_rounds,
+    "grow_policy": grow_policy,
+    "iterations": iterations,
+    "l2_leaf_reg": l2_leaf_reg,
+    "leaf_estimation_method": leaf_estimation_method,
+    "learning_rate": learning_rate,
+    "max_leaves": max_leaves,
+    "min_data_in_leaf": min_data_in_leaf,
+    "random_seed": random_seed,
+    "random_strength": random_strength,
+    "verbose": verbose,
 }
 
-model = CatBoostRegressor(**cb_params)
-model.fit(train_pool, eval_set=test_pool, verbose=100)
+param_grid = ParameterGrid(cb_params)
+n_combinations = len(list(param_grid))
+print(f"Number of combinations: {n_combinations}")
 
-x = 1
+f1_prev = 0
+for i, param in enumerate(param_grid):
+    print()
+    print(f"Training model {i + 1} with following parameters:")
+    print(param)
+    model = CatBoostRegressor(**param)
+    model.fit(train_pool, eval_set=test_pool)
+    # ----- Evaluate model -----
+    print(f"Evaluating model {i + 1}...")
+    precision, recall, f1 = evaluate_model(model, cols)
+    if f1 > f1_prev:
+        f1_prev = f1
+        print(f"Precision: {precision}")
+        print(f"Recall: {recall}")
+        print(f"F1: {f1}")
+        if f1_prev > 0.63:
+            pickle_save(
+                {
+                    "model": model,
+                    "prediction": precision,
+                    "recall": recall,
+                    "f1": f1,
+                }
+            )
 
 
 #         X = data_part.drop(["rating_10"], axis=1)
@@ -140,9 +176,9 @@ x = 1
 # pickle_save(model, f"{PICKLE_FILE_NAME}-l3-model")
 # model = pickle_load("validation-2022-bing-l3-model", is_dump=True)
 
-# ----- Evaluate model -----
-precision, recall, f1 = evaluate_model(model, cols)
+# # ----- Evaluate model -----
+# precision, recall, f1 = evaluate_model(model, cols)
 
-print(f"Precision: {precision}")
-print(f"Recall: {recall}")
-print(f"F1: {f1}")
+# print(f"Precision: {precision}")
+# print(f"Recall: {recall}")
+# print(f"F1: {f1}")
