@@ -27,7 +27,6 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import HistGradientBoostingRegressor
 import matplotlib.pyplot as plt
-import spacy
 from collections import Counter
 import en_core_web_sm
 from _types import SpacyTypes
@@ -77,7 +76,9 @@ def cluster_data(data, n_clusters=5):
 
 def ensemble_catboost_regression(data, labels, cb_params, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
 
     # Create a CatBoost Regressor with n_estimators trees
     cb_model = cb.CatBoostRegressor(**cb_params)
@@ -90,7 +91,9 @@ def ensemble_catboost_regression(data, labels, cb_params, test_size=0.3):
 
 def ensemble_xgboost_regression(data, labels, xgb_params, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
 
     # Create an XGBoost Regressor with n_estimators trees
     xgb_model = xgb.XGBRegressor(**xgb_params)
@@ -102,7 +105,9 @@ def ensemble_xgboost_regression(data, labels, xgb_params, test_size=0.3):
 
 def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
 
     # Hyperparameters for HistGradientBoostingRegressor
     hgb_params = {
@@ -125,7 +130,9 @@ def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
 
 def ensemble_gradient_boost_regression(data, labels, gbr_params, test_size=0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
 
     # Train the final model with the best parameters
     best_gb = GradientBoostingRegressor(**gbr_params)
@@ -162,7 +169,9 @@ def ensemble_gradient_boost_regression(data, labels, gbr_params, test_size=0.3):
 
 def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size
+    )
     rf = RandomForestRegressor(
         n_estimators=500,
         min_samples_split=6,
@@ -226,7 +235,9 @@ def remove_stopwords(unfiltered_string: str) -> str:
     translator = str.maketrans("", "", string.punctuation)
     filtered_words = unfiltered_string.translate(translator)
     stop_words = set(stopwords.words("english"))
-    filtered_words = [word for word in filtered_words.split() if word.lower() not in stop_words]
+    filtered_words = [
+        word for word in filtered_words.split() if word.lower() not in stop_words
+    ]
     return " ".join(filtered_words)
 
 
@@ -412,7 +423,9 @@ def pickle_save_in_folder(obj, folder):
         os.mkdir(f"{ROOTPATH}/src/pickle-dumps/{folder}")
 
     now = datetime.now()
-    filename = f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+    filename = (
+        f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+    )
 
     # check if file already exists and if so, append a number to the filename
     i = 1
@@ -432,7 +445,9 @@ def pickle_save(obj, filename: Union[str, None] = None):
         filename = f"{ROOTPATH}/src/pickle-dumps/{filename}.pickle"
     else:
         now = datetime.now()
-        filename = f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+        filename = (
+            f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+        )
         i = 1
         while os.path.isfile(filename):
             filename = f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
@@ -443,7 +458,9 @@ def pickle_save(obj, filename: Union[str, None] = None):
 
 
 def pickle_load(filename, is_dump: bool = False):
-    file = f"{ROOTPATH}/src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
+    file = (
+        f"{ROOTPATH}/src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
+    )
     with open(file, "rb") as f:
         return pickle.load(f)
 
@@ -483,9 +500,19 @@ def evaluate_model(model, columns):
             elif best_candidate.id == cell.correct_candidate.id:
                 num_correct_annotations += 1
 
-    precision = num_correct_annotations / num_submitted_annotations if num_submitted_annotations > 0 else 0
-    recall = num_correct_annotations / num_ground_truth_annotations if num_ground_truth_annotations > 0 else 0
-    f1 = 2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0
+    precision = (
+        num_correct_annotations / num_submitted_annotations
+        if num_submitted_annotations > 0
+        else 0
+    )
+    recall = (
+        num_correct_annotations / num_ground_truth_annotations
+        if num_ground_truth_annotations > 0
+        else 0
+    )
+    f1 = (
+        2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0
+    )
 
     return precision, recall, f1
 
