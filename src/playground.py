@@ -67,30 +67,30 @@ import os
 # suggestions = ["Esther Elizabeth Velkiers", "Emil Volkers", "Edward Cecil Villiers"]
 # print(best_suggestion(input_string, suggestions))
 
-# x1 = pickle_load("25-03_10-27-34", is_dump=True)
+x1 = pickle_load("63p", is_dump=True)
 
-# print(x1["model"].get_params())
-# print(x1["f1"])
+print(x1["model"].get_params())
+print(x1["f1"])
 
-import torch
-from transformers import AutoTokenizer, AutoModel
+# import torch
+# from transformers import AutoTokenizer, AutoModel
 
-# Load the pre-trained BERT model and tokenizer
-model_name = "bert-base-uncased"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModel.from_pretrained(model_name)
+# # Load the pre-trained BERT model and tokenizer
+# model_name = "bert-base-uncased"
+# tokenizer = AutoTokenizer.from_pretrained(model_name)
+# model = AutoModel.from_pretrained(model_name)
 
-# Define an input name
-input_name = "Barack Obama"
+# # Define an input name
+# input_name = "Barack Obama"
 
-# Tokenize the input name
-inputs = tokenizer(input_name, return_tensors="pt", padding=True, truncation=True)
+# # Tokenize the input name
+# inputs = tokenizer(input_name, return_tensors="pt", padding=True, truncation=True)
 
-# Get the embeddings for the input name
-outputs = model(**inputs)
-embedding = outputs.last_hidden_state[:, 0, :].detach().numpy()
+# # Get the embeddings for the input name
+# outputs = model(**inputs)
+# embedding = outputs.last_hidden_state[:, 0, :].detach().numpy()
 
-print(embedding)
+# print(embedding)
 
 # Output:
 # [[-5.71222067e-01  8.45796764e-02 -5.52923083e-01  3.20193231e-01
