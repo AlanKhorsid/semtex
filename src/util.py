@@ -81,6 +81,13 @@ def ensemble_catboost_regression(data, labels, cb_params=None, test_size=0.3):
     # Split the dataset into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
 
+    learn_pool = cb.Pool(
+        X_train, y_train, cat_features=cat_features, text_features=text_features, feature_names=list(X_train)
+    )
+    test_pool = cb.Pool(
+        X_test, y_test, cat_features=cat_features, text_features=text_features, feature_names=list(X_train)
+    )
+
     # Create a CatBoost Regressor with n_estimators trees
     cb_model = cb.CatBoostRegressor(**cb_params)
 

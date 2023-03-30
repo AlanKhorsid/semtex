@@ -32,6 +32,16 @@ class Candidate:
     subclass_overlap_l1_l2: Union[int, None]
     subclass_overlap_l2_l1: Union[int, None]
     subclass_overlap_l2_l2: Union[int, None]
+    instance_overlap_l1_l3: Union[int, None]
+    instance_overlap_l2_l3: Union[int, None]
+    instance_overlap_l3_l1: Union[int, None]
+    instance_overlap_l3_l2: Union[int, None]
+    instance_overlap_l3_l3: Union[int, None]
+    subclass_overlap_l1_l3: Union[int, None]
+    subclass_overlap_l2_l3: Union[int, None]
+    subclass_overlap_l3_l1: Union[int, None]
+    subclass_overlap_l3_l2: Union[int, None]
+    subclass_overlap_l3_l3: Union[int, None]
 
     def __init__(self, id: int):
         self.id = id
@@ -51,6 +61,16 @@ class Candidate:
         self.subclass_overlap_l1_l2 = None
         self.subclass_overlap_l2_l1 = None
         self.subclass_overlap_l2_l2 = None
+        self.instance_overlap_l1_l3 = None
+        self.instance_overlap_l2_l3 = None
+        self.instance_overlap_l3_l1 = None
+        self.instance_overlap_l3_l2 = None
+        self.instance_overlap_l3_l3 = None
+        self.subclass_overlap_l1_l3 = None
+        self.subclass_overlap_l2_l3 = None
+        self.subclass_overlap_l3_l1 = None
+        self.subclass_overlap_l3_l2 = None
+        self.subclass_overlap_l3_l3 = None
 
     @property
     def info_fetched(self) -> bool:
@@ -102,7 +122,7 @@ class Candidate:
         other_instances_l2: list[int],
         other_subclasses_l2: list[int],
     ):
-        (my_instances_l2, my_subclasses_2) = self.instance_layer
+        (my_instances_l2, my_subclasses_2) = self.instance_layer_2
         self.instance_overlap_l1_l2 = sum([self.instances.count(num) for num in other_instances_l2])
         self.instance_overlap_l2_l1 = sum([my_instances_l2.count(num) for num in other_instances_l1])
         self.instance_overlap_l2_l2 = sum([my_instances_l2.count(num) for num in other_instances_l2])
@@ -110,24 +130,49 @@ class Candidate:
         self.subclass_overlap_l2_l1 = sum([my_subclasses_2.count(num) for num in other_subclasses_l1])
         self.subclass_overlap_l2_l2 = sum([my_subclasses_2.count(num) for num in other_subclasses_l2])
 
+    def compute_features_l3(
+        self,
+        other_instances_l1: list[int],
+        other_instances_l2: list[int],
+        other_instances_l3: list[int],
+        other_subclasses_l1: list[int],
+        other_subclasses_l2: list[int],
+        other_subclasses_l3: list[int],
+    ):
+        (my_instances_l2, my_subclasses_2) = self.instance_layer_2
+        (my_instances_l3, my_subclasses_3) = self.instance_layer_3
+        self.instance_overlap_l1_l3 = sum([self.instances.count(num) for num in other_instances_l3])
+        self.instance_overlap_l2_l3 = sum([my_instances_l2.count(num) for num in other_instances_l3])
+        self.instance_overlap_l3_l1 = sum([my_instances_l3.count(num) for num in other_instances_l1])
+        self.instance_overlap_l3_l2 = sum([my_instances_l3.count(num) for num in other_instances_l2])
+        self.instance_overlap_l3_l3 = sum([my_instances_l3.count(num) for num in other_instances_l3])
+        self.subclass_overlap_l1_l3 = sum([self.subclasses.count(num) for num in other_subclasses_l3])
+        self.subclass_overlap_l2_l3 = sum([my_subclasses_2.count(num) for num in other_subclasses_l3])
+        self.subclass_overlap_l3_l1 = sum([my_subclasses_3.count(num) for num in other_subclasses_l1])
+        self.subclass_overlap_l3_l2 = sum([my_subclasses_3.count(num) for num in other_subclasses_l2])
+        self.subclass_overlap_l3_l3 = sum([my_subclasses_3.count(num) for num in other_subclasses_l3])
+
     @property
     def features(self) -> list:
         return [
             self.id,
+            self.title,
+            self.description,
             self.num_statements,
             self.instance_overlap,
             self.subclass_overlap,
             self.description_overlap,
-            self.instance_overlap_l1_l2,
-            self.instance_overlap_l2_l1,
-            self.instance_overlap_l2_l2,
-            self.subclass_overlap_l1_l2,
-            self.subclass_overlap_l2_l1,
-            self.subclass_overlap_l2_l2,
+            self.instance_names,
         ]
 
     @property
-    def instance_layer(self, n=2):
+    def instance_names(self):
+        names = [wikidata_get_entity(i)["title"] for i in self.instances]
+        # create string split by |
+        return "|".join(names)
+
+    @property
+    def instance_layer_2(self):
         instances = set()
         subclasses = set()
         for i in self.instances + self.subclasses:
@@ -136,6 +181,22 @@ class Candidate:
             sub = [int(prop[1][1:]) for prop in props if prop[0] == "P279"]
             instances.update(ins)
             subclasses.update(sub)
+        return list(instances), list(subclasses)
+
+    @property
+    def instance_layer_3(self):
+        instances = set()
+        subclasses = set()
+        for i in self.instances + self.subclasses:
+            props = wikidata_get_entity(i)["properties"]
+            ins = [int(prop[1][1:]) for prop in props if prop[0] == "P31"]
+            sub = [int(prop[1][1:]) for prop in props if prop[0] == "P279"]
+            for j in ins + sub:
+                props = wikidata_get_entity(j)["properties"]
+                ins1 = [int(prop[1][1:]) for prop in props if prop[0] == "P31"]
+                sub1 = [int(prop[1][1:]) for prop in props if prop[0] == "P279"]
+                instances.update(ins1)
+                subclasses.update(sub1)
         return list(instances), list(subclasses)
 
 
@@ -223,19 +284,31 @@ class CandidateSet:
         l1_subclasses = []
         l2_instances = []
         l2_subclasses = []
+        l3_instances = []
+        l3_subclasses = []
         for candidate in other_candidates:
-            (ins_l2, sub_l2) = candidate.instance_layer
+            (ins_l2, sub_l2) = candidate.instance_layer_2
+            (ins_l3, sub_l3) = candidate.instance_layer_3
             l1_instances.extend(candidate.instances)
             l1_subclasses.extend(candidate.subclasses)
             l2_instances.extend(ins_l2)
             l2_subclasses.extend(sub_l2)
+            l3_instances.extend(ins_l3)
+            l3_subclasses.extend(sub_l3)
 
         for candidate in self.candidates:
-            candidate.compute_features_l2(l1_instances, l1_subclasses, l2_instances, l2_subclasses)
+            candidate.compute_features_l3(
+                l1_instances, l1_subclasses, l2_instances, l2_subclasses, l3_instances, l3_subclasses
+            )
 
     @property
     def features(self) -> list[list]:
-        return [candidate.features for candidate in self.candidates]
+        features = []
+        for candidate in self.candidates:
+            f = candidate.features
+            f.append(1.0 if candidate.id == self.correct_id else 0.0)
+            features.append(f)
+        return features
 
     @property
     def labels(self) -> list[int]:

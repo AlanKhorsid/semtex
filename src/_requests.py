@@ -271,4 +271,4 @@ def fetch_property_labels():
                     current_cache = set()
 
 
-fetch_property_labels()
+# fetch_property_labels()
