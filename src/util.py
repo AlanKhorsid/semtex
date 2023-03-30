@@ -329,34 +329,25 @@ def evaluate_model(model, columns):
     num_correct_annotations = 0
     num_submitted_annotations = 0
     num_ground_truth_annotations = 0
-    with progress:
-        t1 = progress.add_task("Columns", total=len(columns))
-        t2 = progress.add_task("|-> Cells")
+    for col in columns:
+        for cell in col.cells:
+            num_ground_truth_annotations += 1
+            if len(cell.candidates) == 0:
+                continue
 
-        for col in columns:
-            progress.update(task_id=t2, total=len(col.cells))
-            for cell in col.cells:
-                num_ground_truth_annotations += 1
-                if len(cell.candidates) == 0:
-                    continue
+            num_submitted_annotations += 1
 
-                num_submitted_annotations += 1
-
-                best_candidate = None
-                best_score = float("-inf")
-                for candidate in cell.candidates:
-                    prediction = model.predict([candidate.features])[0]
-                    if prediction > best_score:
-                        best_score = prediction
-                        best_candidate = candidate
-                if best_candidate is None:
-                    raise Exception("No candidate found")
-                elif best_candidate.id == cell.correct_candidate.id:
-                    num_correct_annotations += 1
-
-                progress.update(task_id=t2, advance=1)
-            progress.update(task_id=t2, completed=0)
-            progress.update(task_id=t1, advance=1)
+            best_candidate = None
+            best_score = float("-inf")
+            for candidate in cell.candidates:
+                prediction = model.predict([candidate.features])[0]
+                if prediction > best_score:
+                    best_score = prediction
+                    best_candidate = candidate
+            if best_candidate is None:
+                raise Exception("No candidate found")
+            elif best_candidate.id == cell.correct_candidate.id:
+                num_correct_annotations += 1
 
     precision = (
         num_correct_annotations / num_submitted_annotations

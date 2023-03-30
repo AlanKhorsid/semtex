@@ -95,15 +95,14 @@ test_pool = Pool(
 bootstrap_type = ["Bayesian", "MVS", "Bernoulli"]
 depth = [4, 6, 8]
 early_stopping_rounds = [10]
-grow_policy = ["Lossguide", "SymmetricTree"]
+grow_policy = ["SymmetricTree"]
 iterations = [500]
-l2_leaf_reg = [0.03, 0.2, 0.5]
+l2_leaf_reg = [0.03, 0.1, 0.3, 0.5, 1]
 leaf_estimation_method = ["Newton"]
-learning_rate = [0.01, 0.03, 0.1]
-max_leaves = [500]
-min_data_in_leaf = [10]
+learning_rate = [0.005, 0.01, 0.03, 0.1]
+min_data_in_leaf = [1, 5, 10, 20]
 random_seed = [42]
-random_strength = [5, 10, 20]
+random_strength = [1, 3, 5, 8, 12]
 verbose = [False]
 
 cb_params = {
@@ -115,7 +114,7 @@ cb_params = {
     "l2_leaf_reg": l2_leaf_reg,
     "leaf_estimation_method": leaf_estimation_method,
     "learning_rate": learning_rate,
-    "max_leaves": max_leaves,
+    # "max_leaves": max_leaves,
     "min_data_in_leaf": min_data_in_leaf,
     "random_seed": random_seed,
     "random_strength": random_strength,
