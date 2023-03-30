@@ -65,7 +65,6 @@ param_grid = {
     "random_seed": [42],
     "random_strength": [5],
     "verbose": [False],
-    "task_type": ["GPU"],
 }
 # calculate number of combinations of parameters
 n_combinations = len(list(ParameterGrid(param_grid)))
