@@ -56,15 +56,15 @@ param_grid = {
     "depth": [4],
     "early_stopping_rounds": [10],
     "grow_policy": ["Lossguide"],
-    "iterations": [10000, 100000, 1000000],
+    "iterations": [500],
     "l2_leaf_reg": [0.5],
     "leaf_estimation_method": ["Newton"],
     "learning_rate": [0.01],
-    "max_leaves": [100, 500],
-    "min_data_in_leaf": [10, 20],
+    "max_leaves": [500],
+    "min_data_in_leaf": [10],
     "random_seed": [42],
     "random_strength": [5],
-    "verbose": [False],
+    "verbose": [100],
 }
 # calculate number of combinations of parameters
 n_combinations = len(list(ParameterGrid(param_grid)))
