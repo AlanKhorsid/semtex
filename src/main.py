@@ -2,14 +2,8 @@ import random
 from tqdm import tqdm
 from classes import CandidateSet, Column
 from util import (
-    cluster_data,
     ensemble_catboost_regression,
-    ensemble_hist_gradient_boost_regression,
-    ensemble_xgboost_regression,
-    ensemble_gradient_boost_regression,
     evaluate_model,
-    open_dataset,
-    random_forest_regression,
     pickle_save,
     pickle_load,
 )
@@ -18,7 +12,7 @@ import random
 from transformers import AutoTokenizer, AutoModel, RobertaTokenizer, RobertaModel
 
 i = 0
-PICKLE_FILE_NAME = "test-2022-bing"
+PICKLE_FILE_NAME = "validation-2022-bing"
 
 # ----- Open dataset -----
 print("Opening dataset...")
