@@ -162,7 +162,7 @@ class Candidate:
             self.instance_overlap,
             self.subclass_overlap,
             self.description_overlap,
-            self.instance_names,
+            # self.instance_names,
         ]
 
     @property
@@ -306,7 +306,8 @@ class CandidateSet:
         features = []
         for candidate in self.candidates:
             f = candidate.features
-            f.append(1.0 if candidate.id == self.correct_id else 0.0)
+            f.append(Levenshtein.ratio(candidate.title, self.mention))
+            f.append(1 if candidate.id == self.correct_id else -1)
             features.append(f)
         return features
 
