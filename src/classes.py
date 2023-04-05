@@ -19,6 +19,8 @@ import threading
 import torch
 import numpy as np
 from transformers import AutoTokenizer, AutoModel
+from flair.data import Sentence
+from flair.models import SequenceTagger
 
 model_name = "bert-large-uncased"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -33,6 +35,7 @@ class Candidate:
     subclasses: Union[list[int], None]
     num_statements: Union[int, None]
     sentence: Union[str, None]
+    named_entity: Union[str, None]
 
     instance_overlap: Union[int, None]
     subclass_overlap: Union[int, None]
@@ -141,6 +144,14 @@ class Candidate:
 
         return x
 
+    def get_named_entity(self):
+        sentence = Sentence(self.to_sentence)
+        tagger = SequenceTagger.load("ner-ontonotes")
+        tagger.predict(sentence)
+        for entity in sentence.get_spans("ner"):
+            print(self.title, entity.tag, entity.score)
+            return (self.title, entity.tag, entity.score)
+
         # x = f"{self.title}{' is a ' + self.description if self.description != '' else ''}"
 
         # props = wikidata_get_entity(self.id)["properties"]
@@ -177,6 +188,16 @@ class CandidateSet:
     @property
     def candidates_fetched(self) -> bool:
         return self.candidates is not None
+
+    @property
+    def get_named_entity(self):
+        for candidate in self.candidates:
+            sentence = Sentence(candidate.to_sentence)
+            tagger = SequenceTagger.load("flair/ner-english-ontonotes-large")
+            tagger.predict(sentence)
+            for entity in sentence.get_spans("ner"):
+                print(candidate, entity.tag, entity.score)
+                return (candidate, entity.tag, entity.score)
 
     def fetch_candidates(self):
         if self.mention == "":
@@ -251,45 +272,6 @@ class CandidateSet:
             1.0 if candidate.id == self.correct_id else 0.0
             for candidate in self.candidates
         ]
-
-    def get_best_candidate_BERT(self, groups):
-        # remove self.candidates from groups
-        my_names = [c.to_sentence for c in self.candidates]
-        all_names = [name for group in groups for name in group]
-        other_names = [name for name in all_names if name not in my_names]
-
-        # Define a function to get embeddings from the model
-        def get_embedding(text):
-            inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
-            outputs = model(**inputs)
-            return outputs.last_hidden_state[:, 0, :].detach().numpy()
-
-        # Calculate embeddings for each name
-        embeddings = [get_embedding(name) for name in all_names]
-
-        # Construct the similarity matrix
-        similarity_matrix = np.zeros((len(all_names), len(all_names)))
-        for i, name1 in enumerate(my_names):
-            for j, name2 in enumerate(other_names):
-                emb1 = embeddings[i]
-                emb2 = embeddings[j]
-                # Cosine similarity
-                similarity_matrix[i][j] = torch.cosine_similarity(
-                    torch.tensor(emb1), torch.tensor(emb2)
-                )
-
-        max_similarity = -1
-        best_candidate = None
-        for i, name in enumerate(my_names):
-            indices = [j for j in range(len(all_names)) if all_names[j] not in my_names]
-            similarities = similarity_matrix[all_names.index(name), indices]
-            avg_similarity = np.mean(similarities)
-            if avg_similarity > max_similarity:
-                max_similarity = avg_similarity
-                best_candidate = name
-        print(f"Best candidate: {best_candidate}")
-
-        return best_candidate
 
     def predict_nlp(self, embeddings, other_cells):
         max_similarity = -1
@@ -406,3 +388,14 @@ class Column:
         print("")
 
         return predictions
+
+    def get_named_entity_overlap(self, other):
+        total = 0
+        correct = 0
+        for i in range(len(self.cells)):
+            for j in range(len(other.cells)):
+                if self.cells[i].mention == other.cells[j].mention:
+                    total += 1
+                    if self.cells[i].correct_id == other.cells[j].correct_id:
+                        correct += 1
+        return correct / total

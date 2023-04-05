@@ -6,77 +6,25 @@ import html
 from decouple import config
 
 # from bingsearchapi import call_manually
-from .bestmatch import get_best_title_match
-from .preprocesschecker import check_spellchecker_threaded
+from bestmatch import get_best_title_match
+from preprocesschecker import check_spellchecker_threaded
 from pathlib import Path
 
 from util import pickle_load, pickle_save
 
 rootpath = str(Path(__file__).parent.parent.parent)
 src_folder = f"{rootpath}/datasets/BingSearchResults"
+all_search_results = pickle_load("searchres", is_dump=True)
 
-
-def search_for_JSON(query_string):
-    """
-    Searches for a JSON file containing the search results for a given query.
-    If the file is found, the JSON object is returned.
-    If the file is not found, the original query is returned.
-
-    Args:
-        query_string (str): The search query.
-
-    Returns:
-        dict: The JSON object containing the search results for the given query.
-
-    Example:
-        >>> search_for_JSON("Barack Obama")
-        {
-            "_type": "SearchResponse",
-            "queryContext": {
-                "originalQuery": "Barack Obama"
-            },  ...
-    """
-
-    for filename in os.listdir(src_folder):
-        if filename.endswith(".json"):
-            filepath = os.path.join(src_folder, filename)
-            with open(filepath, "r") as f:
-                json_data = json.load(f)
-                if (
-                    json_data["_type"] == "SearchResponse"
-                    and json_data["queryContext"]["originalQuery"].lower() == query_string.lower()
-                ):
-                    return json_data
-    return query_string
-
-
-all_search_results = pickle_load("all-test-cells-search-results", is_dump=True)
+num_of_missed_queries = 0
 
 
 def generate_suggestion(query):
-    """
-        Generates a suggested alternative search query based on the search results for the original query.
-        If the original query is not found in the JSON file, the original query is returned.
-        If the original query is found in the JSON file,
-        but no suggested alternative query is given,
-        the best match for the original query based on search result titles is returned.
-        If the original query is found in the JSON file,
-        and a suggested alternative query is given, the suggested alternative query is returned.
-    Args:
-        query (str): The original search query.
-
-    Returns:
-        str: The suggested alternative search query, or the best match for the original query based on search result titles.
-
-    Example:
-        >>> generate_suggestion("Barak Obma")
-        "Barack Obama"
-    """
-
-    # all_search_results = pickle_load("all-test-cells-search-results", is_dump=True)
-
     if not query in all_search_results:
+        num_of_missed_queries += 1
+        print(f"NOT FOUND: {query}")
         return query
+
     json_obj = all_search_results[query]
 
     if not "webPages" in json_obj:
