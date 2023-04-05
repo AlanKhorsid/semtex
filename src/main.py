@@ -4,12 +4,8 @@ from sklearn.model_selection import train_test_split
 from classes import Column
 from util import (
     ensemble_catboost_regression,
-    ensemble_hist_gradient_boost_regression,
-    ensemble_xgboost_regression,
-    ensemble_gradient_boost_regression,
     evaluate_model,
     open_dataset,
-    random_forest_regression,
     pickle_save,
     pickle_load,
     progress,
@@ -50,10 +46,10 @@ with progress:
         i = i + 1 if i < 9 else 1
 
 for col in cols_test:
-    col.get_tag_ratio()
+    col.get_tag_ratio
 
 for col in cols_validation:
-    col.get_tag_ratio()
+    col.get_tag_ratio
 
 # with progress:
 #     t1 = progress.add_task("Columns", total=len(cols))

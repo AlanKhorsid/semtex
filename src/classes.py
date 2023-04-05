@@ -499,7 +499,7 @@ class Column:
                     if other_cand == candidate:
                         continue
                     other_tag = set([other_cand.named_entity])
-                    if len(my_tag.intersection(other_tag) > 0):
+                    if len(my_tag.intersection(other_tag)) > 0:
                         overlap_counter += 1
                     num_other_candidates += 1
 

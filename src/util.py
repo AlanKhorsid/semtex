@@ -20,29 +20,10 @@ import string
 import numpy as np
 import pandas as pd
 import catboost as cb
-from sklearn.ensemble import (
-    GradientBoostingRegressor,
-    HistGradientBoostingRegressor,
-    RandomForestRegressor,
-)
-from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn.metrics import mean_squared_error
-from sklearn.tree import export_text
 import pickle
 from datetime import datetime
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.metrics import mean_squared_error
-from sklearn.ensemble import HistGradientBoostingRegressor
-import matplotlib.pyplot as plt
-import spacy
 from collections import Counter
-import en_core_web_sm
-from _types import SpacyTypes
 from pathlib import Path
-import xgboost as xgb
 
 ROOTPATH = Path(__file__).parent.parent
 
@@ -95,143 +76,6 @@ def ensemble_catboost_regression(data, labels, cb_params=None, test_size=0.3):
     cb_model.fit(X_train, y_train, eval_set=(X_test, y_test))
 
     return cb_model
-
-
-def ensemble_xgboost_regression(data, labels, test_size=0.3):
-    # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
-
-    # Hyperparameters for XGBoost Regressor
-    xgb_params = {
-        "n_estimators": 1200,
-        "learning_rate": 0.01,
-        "subsample": 0.8,
-        "max_depth": 12,
-        "min_child_weight": 1,
-        # "objective": "reg:squarederror",
-        "gamma": 0.1,
-        "colsample_bytree": 1.0,
-        "reg_alpha": 0.1,
-        "reg_lambda": 1,
-        "random_state": 42,
-    }
-
-    # Create an XGBoost Regressor with n_estimators trees
-    xgb_model = xgb.XGBRegressor(**xgb_params)
-
-    # Train the model on the training set
-    xgb_model.fit(X_train, y_train)
-    return xgb_model
-
-
-def ensemble_hist_gradient_boost_regression(data, labels, test_size=0.3):
-    # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
-
-    # Hyperparameters for HistGradientBoostingRegressor
-    hgb_params = {
-        "max_iter": 100,
-        "learning_rate": 0.1,
-        "max_depth": 8,
-        "min_samples_leaf": 5,
-        "l2_regularization": 0.01,
-        "random_state": 42,
-    }
-
-    # Create a HistGradientBoostingRegressor with max_iter iterations
-    hgb = HistGradientBoostingRegressor(**hgb_params)
-
-    # Train the model on the training set
-    hgb.fit(X_train, y_train)
-
-    return hgb
-
-    mse = mean_squared_error(y_test, hgb.predict(X_test))
-    print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
-
-    # Cross validation
-    scores = cross_val_score(hgb, X_train, y_train, cv=5, scoring="neg_mean_squared_error")
-    print("Cross-validated scores:", scores)
-
-
-def ensemble_gradient_boost_regression(data, labels, test_size=0.3):
-    # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
-
-    # Hyperparameters for Gradient Boosting Regressor
-    gbr_params = {
-        "n_estimators": 800,
-        "learning_rate": 0.01,
-        "subsample": 0.8,
-        "max_depth": 8,
-        "min_samples_split": 2,
-        "loss": "squared_error",
-        "random_state": 42,
-    }
-
-    # Create a Gradient Boosting Regressor with n_estimators trees
-    gb = GradientBoostingRegressor(**gbr_params)
-
-    # Train the model on the training set
-    gb.fit(X_train, y_train)
-
-    return gb
-
-    mse = mean_squared_error(y_test, gb.predict(X_test))
-    print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
-
-    # cross validation
-    scores = cross_val_score(gb, X_train, y_train, cv=5, scoring="neg_mean_squared_error")
-    print("Cross-validated scores:", scores)
-
-
-def random_forest_regression(data: list, labels: list[float], test_size: float = 0.3):
-    # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
-    rf = RandomForestRegressor(
-        n_estimators=500,
-        min_samples_split=6,
-        max_depth=4,
-        criterion="squared_error",
-        random_state=42,
-    )
-    rf.fit(X_train, y_train)
-
-    return rf
-
-    prediction = rf.predict(X_test)
-    mse = mean_squared_error(y_test, prediction)
-    print(mse)
-
-
-def plot_feature_importance(model, data):
-    # Convert the data list to a DataFrame
-    data_df = pd.DataFrame(data)
-    # Calculate the feature importances
-    feature_importances = model.feature_importances_
-    # Convert the data list to a DataFrame
-    data_df = pd.DataFrame(data)
-
-    # Manually assign column names
-    data_df.columns = [
-        "Id",
-        "Lex Score",
-        "Inst. Overlap",
-        "SubC. Overlap",
-        "Desc. Overlap",
-    ]
-
-    # Get the names of the features
-    feature_names = list(data_df.columns)
-
-    # Plot the feature importances
-    plt.figure(figsize=(10, 6))
-    plt.barh(feature_names, feature_importances)
-    plt.title("Feature Importances")
-    plt.xlabel("Importance")
-    plt.ylabel("Feature")
-    plt.show()
-
 
 def remove_stopwords(unfiltered_string: str) -> str:
     """
