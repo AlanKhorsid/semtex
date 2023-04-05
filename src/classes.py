@@ -14,6 +14,8 @@ import threading
 from flair.data import Sentence
 from flair.models import SequenceTagger
 
+tagger = SequenceTagger.load("flair/ner-english-ontonotes-large")
+
 
 class Candidate:
     id: int
@@ -97,10 +99,9 @@ class Candidate:
     @property
     def get_named_entity(self) -> str:
         sentence = Sentence(self.to_sentence)
-        tagger = SequenceTagger.load("flair/ner-english-ontonotes-large")
         tagger.predict(sentence)
         for entity in sentence.get_spans("ner"):
-            # print(self.title, entity.tag, entity.score)
+            # print(sentence, entity.tag, entity.score)
             return entity.tag
 
     @property
@@ -487,19 +488,21 @@ class Column:
         # Pre-calculate named entities for all candidates
         for cell in self.cells:
             for candidate in cell.candidates:
-                candidate.named_entity = candidate.get_named_entity
+                candidate.get_named_entity
 
             for candidate in cell.candidates:
                 # Calculate overlap ratio for this candidate
                 overlap_counter = 0
                 num_other_candidates = 0
-                my_tag = set([candidate.named_entity])
-                other_tag = set()
+                my_tag = candidate.get_named_entity
+                # print(f"{my_tag}:  ({candidate.to_sentence})")
+                other_tag = ""
                 for other_cand in cell.candidates:
                     if other_cand == candidate:
                         continue
-                    other_tag = set([other_cand.named_entity])
-                    if len(my_tag.intersection(other_tag)) > 0:
+                    # print(f"{other_tag}:  ({other_cand.to_sentence})")
+                    other_tag = other_cand.get_named_entity
+                    if my_tag == other_tag:
                         overlap_counter += 1
                     num_other_candidates += 1
 

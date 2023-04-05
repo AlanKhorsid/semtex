@@ -47,9 +47,16 @@ with progress:
 
 for col in cols_test:
     col.get_tag_ratio
+    for cell in col.cells:
+        for candidate in cell.candidates:
+            candidate.named_entity = candidate.get_named_entity
+            print(candidate.named_entity)
 
 for col in cols_validation:
     col.get_tag_ratio
+    for cell in col.cells:
+        for candidate in cell.candidates:
+            candidate.named_entity = candidate.get_named_entity
 
 # with progress:
 #     t1 = progress.add_task("Columns", total=len(cols))
