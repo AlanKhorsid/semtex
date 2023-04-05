@@ -1,4 +1,5 @@
 from SPARQLWrapper import SPARQLWrapper, JSON
+import re
 
 sparql = SPARQLWrapper("http://dbpedia.org/sparql")
 sparql.setReturnFormat(JSON)
@@ -13,10 +14,11 @@ queryStringPrefixes = "PREFIX owl: <http://www.w3.org/2002/07/owl#>\n" \
                     "PREFIX dbpedia: <http://dbpedia.org/>\n" \
                     "PREFIX skos: <http://www.w3.org/2004/02/skos/core#>\n"
 
-def dbpedia_sparql_to_JSON(queryIdentifier, queryName):
-    querystring = f"{queryStringPrefixes}SELECT * WHERE {{?wikidataquery owl:sameAs wikidata:{queryIdentifier} . ?wikidataquery rdf:type ?type . }}"
+def dbpedia_sparql_to_JSON(queryIdentifier:int , queryName:str) -> [str]:
+    querystring = f"{queryStringPrefixes}SELECT * WHERE {{?wikidataquery owl:sameAs wikidata:Q{queryIdentifier} . ?wikidataquery rdf:type ?type . }}"
 
     sparql.setQuery(querystring)
+    identifiers = []
 
     try:
         results = sparql.queryAndConvert()
@@ -24,10 +26,12 @@ def dbpedia_sparql_to_JSON(queryIdentifier, queryName):
             results = dbpedia_queryname_lookup(queryName)
 
         for res in results["results"]["bindings"]:
-            if "Q" in res["type"]["value"]:
-                print(res)
+            if "wikidata" in res["type"]["value"]:
+                identifiers.append(re.search("Q[0-9]*", res["type"]["value"]).group())
     except Exception as e:
         print(e)
+
+    return identifiers
 
 def dbpedia_queryname_lookup(queryName):
     querystring = f"{queryStringPrefixes}SELECT ?type WHERE {{?wikidataquery rdfs:label \"{queryName}\"@en . ?wikidataquery rdf:type ?type .}}"
@@ -35,4 +39,6 @@ def dbpedia_queryname_lookup(queryName):
     return sparql.queryAndConvert()
 
 if __name__ == "__main__":
-    dbpedia_sparql_to_JSON("76", "Barack Obama")
+    test = dbpedia_sparql_to_JSON(1176, "Barack Obama")
+    for v in test:
+        print(v)
