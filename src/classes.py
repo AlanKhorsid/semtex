@@ -11,6 +11,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from typing import Union
 import Levenshtein
 import threading
+from flair.data import Sentence
+from flair.models import SequenceTagger
 
 
 class Candidate:
@@ -25,6 +27,8 @@ class Candidate:
     subclass_overlap: Union[int, None]
     description_overlap: Union[float, None]
     lex_score: Union[float, None]
+    sentence: Union[str, None]
+    named_entity: Union[str, None]
 
     instance_overlap_l1_l2: Union[int, None]
     instance_overlap_l2_l1: Union[int, None]
@@ -73,6 +77,33 @@ class Candidate:
         self.subclass_overlap_l3_l3 = None
 
     @property
+    def to_sentence(self) -> str:
+        x = ""
+
+        if self.title != "":
+            x += f"{self.title}."
+        if self.description != "":
+            x += f" {self.description}."
+
+        props = wikidata_get_entity(self.id)["properties"]
+        for prop in props:
+            if prop[0] != "P31" and prop[0] != "P279":
+                continue
+            prop_title = wikidata_get_entity(int(prop[1][1:]))["title"]
+            x += f" {prop_title}."
+
+        return x
+
+    @property
+    def get_named_entity(self) -> str:
+        sentence = Sentence(self.to_sentence)
+        tagger = SequenceTagger.load("flair/ner-english-ontonotes-large")
+        tagger.predict(sentence)
+        for entity in sentence.get_spans("ner"):
+            # print(self.title, entity.tag, entity.score)
+            return entity.tag
+
+    @property
     def info_fetched(self) -> bool:
         return self.title is not None
 
@@ -82,8 +113,12 @@ class Candidate:
         self.description = entity_data["description"]
 
         self.num_statements = len(entity_data["properties"])
-        self.instances = [int(prop[1][1:]) for prop in entity_data["properties"] if prop[0] == "P31"]
-        self.subclasses = [int(prop[1][1:]) for prop in entity_data["properties"] if prop[0] == "P279"]
+        self.instances = [
+            int(prop[1][1:]) for prop in entity_data["properties"] if prop[0] == "P31"
+        ]
+        self.subclasses = [
+            int(prop[1][1:]) for prop in entity_data["properties"] if prop[0] == "P279"
+        ]
 
     def get_description_overlap(self, other: "Candidate"):
         if len(self.description) == 0 or len(other.description) == 0:
@@ -95,7 +130,11 @@ class Candidate:
         return cosine_sim[0][1]
 
     def compute_features(
-        self, correct: "Candidate", other: list["Candidate"], instance_total: int, subclass_total: int
+        self,
+        correct: "Candidate",
+        other: list["Candidate"],
+        instance_total: int,
+        subclass_total: int,
     ):
         # self.lex_score = Levenshtein.ratio(self.title, correct.title)
 
@@ -105,14 +144,24 @@ class Candidate:
         for other_candidate in other:
             if other_candidate.id == self.id:
                 continue
-            instance_overlap += len(set(self.instances).intersection(other_candidate.instances))
-            subclass_overlap += len(set(self.subclasses).intersection(other_candidate.subclasses))
+            instance_overlap += len(
+                set(self.instances).intersection(other_candidate.instances)
+            )
+            subclass_overlap += len(
+                set(self.subclasses).intersection(other_candidate.subclasses)
+            )
             description_overlaps.append(self.get_description_overlap(other_candidate))
 
-        self.instance_overlap = instance_overlap / instance_total if instance_total > 0 else 0
-        self.subclass_overlap = subclass_overlap / subclass_total if subclass_total > 0 else 0
+        self.instance_overlap = (
+            instance_overlap / instance_total if instance_total > 0 else 0
+        )
+        self.subclass_overlap = (
+            subclass_overlap / subclass_total if subclass_total > 0 else 0
+        )
         self.description_overlap = (
-            sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0
+            sum(description_overlaps) / len(description_overlaps)
+            if len(description_overlaps) > 0
+            else 0
         )
 
     def compute_features_l2(
@@ -123,12 +172,24 @@ class Candidate:
         other_subclasses_l2: list[int],
     ):
         (my_instances_l2, my_subclasses_2) = self.instance_layer_2
-        self.instance_overlap_l1_l2 = sum([self.instances.count(num) for num in other_instances_l2])
-        self.instance_overlap_l2_l1 = sum([my_instances_l2.count(num) for num in other_instances_l1])
-        self.instance_overlap_l2_l2 = sum([my_instances_l2.count(num) for num in other_instances_l2])
-        self.subclass_overlap_l1_l2 = sum([self.subclasses.count(num) for num in other_subclasses_l2])
-        self.subclass_overlap_l2_l1 = sum([my_subclasses_2.count(num) for num in other_subclasses_l1])
-        self.subclass_overlap_l2_l2 = sum([my_subclasses_2.count(num) for num in other_subclasses_l2])
+        self.instance_overlap_l1_l2 = sum(
+            [self.instances.count(num) for num in other_instances_l2]
+        )
+        self.instance_overlap_l2_l1 = sum(
+            [my_instances_l2.count(num) for num in other_instances_l1]
+        )
+        self.instance_overlap_l2_l2 = sum(
+            [my_instances_l2.count(num) for num in other_instances_l2]
+        )
+        self.subclass_overlap_l1_l2 = sum(
+            [self.subclasses.count(num) for num in other_subclasses_l2]
+        )
+        self.subclass_overlap_l2_l1 = sum(
+            [my_subclasses_2.count(num) for num in other_subclasses_l1]
+        )
+        self.subclass_overlap_l2_l2 = sum(
+            [my_subclasses_2.count(num) for num in other_subclasses_l2]
+        )
 
     def compute_features_l3(
         self,
@@ -141,16 +202,36 @@ class Candidate:
     ):
         (my_instances_l2, my_subclasses_2) = self.instance_layer_2
         (my_instances_l3, my_subclasses_3) = self.instance_layer_3
-        self.instance_overlap_l1_l3 = sum([self.instances.count(num) for num in other_instances_l3])
-        self.instance_overlap_l2_l3 = sum([my_instances_l2.count(num) for num in other_instances_l3])
-        self.instance_overlap_l3_l1 = sum([my_instances_l3.count(num) for num in other_instances_l1])
-        self.instance_overlap_l3_l2 = sum([my_instances_l3.count(num) for num in other_instances_l2])
-        self.instance_overlap_l3_l3 = sum([my_instances_l3.count(num) for num in other_instances_l3])
-        self.subclass_overlap_l1_l3 = sum([self.subclasses.count(num) for num in other_subclasses_l3])
-        self.subclass_overlap_l2_l3 = sum([my_subclasses_2.count(num) for num in other_subclasses_l3])
-        self.subclass_overlap_l3_l1 = sum([my_subclasses_3.count(num) for num in other_subclasses_l1])
-        self.subclass_overlap_l3_l2 = sum([my_subclasses_3.count(num) for num in other_subclasses_l2])
-        self.subclass_overlap_l3_l3 = sum([my_subclasses_3.count(num) for num in other_subclasses_l3])
+        self.instance_overlap_l1_l3 = sum(
+            [self.instances.count(num) for num in other_instances_l3]
+        )
+        self.instance_overlap_l2_l3 = sum(
+            [my_instances_l2.count(num) for num in other_instances_l3]
+        )
+        self.instance_overlap_l3_l1 = sum(
+            [my_instances_l3.count(num) for num in other_instances_l1]
+        )
+        self.instance_overlap_l3_l2 = sum(
+            [my_instances_l3.count(num) for num in other_instances_l2]
+        )
+        self.instance_overlap_l3_l3 = sum(
+            [my_instances_l3.count(num) for num in other_instances_l3]
+        )
+        self.subclass_overlap_l1_l3 = sum(
+            [self.subclasses.count(num) for num in other_subclasses_l3]
+        )
+        self.subclass_overlap_l2_l3 = sum(
+            [my_subclasses_2.count(num) for num in other_subclasses_l3]
+        )
+        self.subclass_overlap_l3_l1 = sum(
+            [my_subclasses_3.count(num) for num in other_subclasses_l1]
+        )
+        self.subclass_overlap_l3_l2 = sum(
+            [my_subclasses_3.count(num) for num in other_subclasses_l2]
+        )
+        self.subclass_overlap_l3_l3 = sum(
+            [my_subclasses_3.count(num) for num in other_subclasses_l3]
+        )
 
     @property
     def features(self) -> list:
@@ -162,6 +243,8 @@ class Candidate:
             self.instance_overlap,
             self.subclass_overlap,
             self.description_overlap,
+            self.tag,
+            self.tag_ratio,
             # self.instance_names,
         ]
 
@@ -265,19 +348,29 @@ class CandidateSet:
     def compute_features(self, col: "Column"):
         other_candidates: list[Candidate] = []
         for cell in col.cells:
-            if (cell.correct_id is not None and cell.correct_id != self.correct_id) or (cell.mention != self.mention):
+            if (cell.correct_id is not None and cell.correct_id != self.correct_id) or (
+                cell.mention != self.mention
+            ):
                 other_candidates.extend(cell.candidates)
 
-        instance_total = sum([len(candidate.instances) for candidate in other_candidates])
-        subclass_total = sum([len(candidate.subclasses) for candidate in other_candidates])
+        instance_total = sum(
+            [len(candidate.instances) for candidate in other_candidates]
+        )
+        subclass_total = sum(
+            [len(candidate.subclasses) for candidate in other_candidates]
+        )
 
         for candidate in self.candidates:
-            candidate.compute_features(self.correct_candidate, other_candidates, instance_total, subclass_total)
+            candidate.compute_features(
+                self.correct_candidate, other_candidates, instance_total, subclass_total
+            )
 
     def add_layer(self, col: "Column"):
         other_candidates: list[Candidate] = []
         for cell in col.cells:
-            if (cell.correct_id is not None and cell.correct_id != self.correct_id) or (cell.mention != self.mention):
+            if (cell.correct_id is not None and cell.correct_id != self.correct_id) or (
+                cell.mention != self.mention
+            ):
                 other_candidates.extend(cell.candidates)
 
         l1_instances = []
@@ -298,7 +391,12 @@ class CandidateSet:
 
         for candidate in self.candidates:
             candidate.compute_features_l3(
-                l1_instances, l1_subclasses, l2_instances, l2_subclasses, l3_instances, l3_subclasses
+                l1_instances,
+                l1_subclasses,
+                l2_instances,
+                l2_subclasses,
+                l3_instances,
+                l3_subclasses,
             )
 
     @property
@@ -313,7 +411,10 @@ class CandidateSet:
 
     @property
     def labels(self) -> list[int]:
-        return [1.0 if candidate.id == self.correct_id else 0.0 for candidate in self.candidates]
+        return [
+            1.0 if candidate.id == self.correct_id else 0.0
+            for candidate in self.candidates
+        ]
 
 
 class Column:
@@ -351,7 +452,11 @@ class Column:
     @property
     def all_cells_fetched(self) -> bool:
         for cell in self.cells:
-            if not (cell.candidates_fetched and cell.candidate_info_fetched and cell.correct_candidate_info_fetched):
+            if not (
+                cell.candidates_fetched
+                and cell.candidate_info_fetched
+                and cell.correct_candidate_info_fetched
+            ):
                 return False
         return True
 
@@ -376,3 +481,27 @@ class Column:
         if not self.features_computed:
             self.compute_features()
         return [x for cell in self.cells for x in cell.labels]
+
+    @property
+    def get_tag_ratio(self) -> float:
+        # Pre-calculate named entities for all candidates
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                candidate.named_entity = candidate.get_named_entity
+
+            for candidate in cell.candidates:
+                # Calculate overlap ratio for this candidate
+                overlap_counter = 0
+                num_other_candidates = 0
+                my_tag = set([candidate.named_entity])
+                other_tag = set()
+                for other_cand in cell.candidates:
+                    if other_cand == candidate:
+                        continue
+                    other_tag = set([other_cand.named_entity])
+                    if len(my_tag.intersection(other_tag) > 0):
+                        overlap_counter += 1
+                    num_other_candidates += 1
+
+                overlap_ratio = overlap_counter / num_other_candidates
+                candidate.tag_ratio = overlap_ratio

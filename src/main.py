@@ -15,7 +15,6 @@ from util import (
     progress,
 )
 import pandas as pd
-from pattern.en import lemma
 from nltk.stem import WordNetLemmatizer
 
 from _requests import wikidata_get_entities
@@ -49,6 +48,12 @@ with progress:
         col.compute_features()
         pickle_save(cols_test, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
+
+for col in cols_test:
+    col.get_tag_ratio()
+
+for col in cols_validation:
+    col.get_tag_ratio()
 
 # with progress:
 #     t1 = progress.add_task("Columns", total=len(cols))
@@ -84,9 +89,11 @@ test = pd.DataFrame(
         "instance_overlap": [x[4] for x in features_test],
         "subclass_overlap": [x[5] for x in features_test],
         "description_overlap": [x[6] for x in features_test],
+        "tag": [x[7] for x in features_test],
+        "tag_ratio": [x[8] for x in features_test],
         # "instance_names": [x[7] for x in features],
-        "title_levenshtein": [x[7] for x in features_test],
-        "label": [x[8] for x in features_test],
+        "title_levenshtein": [x[9] for x in features_test],
+        "label": [x[10] for x in features_test],
     }
 )
 train = pd.DataFrame(
@@ -98,13 +105,15 @@ train = pd.DataFrame(
         "instance_overlap": [x[4] for x in features_validation],
         "subclass_overlap": [x[5] for x in features_validation],
         "description_overlap": [x[6] for x in features_validation],
-        # "instance_names": [x[7] for x in features_test],
-        "title_levenshtein": [x[7] for x in features_validation],
-        "label": [x[8] for x in features_validation],
+        "tag": [x[7] for x in features_validation],
+        "tag_ratio": [x[8] for x in features_validation],
+        # "instance_names": [x[7] for x in features_validation],
+        "title_levenshtein": [x[9] for x in features_validation],
+        "label": [x[10] for x in features_validation],
     }
 )
 
-text_features = ["title", "description"]
+text_features = ["title", "description", "tag"]
 # text_features = []
 
 X_train = train.drop(["label"], axis=1)
@@ -114,7 +123,11 @@ y_test = test["label"]
 
 # ----- Tokenize -----
 
-tokenizer = Tokenizer(lowercasing=True, separator_type="BySense", token_types=["Word", "Number", "Punctuation"])
+tokenizer = Tokenizer(
+    lowercasing=True,
+    separator_type="BySense",
+    token_types=["Word", "Number", "Punctuation"],
+)
 lemmatizer = WordNetLemmatizer()
 
 
@@ -138,15 +151,27 @@ def lemmatize_text(text):
 def preprocess_data(X):
     X_preprocessed = X.copy()
     for feature in text_features:
-        X_preprocessed[feature] = X[feature].apply(lambda x: lemmatize_text(" ".join(tokenizer.tokenize(x))))
+        X_preprocessed[feature] = X[feature].apply(
+            lambda x: lemmatize_text(" ".join(tokenizer.tokenize(x)))
+        )
     return X_preprocessed
 
 
 X_preprocessed_train = preprocess_data(X_train)
 X_preprocessed_test = preprocess_data(X_test)
 
-train_pool = Pool(X_preprocessed_train, y_train, text_features=text_features, feature_names=list(X_train))
-test_pool = Pool(X_preprocessed_test, y_test, text_features=text_features, feature_names=list(X_train))
+train_pool = Pool(
+    X_preprocessed_train,
+    y_train,
+    text_features=text_features,
+    feature_names=list(X_train),
+)
+test_pool = Pool(
+    X_preprocessed_test,
+    y_test,
+    text_features=text_features,
+    feature_names=list(X_train),
+)
 
 cb_params = {
     "iterations": 5000,
@@ -162,7 +187,7 @@ cb_params = {
     "early_stopping_rounds": 10,
     "grow_policy": "SymmetricTree",
     "min_data_in_leaf": 1,
-    "task_type": "GPU",
+    # "task_type": "GPU",
     # "dictionaries": ["Word:min_token_occurrence=5", "BiGram:gram_order=2"],
     # "text_processing": ["NaiveBayes+Word|BoW+Word,BiGram"],
 }
@@ -212,8 +237,16 @@ with progress:
         progress.update(task_id=t2, completed=0)
         progress.update(task_id=t1, advance=1)
 
-precision = num_correct_annotations / num_submitted_annotations if num_submitted_annotations > 0 else 0
-recall = num_correct_annotations / num_ground_truth_annotations if num_ground_truth_annotations > 0 else 0
+precision = (
+    num_correct_annotations / num_submitted_annotations
+    if num_submitted_annotations > 0
+    else 0
+)
+recall = (
+    num_correct_annotations / num_ground_truth_annotations
+    if num_ground_truth_annotations > 0
+    else 0
+)
 f1 = 2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0
 
 print(f"Precision: {precision}")
