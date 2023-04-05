@@ -60,6 +60,8 @@ class Candidate:
         self.subclass_overlap = None
         self.description_overlap = None
         self.lex_score = None
+        self.sentence = None
+        self.named_entity = None
 
         self.instance_overlap_l1_l2 = None
         self.instance_overlap_l2_l1 = None
@@ -101,8 +103,7 @@ class Candidate:
         sentence = Sentence(self.to_sentence)
         tagger.predict(sentence)
         for entity in sentence.get_spans("ner"):
-            # print(sentence, entity.tag, entity.score)
-            return entity.tag
+            self.named_entity = entity.tag
 
     @property
     def info_fetched(self) -> bool:
@@ -164,6 +165,8 @@ class Candidate:
             if len(description_overlaps) > 0
             else 0
         )
+
+        self.get_named_entity
 
     def compute_features_l2(
         self,
@@ -494,14 +497,14 @@ class Column:
                 # Calculate overlap ratio for this candidate
                 overlap_counter = 0
                 num_other_candidates = 0
-                my_tag = candidate.get_named_entity
-                # print(f"{my_tag}:  ({candidate.to_sentence})")
+                my_tag = candidate.named_entity
+                print(f"{my_tag}:  ({candidate.to_sentence})")
                 other_tag = ""
                 for other_cand in cell.candidates:
                     if other_cand == candidate:
                         continue
-                    # print(f"{other_tag}:  ({other_cand.to_sentence})")
-                    other_tag = other_cand.get_named_entity
+                    print(f"{other_tag}:  ({other_cand.to_sentence})")
+                    other_tag = other_cand.named_entity
                     if my_tag == other_tag:
                         overlap_counter += 1
                     num_other_candidates += 1
