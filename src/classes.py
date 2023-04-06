@@ -30,7 +30,7 @@ class Candidate:
     description_overlap: Union[float, None]
     lex_score: Union[float, None]
     sentence: Union[str, None]
-    named_entity: Union[str, None]
+    # tag: Union[str, None]
 
     instance_overlap_l1_l2: Union[int, None]
     instance_overlap_l2_l1: Union[int, None]
@@ -61,7 +61,7 @@ class Candidate:
         self.description_overlap = None
         self.lex_score = None
         self.sentence = None
-        self.named_entity = None
+        # self.tag = None
 
         self.instance_overlap_l1_l2 = None
         self.instance_overlap_l2_l1 = None
@@ -99,11 +99,12 @@ class Candidate:
         return x
 
     @property
-    def get_named_entity(self) -> str:
+    def get_tag(self) -> str:
         sentence = Sentence(self.to_sentence)
         tagger.predict(sentence)
+        self.tag = ""
         for entity in sentence.get_spans("ner"):
-            self.named_entity = entity.tag
+            self.tag = entity.tag
 
     @property
     def info_fetched(self) -> bool:
@@ -165,8 +166,6 @@ class Candidate:
             if len(description_overlaps) > 0
             else 0
         )
-
-        self.get_named_entity
 
     def compute_features_l2(
         self,
@@ -487,27 +486,29 @@ class Column:
         return [x for cell in self.cells for x in cell.labels]
 
     @property
-    def get_tag_ratio(self) -> float:
+    def get_tag_ratio(self):
         # Pre-calculate named entities for all candidates
         for cell in self.cells:
             for candidate in cell.candidates:
-                candidate.get_named_entity
+                candidate.get_tag
 
             for candidate in cell.candidates:
                 # Calculate overlap ratio for this candidate
                 overlap_counter = 0
                 num_other_candidates = 0
-                my_tag = candidate.named_entity
+                my_tag = candidate.tag
                 print(f"{my_tag}:  ({candidate.to_sentence})")
                 other_tag = ""
                 for other_cand in cell.candidates:
                     if other_cand == candidate:
                         continue
                     print(f"{other_tag}:  ({other_cand.to_sentence})")
-                    other_tag = other_cand.named_entity
+                    other_tag = other_cand.tag
                     if my_tag == other_tag:
                         overlap_counter += 1
                     num_other_candidates += 1
-
-                overlap_ratio = overlap_counter / num_other_candidates
+                if num_other_candidates == 0:
+                    overlap_ratio = 0
+                else:
+                    overlap_ratio = overlap_counter / num_other_candidates
                 candidate.tag_ratio = overlap_ratio

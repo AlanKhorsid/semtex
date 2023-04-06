@@ -1,26 +1,10 @@
-from util import pickle_load, pickle_save
+from util import pickle_load
 
 
-import json
-import os
+x1 = pickle_load("test-2022-bing-tag-1", is_dump=True)
 
-result_dict = {}
-
-folder_path = "/Users/alankhorsid/Documents/semtex/datasets/BingSearchResults"
-
-for filename in os.listdir(folder_path):
-    if filename.endswith(".json"):
-        with open(os.path.join(folder_path, filename)) as json_file:
-            json_data = json.load(json_file)
-            original_query = json_data["queryContext"]["originalQuery"]
-            result_dict[original_query] = json_data
-
-
-# for key, value in result_dict.items():
-#     print(f"{key}: {value}\n")
-
-
-dict1 = result_dict
-dict2 = pickle_load("all-test-cells-search-results", is_dump=True)
-
-print(len({**dict1, **dict2}))
+# print every tag
+for col in x1:
+    for cell in col.cells:
+        for c in cell.candidates:
+            print(c.tag)

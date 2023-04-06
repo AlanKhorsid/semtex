@@ -45,18 +45,36 @@ with progress:
         pickle_save(cols_test, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
 
-for col in cols_test:
-    col.get_tag_ratio
-    for cell in col.cells:
-        for candidate in cell.candidates:
-            candidate.named_entity = candidate.get_named_entity
-            print(candidate.named_entity)
+    counter_test = 0
+    pickle_counter_test = 0
+    for col in progress.track(
+        cols_test, description="Generating new features for test"
+    ):
+        col.get_tag_ratio
+        counter_test += 1
 
-for col in cols_validation:
-    col.get_tag_ratio
-    for cell in col.cells:
-        for candidate in cell.candidates:
-            candidate.named_entity = candidate.get_named_entity
+        if counter_test % 100 == 0:
+            pickle_counter_test += 1
+            pickle_save(
+                cols_test[:counter_test],
+                f"test-2022-bing-tag-{pickle_counter_test}",
+            )
+
+    counter_validation = 0
+    pickle_counter_validation = 0
+    for col in progress.track(
+        cols_validation, description="Generating new features for validation"
+    ):
+        col.get_tag_ratio
+        counter_validation += 1
+
+        if counter_validation % 100 == 0:
+            pickle_counter_validation += 1
+            pickle_save(
+                cols_validation[:counter_validation],
+                f"validation-2022-bing-tag-{pickle_counter_validation}",
+            )
+
 
 # with progress:
 #     t1 = progress.add_task("Columns", total=len(cols))
@@ -92,7 +110,7 @@ test = pd.DataFrame(
         "instance_overlap": [x[4] for x in features_test],
         "subclass_overlap": [x[5] for x in features_test],
         "description_overlap": [x[6] for x in features_test],
-        "tag": [x[7] for x in features_test],
+        "tag": [x[7] if x[7] is not None else "" for x in features_test],
         "tag_ratio": [x[8] for x in features_test],
         # "instance_names": [x[7] for x in features],
         "title_levenshtein": [x[9] for x in features_test],
@@ -108,13 +126,14 @@ train = pd.DataFrame(
         "instance_overlap": [x[4] for x in features_validation],
         "subclass_overlap": [x[5] for x in features_validation],
         "description_overlap": [x[6] for x in features_validation],
-        "tag": [x[7] for x in features_validation],
+        "tag": [x[7] if x[7] is not None else "" for x in features_validation],
         "tag_ratio": [x[8] for x in features_validation],
         # "instance_names": [x[7] for x in features_validation],
         "title_levenshtein": [x[9] for x in features_validation],
         "label": [x[10] for x in features_validation],
     }
 )
+
 
 text_features = ["title", "description", "tag"]
 # text_features = []
@@ -124,53 +143,14 @@ y_train = train["label"]
 X_test = test.drop(["label"], axis=1)
 y_test = test["label"]
 
-# ----- Tokenize -----
-
-tokenizer = Tokenizer(
-    lowercasing=True,
-    separator_type="BySense",
-    token_types=["Word", "Number", "Punctuation"],
-)
-lemmatizer = WordNetLemmatizer()
-
-
-def lemmatize_text(text):
-    return " ".join([lemmatizer.lemmatize(word) for word in text.split()])
-
-
-# def lemmatize_text_gensim(text):
-#     result = []
-#     for token in tokenizer.tokenize(text):
-#         lemmas = lemmatize(token)
-#         if len(lemmas) == 0:
-#             lemma = token.lower()
-#         else:
-#             lemma = lemmas[0].decode("utf-8").split("/")[0]
-
-#         result.append(lemma)
-#     return " ".join(result)
-
-
-def preprocess_data(X):
-    X_preprocessed = X.copy()
-    for feature in text_features:
-        X_preprocessed[feature] = X[feature].apply(
-            lambda x: lemmatize_text(" ".join(tokenizer.tokenize(x)))
-        )
-    return X_preprocessed
-
-
-X_preprocessed_train = preprocess_data(X_train)
-X_preprocessed_test = preprocess_data(X_test)
-
 train_pool = Pool(
-    X_preprocessed_train,
+    X_train,
     y_train,
     text_features=text_features,
     feature_names=list(X_train),
 )
 test_pool = Pool(
-    X_preprocessed_test,
+    X_test,
     y_test,
     text_features=text_features,
     feature_names=list(X_train),
