@@ -47,4 +47,4 @@ def compute_bing_search_results():
     print(f"Finished processing all mentions")
 
 
-compute_bing_search_results()
+# compute_bing_search_results()
