@@ -29,7 +29,7 @@ def get_webpage(query: str):
 
 
 def compute_bing_search_results():
-    cells = pickle_load("all_test_cells", is_dump=True)
+    cells = pickle_load("all_validation_cells", is_dump=True)
     print(f"Loaded {len(cells)} mentions from pickle file")
     search_results = {}
     for i, cell in enumerate(cells):
@@ -38,11 +38,13 @@ def compute_bing_search_results():
             continue
         else:
             search_results[cell] = get_webpage(cell)
-            pickle_save_in_folder(search_results[cell], "search_results_for_tests_cell_esbin")
+            pickle_save_in_folder(
+                search_results[cell], "search_results_for_tests_cell_create"
+            )
             print(f"Processed {i+1}/{len(cells)} mentions; saved to pickle file")
     print(f"Now proceeding to save all search results to one pickle file")
     pickle_save(search_results)
     print(f"Finished processing all mentions")
 
 
-get_webpage("Oak Cyvters")
+compute_bing_search_results()

@@ -497,12 +497,12 @@ class Column:
                 overlap_counter = 0
                 num_other_candidates = 0
                 my_tag = candidate.tag
-                print(f"{my_tag}:  ({candidate.to_sentence})")
+                # print(f"{my_tag}:  ({candidate.to_sentence})")
                 other_tag = ""
                 for other_cand in cell.candidates:
                     if other_cand == candidate:
                         continue
-                    print(f"{other_tag}:  ({other_cand.to_sentence})")
+                    # print(f"{other_tag}:  ({other_cand.to_sentence})")
                     other_tag = other_cand.tag
                     if my_tag == other_tag:
                         overlap_counter += 1
