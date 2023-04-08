@@ -30,7 +30,8 @@ class Candidate:
     description_overlap: Union[float, None]
     lex_score: Union[float, None]
     sentence: Union[str, None]
-    # tag: Union[str, None]
+    tag: Union[str, None]
+    tag_ratio: Union[float, None]
 
     instance_overlap_l1_l2: Union[int, None]
     instance_overlap_l2_l1: Union[int, None]
@@ -61,7 +62,8 @@ class Candidate:
         self.description_overlap = None
         self.lex_score = None
         self.sentence = None
-        # self.tag = None
+        self.tag = None
+        self.tag_ratio = None
 
         self.instance_overlap_l1_l2 = None
         self.instance_overlap_l2_l1 = None
@@ -491,24 +493,29 @@ class Column:
         for cell in self.cells:
             for candidate in cell.candidates:
                 candidate.get_tag
+                # print(f"Tag: {candidate.tag}  -  ({candidate.to_sentence})")
 
+        # Compare yourself with other candidates in the other cells
+        for cell in self.cells:
             for candidate in cell.candidates:
                 # Calculate overlap ratio for this candidate
                 overlap_counter = 0
                 num_other_candidates = 0
+                overlap_ratio = 0.0
                 my_tag = candidate.tag
-                # print(f"{my_tag}:  ({candidate.to_sentence})")
-                other_tag = ""
-                for other_cand in cell.candidates:
-                    if other_cand == candidate:
+                # print(f"My tag: {my_tag}  -  ({candidate.to_sentence})")
+                for other_cell in self.cells:
+                    if other_cell.mention == cell.mention:
                         continue
-                    # print(f"{other_tag}:  ({other_cand.to_sentence})")
-                    other_tag = other_cand.tag
-                    if my_tag == other_tag:
-                        overlap_counter += 1
-                    num_other_candidates += 1
+                    for other_cand in other_cell.candidates:
+                        other_tag = other_cand.tag
+                        # print(f"Other tag: {other_tag}:  -  ({other_cand.to_sentence})")
+                        if my_tag == other_tag:
+                            overlap_counter += 1
+                        num_other_candidates += 1
                 if num_other_candidates == 0:
-                    overlap_ratio = 0
+                    overlap_ratio = 0.0
                 else:
                     overlap_ratio = overlap_counter / num_other_candidates
-                candidate.tag_ratio = overlap_ratio
+                    candidate.tag_ratio = overlap_ratio
+                    # print(f"Overlap ratio: {overlap_ratio}")

@@ -25,7 +25,6 @@ PICKLE_FILE_NAME = "test-2022-bing"
 cols_test: list[Column] = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=True)
 cols_validation: list[Column] = pickle_load("validation-2022-bing", is_dump=True)
 
-
 # ----- Fetch candidates -----
 while not all([col.all_cells_fetched for col in cols_test]):
     with progress:
