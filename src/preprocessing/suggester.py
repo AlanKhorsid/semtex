@@ -1,16 +1,13 @@
-import re
 import json
-from numpy import empty
 import os
 import html
-from decouple import config
+import pickle
 
 # from bingsearchapi import call_manually
 from .bestmatch import get_best_title_match
 from .preprocesschecker import check_spellchecker_threaded
 from pathlib import Path
 
-from util import pickle_load, pickle_save
 
 rootpath = str(Path(__file__).parent.parent.parent)
 src_folder = f"{rootpath}/datasets/BingSearchResults"
@@ -50,31 +47,17 @@ def search_for_JSON(query_string):
     return query_string
 
 
+def pickle_load(filename, is_dump: bool = False):
+    ROOTPATH = Path(__file__).parent.parent.parent
+    file = f"{ROOTPATH}/src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
+    with open(file, "rb") as f:
+        return pickle.load(f)
+
+
 all_search_results = pickle_load("all-test-cells-search-results", is_dump=True)
 
 
 def generate_suggestion(query):
-    """
-        Generates a suggested alternative search query based on the search results for the original query.
-        If the original query is not found in the JSON file, the original query is returned.
-        If the original query is found in the JSON file,
-        but no suggested alternative query is given,
-        the best match for the original query based on search result titles is returned.
-        If the original query is found in the JSON file,
-        and a suggested alternative query is given, the suggested alternative query is returned.
-    Args:
-        query (str): The original search query.
-
-    Returns:
-        str: The suggested alternative search query, or the best match for the original query based on search result titles.
-
-    Example:
-        >>> generate_suggestion("Barak Obma")
-        "Barack Obama"
-    """
-
-    # all_search_results = pickle_load("all-test-cells-search-results", is_dump=True)
-
     if not query in all_search_results:
         return query
     json_obj = all_search_results[query]

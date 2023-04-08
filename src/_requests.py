@@ -1,15 +1,8 @@
 import requests
-from _types import WikiDataSearchEntitiesResponse, validate_wikidata_search_entities_response
-from util import (
-    parse_entity_description,
-    parse_entity_properties,
-    parse_entity_title,
-    pickle_save,
-    pickle_load,
-    JsonUpdater,
-)
-import threading
+from _types import WikiDataSearchEntitiesResponse
 import re
+
+from util2 import JsonUpdater, parse_entity_description, parse_entity_properties, parse_entity_title, pickle_save
 
 API_URL = "https://www.wikidata.org/w/api.php"
 
