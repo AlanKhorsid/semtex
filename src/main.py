@@ -52,7 +52,7 @@ with progress:
         col.get_tag_ratio
         counter_test += 1
 
-        if counter_test % 1 == 0:
+        if counter_test % 100 == 0:
             pickle_counter_test += 1
             pickle_save(
                 cols_test[:counter_test],
