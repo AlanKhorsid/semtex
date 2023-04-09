@@ -2,7 +2,7 @@ import requests
 from _types import WikiDataSearchEntitiesResponse
 import re
 
-from util2 import JsonUpdater, parse_entity_description, parse_entity_properties, parse_entity_title, pickle_save
+from util2 import JsonUpdater, PickleUpdater, parse_entity_description, parse_entity_properties, parse_entity_statements, parse_entity_title, pickle_save, progress
 
 API_URL = "https://www.wikidata.org/w/api.php"
 
@@ -13,13 +13,75 @@ class RateLimitException(Exception):
     pass
 
 
+fetch_entity_updater = PickleUpdater("/datasets/wikidata_fetch_entity_cache.pickle", save_interval=300)
+
+def wikidata_fetch_entities(ids: list[int], lang: str = "en", chunk_size: int = 50):
+    if not fetch_entity_updater.data_loaded:
+        fetch_entity_updater.load_data()
+    
+    # Remove queries that are already in the cache
+    ids = [id for id in ids if id not in fetch_entity_updater.data]
+    if len(ids) == 0:
+        return
+    
+    # Split queries into chunks of 50
+    query_chunks = [ids[i:i+chunk_size] for i in range(0, len(ids), chunk_size)]
+
+    with progress:
+        for chunk in progress.track(query_chunks, description="Fetching entities"):
+            params = {
+                "action": "wbgetentities",
+                "languages": lang,
+                "format": "json",
+                "ids": "|".join([f"Q{q}" for q in chunk]),
+            }
+
+            data = requests.get(API_URL, params=params)
+            data_json = data.json()
+
+            assert data.status_code == 200, f"Request failed: {data_json}"
+            assert data_json["success"] == 1, f"Request failed: {data_json}"
+
+            for entity_id in chunk:
+                entity_data = data_json["entities"][f"Q{entity_id}"]
+                title = parse_entity_title(entity_data) or ""
+                description = parse_entity_description(entity_data) or ""
+                statements = []
+                for claims in entity_data["claims"].values():
+                    for claim in claims:
+                        if claim["mainsnak"]["snaktype"] == "novalue" or claim["mainsnak"]["snaktype"] == "somevalue":
+                            continue
+                        prop = int(claim["mainsnak"]["property"][1:])
+                        type = claim["mainsnak"]["datatype"]
+                        value = claim["mainsnak"]["datavalue"]["value"]
+                        statements.append((prop, type, value))
+                fetch_entity_updater.update_data(entity_id, (title, description, statements))
+
+    fetch_entity_updater.save_data()
+
+def get_entity(entity_id: int):
+    if not fetch_entity_updater.data_loaded:
+        fetch_entity_updater.load_data()
+
+    assert entity_id in fetch_entity_updater.data, f"Entity {entity_id} not found in cache."
+
+    return fetch_entity_updater.data[entity_id]
+
+    
+# OLDLDLD 
+# -------------
+# -------------
+# ------------- 
+
 entity_query_updater = JsonUpdater("/datasets/wikidata_entity_query_cache.json")
 entity_search_updater = JsonUpdater("/datasets/wikidata_entity_search_cache.json")
 get_entity_updater = JsonUpdater("/datasets/wikidata_get_entity_cache.json")
 get_property_updater = JsonUpdater("/datasets/wikidata_get_property_cache.json")
 
-
 def wikidata_entity_query(query: str) -> list[str]:
+    if not entity_query_updater.data_loaded:
+        entity_query_updater.load_data()
+
     if query in entity_query_updater.data:
         entities = entity_query_updater.data[query]
         if not all([bool(re.match(ENTITY_RE, e)) for e in entities]):
@@ -80,6 +142,9 @@ def wikidata_entity_search(query: str, limit: int = 30, lang: str = "en") -> lis
     ['Q76', 'Q47513588', 'Q59661289']
     """
 
+    if not entity_search_updater.data_loaded:
+        entity_search_updater.load_data()
+
     other_ids = wikidata_entity_query(query)
 
     if query in entity_search_updater.data:
@@ -116,6 +181,9 @@ def wikidata_entity_search(query: str, limit: int = 30, lang: str = "en") -> lis
 
 
 def wikidata_get_entities(entity_ids: list[int], lang: str = "en") -> list[dict]:
+    if not get_entity_updater.data_loaded:
+        get_entity_updater.load_data()
+
     res = []
 
     for entity_id in entity_ids:
@@ -151,6 +219,9 @@ def wikidata_get_entities(entity_ids: list[int], lang: str = "en") -> list[dict]
 
 
 def wikidata_get_properties(property_ids: list[str], lang: str = "en") -> list[dict]:
+    if not get_property_updater.data_loaded:
+        get_property_updater.load_data()
+
     res = []
 
     for property_id in property_ids:
@@ -215,6 +286,8 @@ def wikidata_get_entity(entity_id: int, lang: str = "en") -> dict:
     -------
     >>> wikidata_get_entity(76)
     """
+    if not get_entity_updater.data_loaded:
+        get_entity_updater.load_data()
 
     if f"{entity_id}" in get_entity_updater.data:
         return get_entity_updater.data[f"{entity_id}"]

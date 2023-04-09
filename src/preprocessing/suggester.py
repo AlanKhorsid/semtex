@@ -54,10 +54,14 @@ def pickle_load(filename, is_dump: bool = False):
         return pickle.load(f)
 
 
-all_search_results = pickle_load("all-test-cells-search-results", is_dump=True)
+all_search_results = None
 
 
 def generate_suggestion(query):
+    global all_search_results
+    if all_search_results is None:
+        all_search_results = pickle_load("all-validation-cells-bing", is_dump=True)
+
     if not query in all_search_results:
         return query
     json_obj = all_search_results[query]

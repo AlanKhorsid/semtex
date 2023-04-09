@@ -62,6 +62,9 @@ def open_table(
 ):
     from classes2 import Cell, Column
 
+    if file_name == "HXA71H9Q":
+        x = 1
+
     if dataset == "test":
         file_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Test/tables"
     elif dataset == "validation":
@@ -82,7 +85,7 @@ def open_table(
     for i in range(num_cols):
         if i in entity_cols:
             if spellcheck == "bing":
-                columns.append(Column([generate_suggestion(row[i]) for row in rows]))
+                columns.append(Column([Cell(generate_suggestion(row[i])) for row in rows], i))
             else:
                 columns.append(Column([Cell(row[i]) for row in rows]))
         else:
@@ -98,11 +101,23 @@ def open_tables(
 ):
     from classes2 import Table, TableCollection
 
+    if dataset == "test":
+        raise NotImplementedError("Test dataset not implemented yet")
+    elif dataset == "validation":
+        gt_rows = get_csv_rows(f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/{task}_gt.csv")
+
     targets = open_targets(dataset, task)
     tables = {}
     with progress:
         for filename, cols in progress.track(targets.items(), description=f"Opening {dataset} dataset"):
             columns, literal_columns = open_table(dataset, filename, cols, spellcheck=spellcheck)
+
+            # set the correct id for each cell
+            for i, col in zip(cols, columns):
+                for j, cell in enumerate(col.cells):
+                    gt_row = next(row for row in gt_rows if row[0] == filename and int(row[1]) == j + 1 and int(row[2]) == i)
+                    cell.correct_id = int(gt_row[3].split("/")[-1][1:])
+
             tables[filename] = Table(columns, literal_columns)
     return TableCollection(tables)
 
@@ -138,26 +153,6 @@ def pickle_load(filename, is_dump: bool = False):
 
 
 def parse_entity_title(entity_data: dict) -> Union[str, None]:
-    """
-    Parses the title of an entity from the Wikidata API. If the entity has no
-    English label, returns None.
-
-    Parameters
-    ----------
-    entity_data : dict
-        The entity data to parse.
-
-    Returns
-    -------
-    str
-        The title of the entity.
-
-    Example
-    -------
-    >>> parse_entity_title({"labels": {"en": {"value": "Barack Obama"}}})
-    "Barack Obama"
-    """
-
     try:
         return entity_data["labels"]["en"]["value"]
     except KeyError:
@@ -165,55 +160,67 @@ def parse_entity_title(entity_data: dict) -> Union[str, None]:
 
 
 def parse_entity_description(entity_data: dict) -> Union[str, None]:
-    """
-    Parses the description of an entity from the Wikidata API. If the entity has
-    no English description, returns None.
-
-    Parameters
-    ----------
-    entity_data : dict
-        The entity data to parse.
-
-    Returns
-    -------
-    str
-        The description of the entity.
-
-    Example
-    -------
-    >>> parse_entity_description({"descriptions": {"en": {"value": "44th President of the United States"}}})
-    "44th President of the United States"
-    """
-
     try:
         return entity_data["descriptions"]["en"]["value"]
     except KeyError:
         return None
 
+def parse_entity_statements(entity_data: dict):
+    from classes2 import Statement
+
+    assert "claims" in entity_data, "Entity data does not contain claims"
+
+    statements: list[Statement] = []
+    for claims in entity_data["claims"].values():
+        for claim in claims:
+            if claim["mainsnak"]["snaktype"] == "novalue" or claim["mainsnak"]["snaktype"] == "somevalue":
+                continue
+
+            type = claim["mainsnak"]["datatype"]
+            if type == "wikibase-item":
+                value = int(claim["mainsnak"]["datavalue"]["value"]["id"][1:])
+            elif type == "quantity":
+                value = claim["mainsnak"]["datavalue"]["value"]["amount"]
+                if value[0] == "+":
+                    value = value[1:]
+                assert value[0] == "-" or value[0].isdigit(), f"Invalid value: {value}"
+            elif type == "time":
+                time_str = claim["mainsnak"]["datavalue"]["value"]["time"]
+                try:
+                    dt = datetime.strptime(time_str, "+%Y-%m-%dT%H:%M:%SZ")
+                except ValueError:
+                    # assert time_str[6:8] == "00" or time_str[9:11] == "00", f"Weird stuff here man: {time_str}"
+                    if time_str[6:8] == "00":
+                        time_str = time_str[:6] + "01" + time_str[8:]
+                    if time_str[9:11] == "00":
+                        time_str = time_str[:9] + "01" + time_str[11:]
+                    try:
+                        dt = datetime.strptime(time_str, "+%Y-%m-%dT%H:%M:%SZ")
+                    except ValueError:
+                        # some weird dates can occour. Should be fixed in the future
+                        continue
+                value = dt
+            else:
+                continue
+            
+            property = int(claim["mainsnak"]["property"][1:])
+            statements.append(Statement(property, type, value))
+    
+    return statements
+
+def parse_date(date_string: str) -> datetime:
+    if date_string[0] == "+":
+        date_string = date_string[1:]
+        date = datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%SZ")
+    elif date_string[0] == "-":
+        date_string = date_string[1:]
+        date = datetime.strptime(date_string, "%Y%m%d-%H:%M:%SZ")
+    else:
+        raise ValueError("Invalid date string: " + date_string)
+    return date
+            
 
 def parse_entity_properties(entity_data: dict) -> dict:
-    """
-    Parses the claims of an entity from the Wikidata API.
-
-    Parameters
-    ----------
-    entity_data : dict
-        The entity data to parse.
-
-    Returns
-    -------
-    dict
-        The claims of the entity.
-
-    Example
-    -------
-    >>> parse_entity_claims(entity_data)
-    [
-        ("P31", "Q5"),
-        ("P21", "Q6581072"),
-    ]
-    """
-
     properties = []
     for claims in entity_data["claims"].values():
         for claim in claims:
@@ -241,18 +248,22 @@ class JsonUpdater:
     def __init__(self, filename):
         self.filename = f"{ROOTPATH}{filename}"
         self.lock = threading.Lock()
-        self.data = self.load_data()
+        self.data = None
         self.last_save_time = time.time()
+    
+    @property
+    def data_loaded(self):
+        return self.data is not None
 
     def load_data(self):
         with open(self.filename, "r") as f:
-            return json.load(f)
+            self.data = json.load(f)
 
     def update_data(self, key, value):
         with self.lock:
             self.data[key] = value
             current_time = time.time()
-            if current_time - self.last_save_time > 20:
+            if current_time - self.last_save_time > 0:
                 self.save_data()
                 self.last_save_time = current_time
 
@@ -264,3 +275,45 @@ class JsonUpdater:
     def save_data(self):
         with open(self.filename, "w") as f:
             json.dump(self.data, f)
+
+
+class PickleUpdater:
+    def __init__(self, filename, rootpath=ROOTPATH, save_interval=60):
+        self.filename = f"{rootpath}{filename}"
+        self.lock = threading.Lock()
+        self.data = None
+        self.last_save_time = time.time()
+        self.save_interval = save_interval
+    
+    @property
+    def data_loaded(self):
+        return self.data is not None
+
+    def load_data(self):
+        if not os.path.isfile(self.filename):
+            with open(self.filename, "wb") as f:
+                pickle.dump({}, f)
+
+        with open(self.filename, "rb") as f:
+            self.data = pickle.load(f)
+
+    def update_data(self, key, value, force_save=False):
+        with self.lock:
+            self.data[key] = value
+            current_time = time.time()
+            if force_save or current_time - self.last_save_time > self.save_interval:
+                self.save_data()
+                self.last_save_time = current_time
+
+    def delete_data(self, key):
+        with self.lock:
+            del self.data[key]
+            self.save_data()
+
+    def save_data(self):
+        with open(self.filename, "wb") as f:
+            pickle.dump(self.data, f)
+    
+    def close_data(self):
+        self.save_data()
+        self.data = None
