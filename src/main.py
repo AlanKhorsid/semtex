@@ -134,7 +134,7 @@ test_pool = Pool(
 from sklearn.model_selection import GridSearchCV
 
 cb_params = {
-    "iterations": [1000, 3000, 5000],
+    "iterations": [3000, 5000, 7500],
     "learning_rate": [0.01, 0.03, 0.1],
     "depth": [6, 8, 10],
     "l2_leaf_reg": [0.1, 1],
@@ -145,7 +145,7 @@ cb_params = {
     "random_strength": [8],
     "bootstrap_type": ["Bayesian", "Bernoulli"],
     "early_stopping_rounds": [10],
-    "grow_policy": ["SymmetricTree", "lossguide"],
+    "grow_policy": ["SymmetricTree", "Lossguide"],
     "min_data_in_leaf": [1],
     # "task_type": "GPU",
     "tokenizers": [
@@ -178,11 +178,10 @@ cb_params = {
 
 # use parametergrid to create all combinations of parameters
 param_grid = ParameterGrid(cb_params)
-param_list = list(param_grid)
-print(f"Number of combinations: {len(param_list)}")
-
-# shuffle the list of parameter combinations
-random.shuffle(param_list)
+print(f"Number of combinations: {len(cb_params)}")
+# shuffle the parameter grid
+param_grid = list(param_grid)
+random.shuffle(param_grid)
 
 best_f1 = 0
 # loop through the parameter combinations
