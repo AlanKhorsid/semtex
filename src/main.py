@@ -184,6 +184,7 @@ print(f"Number of combinations: {len(param_list)}")
 # shuffle the list of parameter combinations
 random.shuffle(param_list)
 
+best_f1 = 0
 # loop through the parameter combinations
 for params in param_grid:
     print(params)
@@ -250,4 +251,6 @@ for params in param_grid:
     print(f"Precision: {precision}")
     print(f"Recall: {recall}")
     print(f"F1: {f1}")
-    pickle_save(model, "le-classifier")
+    if f1 > best_f1:
+        best_f1 = f1
+        pickle_save(model, "le-classifier")
