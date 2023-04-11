@@ -131,82 +131,89 @@ test_pool = Pool(
     feature_names=list(X_train),
 )
 
-from sklearn.model_selection import GridSearchCV
-
 cb_params = {
-    "iterations": [3000, 5000, 7500],
+    "iterations": [5000, 7500, 10000, 20000],
     "learning_rate": [0.01, 0.03, 0.1],
-    "depth": [6, 8, 10],
-    "l2_leaf_reg": [0.1, 1],
+    "depth": [6, 8, 10, 12],
+    "l2_leaf_reg": [0.1, 1, 10],
     # "loss_function": "MultiClassOneVsAll",
     "leaf_estimation_method": ["Newton"],
     "random_seed": [42],
     "verbose": [False],
-    "random_strength": [8],
+    "random_strength": [1, 2, 4, 6, 8, 10],
     "bootstrap_type": ["Bayesian", "Bernoulli"],
     "early_stopping_rounds": [10],
     "grow_policy": ["SymmetricTree", "Lossguide"],
-    "min_data_in_leaf": [1],
+    "min_data_in_leaf": [1, 2, 3, 4, 5],
     # "task_type": "GPU",
     "tokenizers": [
-        [
-            {
-                "tokenizer_id": "Space",
-                "delimiter": " ",
-                "separator_type": "ByDelimiter",
-            }
-        ]
+        {
+            "tokenizer_id": "Space",
+            "delimiter": " ",
+            "separator_type": "ByDelimiter",
+        },
+        {
+            "tokenizer_id": "Comma",
+            "delimiter": ",",
+            "separator_type": "ByDelimiter",
+        },
     ],
     "dictionaries": [
-        [
-            {
-                "dictionary_id": "Unigram",
-                "max_dictionary_size": "50000",
-                "gram_count": "1",
-                "tokenizerId": "Space",
-            }
-        ]
+        {
+            "dictionary_id": "Unigram",
+            "max_dictionary_size": "50000",
+            "gram_count": "1",
+            "tokenizerId": "Space",
+        },
+        {
+            "dictionary_id": "Bigram",
+            "max_dictionary_size": "50000",
+            "gram_count": "2",
+            "tokenizerId": "Space",
+        },
     ],
     "feature_calcers": [
-        [
-            "BoW:top_tokens_count=1000",
-            "NaiveBayes",
-        ]
+        "BoW:top_tokens_count=1000",
+        "NaiveBayes",
     ]
     # "text_processing": ["NaiveBayes+Word|BoW+Word,BiGram"],
 }
 
 # use parametergrid to create all combinations of parameters
 param_grid = ParameterGrid(cb_params)
-print(f"Number of combinations: {len(cb_params)}")
 # shuffle the parameter grid
 param_grid = list(param_grid)
 random.shuffle(param_grid)
 
 best_f1 = 0
+num_of_iterations = 0
+list_of_params = []
 # loop through the parameter combinations
 for params in param_grid:
+    num_of_iterations += 1
     print(params)
+    print()
+    print(f"{num_of_iterations} of {len(param_grid)}")
     # train the model
     model = CatBoostClassifier(**params)
     model.fit(train_pool, eval_set=test_pool, verbose=100, early_stopping_rounds=100)
+    list_of_params.append(params)
 
-    # model.fit(train_pool, verbose=100)
-    # pickle_save(model, "le-classifier")
-    # model = pickle_load("le-classifier", is_dump=True)
-
-    # ----- Evaluate model -----
-    # precision, recall, f1 = evaluate_model(model, cols)
+    if num_of_iterations % 50 == 0:
+        pickle_save(
+            list_of_params,
+            f"used-parameters",
+        )
 
     num_correct_annotations = 0
     num_submitted_annotations = 0
     num_ground_truth_annotations = 0
     with progress:
         t1 = progress.add_task("Columns", total=len(cols_test_tag))
-        t2 = progress.add_task("|-> Cells")
+        # t2 = progress.add_task("|-> Cells")
 
         for col in cols_test_tag:
-            progress.update(task_id=t2, total=len(col.cells))
+            # progress.update(task_id=t2, total=len(col.cells))
             for cell in col.cells:
                 num_ground_truth_annotations += 1
                 if len(cell.candidates) == 0:
@@ -229,8 +236,8 @@ for params in param_grid:
                 #         f"{'CORRECT ' if candidate.id == cell.correct_id else '        '}{'{:.2f}'.format(pred[1] * 100)}%:\t{candidate.title}"
                 #     )
 
-                progress.update(task_id=t2, advance=1)
-            progress.update(task_id=t2, completed=0)
+            #     progress.update(task_id=t2, advance=1)
+            # progress.update(task_id=t2, completed=0)
             progress.update(task_id=t1, advance=1)
 
     precision = (
@@ -247,9 +254,23 @@ for params in param_grid:
         2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0
     )
 
-    print(f"Precision: {precision}")
-    print(f"Recall: {recall}")
-    print(f"F1: {f1}")
+    # Define color codes
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    BOLD = "\033[1m"
+    RESET = "\033[0m"
+
+    print(f"Precision:    {precision}")
+    print(f"Recall:       {recall}")
+    print(f"F1:           {f1}")
+    print()
+    print("----------------------------------------")
+    print(f"{RED}{BOLD}Best F1 so far:      {RED}{best_f1}{BOLD}{RESET}")
+    print("----------------------------------------")
     if f1 > best_f1:
         best_f1 = f1
-        pickle_save(model, "le-classifier")
+        print(f"{GREEN}{BOLD}NEW BEST F1:{RESET}      {GREEN}{BOLD}{best_f1}{RESET}")
+        print("----------------------------------------")
+        print()
+        pickle_save(model, "best-model-so-far")
