@@ -1,10 +1,15 @@
-from util import pickle_load
+from util import pickle_load, pickle_save
 
+x1 = pickle_load("all-test-tag", is_dump=True)
 
-x1 = pickle_load("test-2022-bing-tag-1", is_dump=True)
-
-# print every tag
+# get tags and tag ratio
 for col in x1:
+    print(f"Column: {col.cells}")
     for cell in col.cells:
-        for c in cell.candidates:
-            print(c.tag)
+        print(f"Cell: {cell}")
+        print()
+        for candidate in cell.candidates:
+            print(f"Candidate: {candidate.to_sentence}")
+            print(f"Tag:    {candidate.tag}")
+            print(f"Tag ratio:    {candidate.tag_ratio}")
+            print()

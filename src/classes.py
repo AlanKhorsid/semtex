@@ -29,7 +29,6 @@ class Candidate:
     subclass_overlap: Union[int, None]
     description_overlap: Union[float, None]
     lex_score: Union[float, None]
-    sentence: Union[str, None]
     tag: Union[str, None]
     tag_ratio: Union[float, None]
 
@@ -61,7 +60,6 @@ class Candidate:
         self.subclass_overlap = None
         self.description_overlap = None
         self.lex_score = None
-        self.sentence = None
         self.tag = None
         self.tag_ratio = None
 
@@ -105,8 +103,10 @@ class Candidate:
         sentence = Sentence(self.to_sentence)
         tagger.predict(sentence)
         self.tag = ""
+        # only take the first tag
         for entity in sentence.get_spans("ner"):
             self.tag = entity.tag
+            break
 
     @property
     def info_fetched(self) -> bool:
@@ -240,6 +240,8 @@ class Candidate:
 
     @property
     def features(self) -> list:
+        if not hasattr(self, "tag"):
+            self.get_tag
         return [
             self.id,
             self.title,
@@ -514,12 +516,20 @@ class Column:
                         total_counts[candidate] += 1
 
         # Calculate the overlap ratio for each candidate
-        for candidate in candidate_tags:
-            print()
-            if total_counts[candidate] == 0:
-                candidate.tag_ratio = 0.0
-            else:
-                candidate.tag_ratio = (
-                    overlap_counts[candidate] / total_counts[candidate]
-                )
-                print(f"{candidate.title}:   {candidate.tag_ratio}")
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                if total_counts[candidate] == 0:
+                    candidate.tag_ratio = 0.0
+                else:
+                    candidate.tag_ratio = (
+                        overlap_counts[candidate] / total_counts[candidate]
+                    )
+        # for candidate in candidate_tags:
+        #     print()
+        #     if total_counts[candidate] == 0:
+        #         candidate.tag_ratio = 0.0
+        #     else:
+        #         candidate.tag_ratio = (
+        #             overlap_counts[candidate] / total_counts[candidate]
+        #         )
+        #         print(f"{candidate.title}:   {candidate.tag_ratio}")

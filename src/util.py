@@ -25,6 +25,8 @@ from datetime import datetime
 from collections import Counter
 from pathlib import Path
 
+from sklearn.model_selection import train_test_split
+
 ROOTPATH = Path(__file__).parent.parent
 
 progress = Progress(
@@ -41,7 +43,6 @@ progress = Progress(
 
 
 def ensemble_catboost_regression(data, labels, cb_params=None, test_size=0.3):
-
     if not cb_params:
         cb_params = {
             "bootstrap_type": "Bernoulli",
@@ -60,13 +61,23 @@ def ensemble_catboost_regression(data, labels, cb_params=None, test_size=0.3):
         }
 
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42
+    )
 
     learn_pool = cb.Pool(
-        X_train, y_train, cat_features=cat_features, text_features=text_features, feature_names=list(X_train)
+        X_train,
+        y_train,
+        cat_features=cat_features,
+        text_features=text_features,
+        feature_names=list(X_train),
     )
     test_pool = cb.Pool(
-        X_test, y_test, cat_features=cat_features, text_features=text_features, feature_names=list(X_train)
+        X_test,
+        y_test,
+        cat_features=cat_features,
+        text_features=text_features,
+        feature_names=list(X_train),
     )
 
     # Create a CatBoost Regressor with n_estimators trees
@@ -76,6 +87,7 @@ def ensemble_catboost_regression(data, labels, cb_params=None, test_size=0.3):
     cb_model.fit(X_train, y_train, eval_set=(X_test, y_test))
 
     return cb_model
+
 
 def remove_stopwords(unfiltered_string: str) -> str:
     """
@@ -99,7 +111,9 @@ def remove_stopwords(unfiltered_string: str) -> str:
     translator = str.maketrans("", "", string.punctuation)
     filtered_words = unfiltered_string.translate(translator)
     stop_words = set(stopwords.words("english"))
-    filtered_words = [word for word in filtered_words.split() if word.lower() not in stop_words]
+    filtered_words = [
+        word for word in filtered_words.split() if word.lower() not in stop_words
+    ]
     return " ".join(filtered_words)
 
 
@@ -132,7 +146,10 @@ def get_csv_lines(filename: str) -> list[list[str]]:
         return list(reader)
 
 
-def open_dataset(dataset: Literal["test", "validation"] = "validation", disable_spellcheck: bool = False):
+def open_dataset(
+    dataset: Literal["test", "validation"] = "validation",
+    disable_spellcheck: bool = False,
+):
     from classes import CandidateSet, Column
     from preprocessing.suggester import generate_suggestion
 
@@ -282,7 +299,9 @@ def pickle_save_in_folder(obj, folder):
         os.mkdir(f"{ROOTPATH}/src/pickle-dumps/{folder}")
 
     now = datetime.now()
-    filename = f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+    filename = (
+        f"{ROOTPATH}/src/pickle-dumps/{folder}/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+    )
 
     # check if file already exists and if so, append a number to the filename
     i = 1
@@ -302,7 +321,9 @@ def pickle_save(obj, filename: Union[str, None] = None):
         filename = f"{ROOTPATH}/src/pickle-dumps/{filename}.pickle"
     else:
         now = datetime.now()
-        filename = f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+        filename = (
+            f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}.pickle"
+        )
         i = 1
         while os.path.isfile(filename):
             filename = f"{ROOTPATH}/src/pickle-dumps/{now.strftime('%d-%m_%H-%M-%S')}_{i}.pickle"
@@ -313,20 +334,11 @@ def pickle_save(obj, filename: Union[str, None] = None):
 
 
 def pickle_load(filename, is_dump: bool = False):
-    file = f"{ROOTPATH}/src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
+    file = (
+        f"{ROOTPATH}/src/{'pickle-dumps' if is_dump else 'pickles'}/{filename}.pickle"
+    )
     with open(file, "rb") as f:
         return pickle.load(f)
-
-
-def name_entity_recognition_labels(title: str, description: str) -> list[int]:
-    nlp = en_core_web_sm.load()
-    labels = []
-    results = nlp(f"{title} - {description}")
-    for r in results.ents:
-        labels.append(r.label_)
-    labels = list(set(labels))
-    labels = [SpacyTypes[label].value for label in labels]
-    return labels
 
 
 def evaluate_model(model, columns):
@@ -362,9 +374,19 @@ def evaluate_model(model, columns):
             progress.update(task_id=t2, completed=0)
             progress.update(task_id=t1, advance=1)
 
-    precision = num_correct_annotations / num_submitted_annotations if num_submitted_annotations > 0 else 0
-    recall = num_correct_annotations / num_ground_truth_annotations if num_ground_truth_annotations > 0 else 0
-    f1 = 2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0
+    precision = (
+        num_correct_annotations / num_submitted_annotations
+        if num_submitted_annotations > 0
+        else 0
+    )
+    recall = (
+        num_correct_annotations / num_ground_truth_annotations
+        if num_ground_truth_annotations > 0
+        else 0
+    )
+    f1 = (
+        2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0
+    )
 
     return precision, recall, f1
 
