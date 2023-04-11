@@ -524,12 +524,3 @@ class Column:
                     candidate.tag_ratio = (
                         overlap_counts[candidate] / total_counts[candidate]
                     )
-        # for candidate in candidate_tags:
-        #     print()
-        #     if total_counts[candidate] == 0:
-        #         candidate.tag_ratio = 0.0
-        #     else:
-        #         candidate.tag_ratio = (
-        #             overlap_counts[candidate] / total_counts[candidate]
-        #         )
-        #         print(f"{candidate.title}:   {candidate.tag_ratio}")
