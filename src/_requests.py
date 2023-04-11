@@ -2,7 +2,16 @@ import requests
 from _types import WikiDataSearchEntitiesResponse
 import re
 
-from util2 import JsonUpdater, PickleUpdater, parse_entity_description, parse_entity_properties, parse_entity_statements, parse_entity_title, pickle_save, progress
+from util2 import (
+    JsonUpdater,
+    PickleUpdater,
+    parse_entity_description,
+    parse_entity_properties,
+    parse_entity_statements,
+    parse_entity_title,
+    pickle_save,
+    progress,
+)
 
 API_URL = "https://www.wikidata.org/w/api.php"
 
@@ -13,19 +22,20 @@ class RateLimitException(Exception):
     pass
 
 
-fetch_entity_updater = PickleUpdater("/datasets/wikidata_fetch_entity_cache.pickle", save_interval=300)
+fetch_entity_updater = PickleUpdater("/datasets/wikidata_fetch_entity_cache.pickle", save_interval=20)
+
 
 def wikidata_fetch_entities(ids: list[int], lang: str = "en", chunk_size: int = 50):
     if not fetch_entity_updater.data_loaded:
         fetch_entity_updater.load_data()
-    
+
     # Remove queries that are already in the cache
     ids = [id for id in ids if id not in fetch_entity_updater.data]
     if len(ids) == 0:
         return
-    
+
     # Split queries into chunks of 50
-    query_chunks = [ids[i:i+chunk_size] for i in range(0, len(ids), chunk_size)]
+    query_chunks = [ids[i : i + chunk_size] for i in range(0, len(ids), chunk_size)]
 
     with progress:
         for chunk in progress.track(query_chunks, description="Fetching entities"):
@@ -59,6 +69,7 @@ def wikidata_fetch_entities(ids: list[int], lang: str = "en", chunk_size: int = 
 
     fetch_entity_updater.save_data()
 
+
 def get_entity(entity_id: int):
     if not fetch_entity_updater.data_loaded:
         fetch_entity_updater.load_data()
@@ -67,16 +78,17 @@ def get_entity(entity_id: int):
 
     return fetch_entity_updater.data[entity_id]
 
-    
-# OLDLDLD 
+
+# OLDLDLD
 # -------------
 # -------------
-# ------------- 
+# -------------
 
 entity_query_updater = JsonUpdater("/datasets/wikidata_entity_query_cache.json")
 entity_search_updater = JsonUpdater("/datasets/wikidata_entity_search_cache.json")
 get_entity_updater = JsonUpdater("/datasets/wikidata_get_entity_cache.json")
 get_property_updater = JsonUpdater("/datasets/wikidata_get_property_cache.json")
+
 
 def wikidata_entity_query(query: str) -> list[str]:
     if not entity_query_updater.data_loaded:

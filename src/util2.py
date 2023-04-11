@@ -102,7 +102,7 @@ def open_tables(
     from classes2 import Table, TableCollection
 
     if dataset == "test":
-        raise NotImplementedError("Test dataset not implemented yet")
+        gt_rows = get_csv_rows(f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/test/gt/{task}_gt.csv")
     elif dataset == "validation":
         gt_rows = get_csv_rows(f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/{task}_gt.csv")
 
@@ -115,7 +115,9 @@ def open_tables(
             # set the correct id for each cell
             for i, col in zip(cols, columns):
                 for j, cell in enumerate(col.cells):
-                    gt_row = next(row for row in gt_rows if row[0] == filename and int(row[1]) == j + 1 and int(row[2]) == i)
+                    gt_row = next(
+                        row for row in gt_rows if row[0] == filename and int(row[1]) == j + 1 and int(row[2]) == i
+                    )
                     cell.correct_id = int(gt_row[3].split("/")[-1][1:])
 
             tables[filename] = Table(columns, literal_columns)
@@ -165,6 +167,7 @@ def parse_entity_description(entity_data: dict) -> Union[str, None]:
     except KeyError:
         return None
 
+
 def parse_entity_statements(entity_data: dict):
     from classes2 import Statement
 
@@ -202,11 +205,12 @@ def parse_entity_statements(entity_data: dict):
                 value = dt
             else:
                 continue
-            
+
             property = int(claim["mainsnak"]["property"][1:])
             statements.append(Statement(property, type, value))
-    
+
     return statements
+
 
 def parse_date(date_string: str) -> datetime:
     if date_string[0] == "+":
@@ -218,7 +222,7 @@ def parse_date(date_string: str) -> datetime:
     else:
         raise ValueError("Invalid date string: " + date_string)
     return date
-            
+
 
 def parse_entity_properties(entity_data: dict) -> dict:
     properties = []
@@ -250,7 +254,7 @@ class JsonUpdater:
         self.lock = threading.Lock()
         self.data = None
         self.last_save_time = time.time()
-    
+
     @property
     def data_loaded(self):
         return self.data is not None
@@ -284,7 +288,7 @@ class PickleUpdater:
         self.data = None
         self.last_save_time = time.time()
         self.save_interval = save_interval
-    
+
     @property
     def data_loaded(self):
         return self.data is not None
@@ -313,7 +317,7 @@ class PickleUpdater:
     def save_data(self):
         with open(self.filename, "wb") as f:
             pickle.dump(self.data, f)
-    
+
     def close_data(self):
         self.save_data()
         self.data = None

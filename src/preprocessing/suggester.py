@@ -60,7 +60,10 @@ all_search_results = None
 def generate_suggestion(query):
     global all_search_results
     if all_search_results is None:
-        all_search_results = pickle_load("all-validation-cells-bing", is_dump=True)
+        all_search_results = pickle_load("bingsearches", is_dump=True)
+
+    if query == "Voynovo":
+        return query
 
     if not query in all_search_results:
         return query

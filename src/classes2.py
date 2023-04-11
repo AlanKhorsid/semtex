@@ -5,6 +5,7 @@ from util2 import parse_entity_description, parse_entity_statements, parse_entit
 from dateutil.parser import parse as parse_date
 import Levenshtein
 
+
 class Statement:
     property: int
     type: str
@@ -14,7 +15,7 @@ class Statement:
         self.property = property
         self.type = type
         self.value = value
-    
+
     def get_literal_score(self, literal: str):
         if self.type == "quantity":
             if self.value == literal:
@@ -22,7 +23,9 @@ class Statement:
             try:
                 literal_as_number = float(literal)
                 statement_value_as_number = float(self.value)
-                norm_abs_diff = 1 - (abs(literal_as_number - statement_value_as_number)) / (max(abs(literal_as_number), abs(statement_value_as_number)))
+                norm_abs_diff = 1 - (abs(literal_as_number - statement_value_as_number)) / (
+                    max(abs(literal_as_number), abs(statement_value_as_number))
+                )
                 return norm_abs_diff
             except:
                 return 0
@@ -41,19 +44,19 @@ class Statement:
             return norm_date_diff
         else:
             return 0
-    
+
     def get_entity_score(self, entity_mention: str):
         if self.type != "wikibase-item":
             return 0
-        
+
         entity_data = get_entity(self.value)
-        title = parse_entity_title(entity_data)
+        title = entity_data[0]
         if title is None:
             return 0
         if title == entity_mention:
             return 1
         return Levenshtein.ratio(title, entity_mention)
-        
+
 
 class Candidate:
     id: int
@@ -70,7 +73,7 @@ class Candidate:
         self.description = description
         self.statements = self.parse_statements(statements)
         y = 1
-    
+
     @staticmethod
     def parse_statements(statements: list):
         parsed_statements = []
@@ -123,6 +126,7 @@ class Cell:
     mention: str
     correct_id: Union[int, None]
     candidates: Union[list[Candidate], None]
+    has_correct_candidate: Union[bool, None]
 
     def __init__(self, mention: str):
         self.mention = mention
@@ -136,15 +140,11 @@ class Cell:
 
         entity_ids = wikidata_entity_search(self.mention)
         self.candidates = [Candidate(int(entity_id[1:])) for entity_id in entity_ids]
-    
+        self.has_correct_candidate = any(candidate.id == self.correct_id for candidate in self.candidates)
+
     def get_property_scores(self, row_entities: list["Cell"], row_literals: list[str]):
         if len(self.candidates) == 0:
-            return {
-                "total": 0,
-                "literal_scores": [],
-                "entity_scores": [],
-                "candidate": None
-            }
+            return [{"total": 0, "literal_scores": [], "entity_scores": [], "candidate": None}]
 
         scores = []
         for candidate in self.candidates:
@@ -160,50 +160,28 @@ class Cell:
             scores.append((total, literal_scores, entity_scores, candidate))
         scores.sort(key=lambda x: x[0], reverse=True)
 
-        total, literal_scores, entity_scores, candidate = scores[0]
-        return {
-            "total": total,
-            "literal_scores": [{"score": score, "properties": properties} for score, properties in literal_scores],
-            "entity_scores": [{"score": score, "properties": properties, "values": values} for score, properties, values in entity_scores],
-            "candidate": candidate
-        }
+        best_score = scores[0][0]
+        best_scores = []
 
-        # literal_scores = []
-        # for candidate in self.candidates:
-        #     candidate_scores = []
-        #     for literal in row_literals:
-        #         score, properties = candidate.get_property_score(literal, type="literal")
-        #         candidate_scores.append((score, properties))
-        #     literal_scores.append((candidate_scores, candidate))
-        # literal_scores.sort(key=lambda x: sum([score for score, _ in x[0]]), reverse=True)
-        
-        # entity_scores = []
-        # for candidate in self.candidates:
-        #     candidate_scores = []
-        #     for entity in row_entities:
-        #         score, properties = candidate.get_property_score(entity.mention, type="entity")
-        #         candidate_scores.append((score, properties))
-        #     entity_scores.append((candidate_scores, candidate))
-        # entity_scores.sort(key=lambda x: sum([score for score, _ in x[0]]), reverse=True)
+        for total, literal_scores, entity_scores, candidate in scores:
+            if total == best_score:
+                best_scores.append(
+                    {
+                        "total": total,
+                        "literal_scores": [
+                            {"score": score, "properties": properties} for score, properties in literal_scores
+                        ],
+                        "entity_scores": [
+                            {"score": score, "properties": properties, "values": values}
+                            for score, properties, values in entity_scores
+                        ],
+                        "candidate": candidate,
+                    }
+                )
+            else:
+                break
 
-        # # combine scores by candidate
-        # combined_scores = []
-        # for i, literal_score in enumerate(literal_scores):
-        #     for j, entity_score in enumerate(entity_scores):
-        #         if literal_score[1] == entity_score[1]:
-        #             total = 0
-        #             for n in literal_score[0]:
-        #                 total += n[0]
-        #             for n in entity_score[0]:
-        #                 total += n[0]
-        #             combined_scores.append((total, literal_score[0], entity_score[0], literal_score[1]))
-        #             break
-        
-        # # sort by sum
-        # combined_scores.sort(key=lambda x: x[0], reverse=True)
-
-        
-        
+        return best_scores
 
 
 class Column:
@@ -222,49 +200,83 @@ class Table:
     def __init__(self, columns: list[Column], literal_columns: list[list[str]]):
         self.columns = columns
         self.literal_columns = literal_columns
-    
+
     def dogboost(self):
         col_scores = []
         for i, column in enumerate(self.columns):
             best_scores = []
             for j, cell in enumerate(column.cells):
+                if cell.correct_id == 73848923:
+                    x = 1
+
                 row_literals = [literal_column[j] for literal_column in self.literal_columns]
                 row_entities = [entity_column.cells[j] for z, entity_column in enumerate(self.columns) if z != i]
                 best_score = cell.get_property_scores(row_entities, row_literals)
                 best_scores.append(best_score)
-            avg_score = sum([score["total"] for score in best_scores]) / len(best_scores)
+            avg_score = sum([score[0]["total"] for score in best_scores]) / len(best_scores)
             col_scores.append({"avg_score": avg_score, "best_scores": best_scores, "column": column})
         col_scores.sort(key=lambda x: x["avg_score"], reverse=True)
 
         best_scores = col_scores[0]["best_scores"]
         column = col_scores[0]["column"]
 
+        selections = []
+        for i, c in enumerate(best_scores):
+            best = None
+            best_overlap = -1
+            for cand in c:
+                overlap_count = 0
+                for j, other_c in enumerate(best_scores):
+                    if i == j:
+                        continue
+                    for other_cand in other_c:
+                        overlap_found = False
+                        if other_cand["candidate"] is None:
+                            continue
+                        for z, literal in enumerate(cand["literal_scores"]):
+                            for l in literal["properties"]:
+                                if l in other_cand["literal_scores"][z]["properties"]:
+                                    overlap_found = True
+                        for z, entity in enumerate(cand["entity_scores"]):
+                            for e in entity["properties"]:
+                                if e in other_cand["entity_scores"][z]["properties"]:
+                                    overlap_found = True
+                        if overlap_found:
+                            overlap_count += 1
+                if overlap_count > best_overlap:
+                    best = [cand]
+                    best_overlap = overlap_count
+                elif overlap_count == best_overlap:
+                    best.append(cand)
+            selections.append(best)
+
+        for s in selections:
+            if len(s) > 1:
+                # If we have multiple candidates with same confidence, then we should give it ML
+                # return 0, 0, 0
+                pass
+
         num_correct_annotations = 0
         num_submitted_annotations = 0
         num_ground_truth_annotations = 0
 
-        for score, cell in zip(best_scores, column.cells):
-            num_ground_truth_annotations += 1
-            if score["candidate"] is None:
+        for score, cell in zip(selections, column.cells):
+            if score[0]["candidate"] is None or not cell.has_correct_candidate:
                 continue
-            
+            num_ground_truth_annotations += 1
+
             num_submitted_annotations += 1
 
-            if score["candidate"].id == cell.correct_id:
+            if score[0]["candidate"].id == cell.correct_id:
                 num_correct_annotations += 1
-
-            for literal_score in score["literal_scores"]:
-                if literal_score["score"] < 0.9:
+            else:
+                if cell.has_correct_candidate and len(score) == 1:
                     x = 1
-            for entity_score in score["entity_scores"]:
-                if entity_score["score"] < 0.9:
-                    x = 1
-        
-        precision = num_correct_annotations / num_submitted_annotations if num_submitted_annotations > 0 else 0
-        recall = num_correct_annotations / num_ground_truth_annotations if num_ground_truth_annotations > 0 else 0
-        f1 = 2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0
 
-        x = 1
+                    # If confidence (total) is less than some threshold, then we should give it ML
+                    # If title is not close to the cell mention, then we should give it ML
+
+        return num_correct_annotations, num_submitted_annotations, num_ground_truth_annotations
 
 
 class TableCollection:
@@ -306,7 +318,6 @@ class TableCollection:
                                 entity_ids.add(statement.value)
         wikidata_fetch_entities(list(entity_ids))
 
-    
     def limit_to(self, n: int):
         x = list(self.tables.items())[:n]
         self.tables = dict(x)
