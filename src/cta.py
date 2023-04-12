@@ -4,6 +4,7 @@ from util import (
         pickle_load,
         )
 from classes import (Column)
+from _requests import wikidata_entity_search
 
 #----CTA PLAN----#
 # input: list of candidates from CEA
@@ -26,5 +27,15 @@ def cta_no_query(candidates):
             else:
                 typedict[instance] = 1
 
-PICKLE_FILE_NAME = "test-2022-bing"
-cols: list[Column] = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=True)
+    for key, value in typedict.items():
+        if value == len(candidates):
+            return key
+
+    return cta_query(typedict)
+
+
+def cta_query(typedict):
+    pass
+
+#PICKLE_FILE_NAME = "test-2022-bing"
+#cols: list[Column] = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=True)
