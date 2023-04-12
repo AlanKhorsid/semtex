@@ -48,6 +48,14 @@ with progress:
         pickle_save(cols_test_tag, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
 
+    for col in progress.track(
+        cols_test_tag, description="Generating features for semantic similarities"
+    ):
+        col.find_most_similar
+        for c in col.cells:
+            for cc in c.candidates:
+                print(cc.most_similar_to)
+
 
 # with progress:
 #     t1 = progress.add_task("Columns", total=len(cols))
@@ -132,29 +140,25 @@ test_pool = Pool(
 )
 
 cb_params = {
-    "iterations": [5000, 7500, 10000, 20000],
+    "iterations": [5000],
     "learning_rate": [0.01, 0.03, 0.1],
     "depth": [6, 8, 10, 12],
-    "l2_leaf_reg": [0.1, 1, 10],
+    "l2_leaf_reg": [1, 2, 3],
     # "loss_function": "MultiClassOneVsAll",
     "leaf_estimation_method": ["Newton"],
     "random_seed": [42],
     "verbose": [False],
-    "random_strength": [1, 2, 4, 6, 8, 10],
+    "random_strength": [10, 12, 14, 16, 18, 20],
     "bootstrap_type": ["Bayesian", "Bernoulli"],
-    "early_stopping_rounds": [10],
-    "grow_policy": ["SymmetricTree", "Lossguide"],
-    "min_data_in_leaf": [1, 2, 3, 4, 5],
+    "early_stopping_rounds": [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+    "grow_policy": ["Lossguide"],
+    "max_leaves": [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+    "min_data_in_leaf": [1, 2],
     # "task_type": "GPU",
     "tokenizers": [
         {
             "tokenizer_id": "Space",
             "delimiter": " ",
-            "separator_type": "ByDelimiter",
-        },
-        {
-            "tokenizer_id": "Comma",
-            "delimiter": ",",
             "separator_type": "ByDelimiter",
         },
     ],
@@ -165,18 +169,11 @@ cb_params = {
             "gram_count": "1",
             "tokenizerId": "Space",
         },
-        {
-            "dictionary_id": "Bigram",
-            "max_dictionary_size": "50000",
-            "gram_count": "2",
-            "tokenizerId": "Space",
-        },
     ],
     "feature_calcers": [
         "BoW:top_tokens_count=1000",
         "NaiveBayes",
-    ]
-    # "text_processing": ["NaiveBayes+Word|BoW+Word,BiGram"],
+    ],
 }
 
 # use parametergrid to create all combinations of parameters
@@ -188,8 +185,11 @@ random.shuffle(param_grid)
 best_f1 = 0
 num_of_iterations = 0
 list_of_params = []
+already_seen = pickle_load("used-parameters", is_dump=True)
 # loop through the parameter combinations
 for params in param_grid:
+    if params in already_seen:
+        continue
     num_of_iterations += 1
     print(params)
     print()
@@ -273,4 +273,15 @@ for params in param_grid:
         print(f"{GREEN}{BOLD}NEW BEST F1:{RESET}      {GREEN}{BOLD}{best_f1}{RESET}")
         print("----------------------------------------")
         print()
-        pickle_save(model, "best-model-so-far")
+        if best_f1 > 0.797:
+            # pickle f1, precision, recall and model
+            pickle_save(
+                {
+                    "f1": f1,
+                    "precision": precision,
+                    "recall": recall,
+                    "model": model,
+                    "params": params,
+                },
+                "best-model-so-far",
+            )

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from _requests import wikidata_entity_search, wikidata_get_entity, RateLimitException
 from preprocessing.suggester import generate_suggestion
 from util import (
@@ -13,7 +14,12 @@ import Levenshtein
 import threading
 from flair.data import Sentence
 from flair.models import SequenceTagger
+from nltk.corpus import wordnet as wn
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
 
+stop_words = set(stopwords.words("english"))
 tagger = SequenceTagger.load("flair/ner-english-ontonotes-large")
 
 
@@ -31,6 +37,7 @@ class Candidate:
     lex_score: Union[float, None]
     tag: Union[str, None]
     tag_ratio: Union[float, None]
+    most_similar_to: Union[str, None]
 
     instance_overlap_l1_l2: Union[int, None]
     instance_overlap_l2_l1: Union[int, None]
@@ -62,6 +69,7 @@ class Candidate:
         self.lex_score = None
         self.tag = None
         self.tag_ratio = None
+        self.most_similar_to = None
 
         self.instance_overlap_l1_l2 = None
         self.instance_overlap_l2_l1 = None
@@ -252,6 +260,7 @@ class Candidate:
             self.description_overlap,
             self.tag,
             self.tag_ratio,
+            self.most_similar_to,
             # self.instance_names,
         ]
 
@@ -524,3 +533,73 @@ class Column:
                     candidate.tag_ratio = (
                         overlap_counts[candidate] / total_counts[candidate]
                     )
+
+    @property
+    def find_most_similar(self):
+        lemmatizer = WordNetLemmatizer()
+        stop_words = set(stopwords.words("english"))
+
+        def preprocess_sentence(sentence):
+            words = word_tokenize(sentence)
+            words = [word for word in words if not word.lower() in stop_words]
+            words = [lemmatizer.lemmatize(word) for word in words]
+            synsets = [wn.synsets(word) for word in words]
+            synsets = [synset for sublist in synsets for synset in sublist]
+            return synsets
+
+        preprocessed_sentences = defaultdict(dict)
+
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                candidate.most_similar_to = ""
+                if candidate not in preprocessed_sentences[cell.mention]:
+                    preprocessed_sentences[cell.mention][
+                        candidate
+                    ] = preprocess_sentence(candidate.to_sentence)
+
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                my_synsets = preprocessed_sentences[cell.mention][candidate]
+
+                most_similar_candidate = None
+                for other_cell in self.cells:
+                    max_similarity = -1
+                    if other_cell.mention == cell.mention:
+                        continue
+
+                    for other_candidate in other_cell.candidates:
+                        similarity_score = 0
+                        if (
+                            other_candidate
+                            not in preprocessed_sentences[other_cell.mention]
+                        ):
+                            preprocessed_sentences[other_cell.mention][
+                                other_candidate
+                            ] = preprocess_sentence(other_candidate.to_sentence)
+
+                        other_synsets = preprocessed_sentences[other_cell.mention][
+                            other_candidate
+                        ]
+                        similarity_sum = sum(
+                            ms.path_similarity(synset) or 0
+                            for ms in my_synsets
+                            for synset in other_synsets
+                        )
+
+                        similarity_score = similarity_sum / (
+                            len(my_synsets) * len(other_synsets)
+                        )
+
+                        if similarity_score > max_similarity:
+                            max_similarity = similarity_score
+                            most_similar_candidate = other_candidate
+
+                    if candidate.most_similar_to == "":
+                        candidate.most_similar_to += most_similar_candidate.to_sentence
+                    else:
+                        candidate.most_similar_to += (
+                            " | " + most_similar_candidate.to_sentence
+                        )
+                print(f"{cell.mention} is most similar to these candidates:")
+                print(candidate.most_similar_to)
+                print()

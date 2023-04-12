@@ -14,59 +14,10 @@ from util import pickle_load, pickle_save
 #             print(f"Tag ratio:    {candidate.tag_ratio}")
 #             print()
 
-# x2 = pickle_load("best-params", is_dump=True)
+# x2 = pickle_load("best-model-so-far", is_dump=True)
 
 # print(x2.get_params())
-
-import nltk
-from nltk.corpus import wordnet as wn
-from nltk.tokenize import word_tokenize
-from nltk.stem import WordNetLemmatizer
-from nltk.corpus import stopwords
-
-
-# Define the function to find the semantic similarity between two sentences
-def find_similarity(sentence1, sentence2):
-    # Tokenize the sentences into words
-    words1 = word_tokenize(sentence1)
-    words2 = word_tokenize(sentence2)
-
-    # Remove stop words from the sentences
-    stop_words = set(stopwords.words("english"))
-    words1 = [word for word in words1 if not word.lower() in stop_words]
-    words2 = [word for word in words2 if not word.lower() in stop_words]
-
-    # Lemmatize the words in the sentences
-    lemmatizer = WordNetLemmatizer()
-    words1 = [lemmatizer.lemmatize(word) for word in words1]
-    words2 = [lemmatizer.lemmatize(word) for word in words2]
-
-    # Create synsets for the words in the sentences
-    synsets1 = [wn.synsets(word) for word in words1]
-    synsets2 = [wn.synsets(word) for word in words2]
-
-    # Flatten the lists of synsets
-    synsets1 = [synset for sublist in synsets1 for synset in sublist]
-    synsets2 = [synset for sublist in synsets2 for synset in sublist]
-
-    # Find the maximum similarity score between synsets from the two sentences
-    max_similarity = 0
-    for synset1 in synsets1:
-        for synset2 in synsets2:
-            similarity = synset1.path_similarity(synset2)
-            if similarity is not None and similarity > max_similarity:
-                max_similarity = similarity
-
-    return max_similarity
-
-
-# Example usage
-sentence1 = "Transnistria is a de facto unrecognized state in Eastern Europe that has declared independence from Moldova and is an instance of state with limited recognition, country, landlocked country, unitary state, Rechtsstaat, social state, secular state"
-sentence2 = "Islamic Emirate of Afghanistan is a Taliban-led partially recognized government of Afghanistan from 1996 to 2001 and is an instance of sovereign state, emirate, historical country, state with limited recognition"
-sentence4 = "Transnistria is an instance of geographical region, disputed territory"
-similarity_score = find_similarity(sentence2, sentence4)
-print("The semantic similarity between the two sentences is:", similarity_score)
-
+# print(x2)
 import nltk
 from nltk.corpus import wordnet as wn
 from nltk.tokenize import word_tokenize
