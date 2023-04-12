@@ -607,7 +607,10 @@ class Column:
                         )
                         candidate.similarity_avg += max_similarity
 
-                candidate.similarity_avg /= len(self.cells) - 1
+                if len(self.cells) == 1:
+                    candidate.similarity_avg = 0
+                else:
+                    candidate.similarity_avg /= len(self.cells) - 1
 
                 GREEN = "\033[92m"
                 RESET = "\033[0m"
@@ -617,4 +620,5 @@ class Column:
                 print(
                     f"Average similarity score: {GREEN}{candidate.similarity_avg}{RESET}"
                 )
+                print("---------------------------------")
                 print()

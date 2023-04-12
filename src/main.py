@@ -52,15 +52,32 @@ with progress:
     counter_test = 0
 
     for col in progress.track(
-        cols_test_tag, description="Generating features for semantic similarities"
+        cols_test_tag,
+        description="Generating features for semantic similarities (test)",
     ):
         col.find_most_similar
         counter_test += 1
-        if num_of_iterations % 50 == 0:
+        if counter_test % 10 == 0:
             num_of_iterations += 1
             pickle_save(
                 cols_test_tag[:counter_test],
-                f"new-features-semantic-test-{num_of_iterations}",
+                f"with-semantic-features-test-{num_of_iterations}",
+            )
+
+    num_of_iterations = 0
+    counter_validation = 0
+
+    for col in progress.track(
+        cols_validation_tag,
+        description="Generating features for semantic similarities (validation)",
+    ):
+        col.find_most_similar
+        counter_validation += 1
+        if counter_validation % 10 == 0:
+            num_of_iterations += 1
+            pickle_save(
+                cols_validation_tag[:counter_validation],
+                f"with-semantic-features-validation-{num_of_iterations}",
             )
 
 
