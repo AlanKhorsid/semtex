@@ -38,6 +38,7 @@ class Candidate:
     tag: Union[str, None]
     tag_ratio: Union[float, None]
     most_similar_to: Union[str, None]
+    similarity_avg: Union[float, None]
 
     instance_overlap_l1_l2: Union[int, None]
     instance_overlap_l2_l1: Union[int, None]
@@ -70,6 +71,7 @@ class Candidate:
         self.tag = None
         self.tag_ratio = None
         self.most_similar_to = None
+        self.similarity_avg = None
 
         self.instance_overlap_l1_l2 = None
         self.instance_overlap_l2_l1 = None
@@ -261,6 +263,7 @@ class Candidate:
             self.tag,
             self.tag_ratio,
             self.most_similar_to,
+            self.similarity_avg
             # self.instance_names,
         ]
 
@@ -562,6 +565,7 @@ class Column:
                 my_synsets = preprocessed_sentences[cell.mention][candidate]
 
                 most_similar_candidate = None
+                candidate.similarity_avg = 0
                 for other_cell in self.cells:
                     max_similarity = -1
                     if other_cell.mention == cell.mention:
@@ -596,10 +600,21 @@ class Column:
 
                     if candidate.most_similar_to == "":
                         candidate.most_similar_to += most_similar_candidate.to_sentence
+                        candidate.similarity_avg += max_similarity
                     else:
                         candidate.most_similar_to += (
                             " | " + most_similar_candidate.to_sentence
                         )
-                print(f"{cell.mention} is most similar to these candidates:")
+                        candidate.similarity_avg += max_similarity
+
+                candidate.similarity_avg /= len(self.cells) - 1
+
+                GREEN = "\033[92m"
+                RESET = "\033[0m"
+
+                print(f"{candidate.to_sentence} is most similar to these candidates:")
                 print(candidate.most_similar_to)
+                print(
+                    f"Average similarity score: {GREEN}{candidate.similarity_avg}{RESET}"
+                )
                 print()
