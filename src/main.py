@@ -48,13 +48,20 @@ with progress:
         pickle_save(cols_test_tag, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
 
+    num_of_iterations = 0
+    counter_test = 0
+
     for col in progress.track(
         cols_test_tag, description="Generating features for semantic similarities"
     ):
         col.find_most_similar
-        for c in col.cells:
-            for cc in c.candidates:
-                print(cc.most_similar_to)
+        counter_test += 1
+        if num_of_iterations % 50 == 0:
+            num_of_iterations += 1
+            pickle_save(
+                cols_test_tag[:counter_test],
+                f"new-features-semantic-test-{num_of_iterations}",
+            )
 
 
 # with progress:
