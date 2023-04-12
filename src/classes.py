@@ -21,6 +21,7 @@ from nltk.corpus import stopwords
 
 stop_words = set(stopwords.words("english"))
 tagger = SequenceTagger.load("flair/ner-english-ontonotes-large")
+lemmatizer = WordNetLemmatizer()
 
 
 class Candidate:
@@ -539,9 +540,6 @@ class Column:
 
     @property
     def find_most_similar(self):
-        lemmatizer = WordNetLemmatizer()
-        stop_words = set(stopwords.words("english"))
-
         def preprocess_sentence(sentence):
             words = word_tokenize(sentence)
             words = [word for word in words if not word.lower() in stop_words]
@@ -562,6 +560,12 @@ class Column:
 
         for cell in self.cells:
             for candidate in cell.candidates:
+                GREEN = "\033[92m"
+                RED = "\033[91m"
+                RESET = "\033[0m"
+                print(
+                    f"Processing {RED}{len(cell.candidates)}{RESET} candidates for {cell.mention}..."
+                )
                 my_synsets = preprocessed_sentences[cell.mention][candidate]
 
                 most_similar_candidate = None
@@ -590,9 +594,12 @@ class Column:
                             for synset in other_synsets
                         )
 
-                        similarity_score = similarity_sum / (
-                            len(my_synsets) * len(other_synsets)
-                        )
+                        if len(my_synsets) == 0 or len(other_synsets) == 0:
+                            similarity_score = 0
+                        else:
+                            similarity_score = similarity_sum / (
+                                len(my_synsets) * len(other_synsets)
+                            )
 
                         if similarity_score > max_similarity:
                             max_similarity = similarity_score
@@ -611,9 +618,6 @@ class Column:
                     candidate.similarity_avg = 0
                 else:
                     candidate.similarity_avg /= len(self.cells) - 1
-
-                GREEN = "\033[92m"
-                RESET = "\033[0m"
 
                 print(f"{candidate.to_sentence} is most similar to these candidates:")
                 print(candidate.most_similar_to)
