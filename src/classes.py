@@ -1,4 +1,6 @@
 from collections import defaultdict
+import functools
+from multiprocessing import Pool
 from _requests import wikidata_entity_search, wikidata_get_entity, RateLimitException
 from preprocessing.suggester import generate_suggestion
 from util import (
@@ -18,7 +20,7 @@ from nltk.corpus import wordnet as wn
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 
 
 stop_words = set(stopwords.words("english"))
@@ -551,15 +553,14 @@ class Column:
             return synsets
 
         def preprocess_sentences_in_parallel():
-            with ProcessPoolExecutor() as executor:
+            with Pool() as pool:
                 for cell in self.cells:
                     for candidate in cell.candidates:
-                        future = executor.submit(
+                        preprocess_partial = functools.partial(
                             preprocess_sentence, candidate.to_sentence
                         )
-                        preprocessed_sentences[cell.mention][
-                            candidate
-                        ] = future.result()
+                        future = pool.imap_unordered(preprocess_partial, [candidate])
+                        preprocessed_sentences[cell.mention][candidate] = next(future)
 
         def path_similarity_cached(synset1, synset2):
             cache_key = (synset1, synset2)
@@ -620,7 +621,3 @@ class Column:
                     candidate.similarity_avg = 0
                 else:
                     candidate.similarity_avg /= len(self.cells) - 1
-
-                print(
-                    f"{candidate.to_sentence} is most similar to {candidate.most_similar_to} with an average similarity of {candidate.similarity_avg}"
-                )
