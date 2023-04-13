@@ -18,7 +18,7 @@ from nltk.corpus import wordnet as wn
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 
 stop_words = set(stopwords.words("english"))
@@ -551,7 +551,7 @@ class Column:
             return synsets
 
         def preprocess_sentences_in_parallel():
-            with ThreadPoolExecutor() as executor:
+            with ProcessPoolExecutor() as executor:
                 for cell in self.cells:
                     for candidate in cell.candidates:
                         future = executor.submit(
@@ -620,3 +620,7 @@ class Column:
                     candidate.similarity_avg = 0
                 else:
                     candidate.similarity_avg /= len(self.cells) - 1
+
+                print(
+                    f"{candidate.to_sentence} is most similar to {candidate.most_similar_to} with an average similarity of {candidate.similarity_avg}"
+                )
