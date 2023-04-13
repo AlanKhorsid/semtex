@@ -50,9 +50,9 @@ with progress:
 
     for col in progress.track(
         cols_test_tag,
-        description="Generating features for semantic similarities (test)",
+        description="Generating normalized num_statements (test)",
     ):
-        col.find_most_similar
+        col.normalize_num_statements
         counter_test += 1
         if counter_test % 100 == 0:
             num_of_iterations += 1
@@ -66,9 +66,9 @@ with progress:
 
     for col in progress.track(
         cols_validation_tag,
-        description="Generating features for semantic similarities (validation)",
+        description="Generating normalized num_statements (validation)",
     ):
-        col.find_most_similar
+        col.normalize_num_statements
         counter_validation += 1
         if counter_validation % 100 == 0:
             num_of_iterations += 1

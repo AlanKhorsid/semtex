@@ -1,6 +1,4 @@
 from collections import defaultdict
-import functools
-from multiprocessing import Pool
 from _requests import wikidata_entity_search, wikidata_get_entity, RateLimitException
 from preprocessing.suggester import generate_suggestion
 from util import (
@@ -553,14 +551,15 @@ class Column:
             return synsets
 
         def preprocess_sentences_in_parallel():
-            with Pool() as pool:
+            with ThreadPoolExecutor() as executor:
                 for cell in self.cells:
                     for candidate in cell.candidates:
-                        preprocess_partial = functools.partial(
+                        future = executor.submit(
                             preprocess_sentence, candidate.to_sentence
                         )
-                        future = pool.imap_unordered(preprocess_partial, [candidate])
-                        preprocessed_sentences[cell.mention][candidate] = next(future)
+                        preprocessed_sentences[cell.mention][
+                            candidate
+                        ] = future.result()
 
         def path_similarity_cached(synset1, synset2):
             cache_key = (synset1, synset2)
@@ -621,3 +620,18 @@ class Column:
                     candidate.similarity_avg = 0
                 else:
                     candidate.similarity_avg /= len(self.cells) - 1
+
+    # normalize num_statements
+    @property
+    def normalize_num_statements(self):
+        # get the max num_statements for each candidateset
+        max_num_statements = 0
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                if candidate.num_statements > max_num_statements:
+                    max_num_statements = candidate.num_statements
+
+        # normalize num_statements
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                candidate.num_statements /= max_num_statements
