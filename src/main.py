@@ -54,7 +54,7 @@ with progress:
     ):
         col.find_most_similar
         counter_test += 1
-        if counter_test % 10 == 0:
+        if counter_test % 100 == 0:
             num_of_iterations += 1
             pickle_save(
                 cols_test_tag[:counter_test],
@@ -68,14 +68,9 @@ with progress:
         cols_validation_tag,
         description="Generating features for semantic similarities (validation)",
     ):
-        # skip the first 15 columns
-        if counter_validation < 17:
-            counter_validation += 1
-            continue
-
         col.find_most_similar
         counter_validation += 1
-        if counter_validation % 10 == 0:
+        if counter_validation % 100 == 0:
             num_of_iterations += 1
             pickle_save(
                 cols_validation_tag[:counter_validation],

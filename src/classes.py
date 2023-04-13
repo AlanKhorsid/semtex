@@ -606,12 +606,15 @@ class Column:
                             max_similarity = similarity_score
                             most_similar_candidate = other_candidate
 
-                    candidate.most_similar_to += (
-                        " | " + most_similar_candidate.to_sentence
-                        if candidate.most_similar_to
-                        else most_similar_candidate.to_sentence
-                    )
-                    candidate.similarity_avg += max_similarity
+                    if most_similar_candidate is not None:
+                        candidate.most_similar_to += (
+                            " | " + most_similar_candidate.to_sentence
+                            if candidate.most_similar_to
+                            else most_similar_candidate.to_sentence
+                        )
+                        candidate.similarity_avg += max_similarity
+                    else:
+                        candidate.most_similar_to = ""
 
                 if len(self.cells) == 1:
                     candidate.similarity_avg = 0
