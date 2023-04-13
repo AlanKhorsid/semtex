@@ -12,9 +12,6 @@ from util import (
     progress,
 )
 import pandas as pd
-from nltk.stem import WordNetLemmatizer
-
-from _requests import wikidata_get_entities
 
 i = 0
 PICKLE_FILE_NAME = "test-2022-bing"
@@ -71,6 +68,11 @@ with progress:
         cols_validation_tag,
         description="Generating features for semantic similarities (validation)",
     ):
+        # skip the first 15 columns
+        if counter_validation < 17:
+            counter_validation += 1
+            continue
+
         col.find_most_similar
         counter_validation += 1
         if counter_validation % 10 == 0:

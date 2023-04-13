@@ -18,6 +18,8 @@ from nltk.corpus import wordnet as wn
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
+from concurrent.futures import ThreadPoolExecutor
+
 
 stop_words = set(stopwords.words("english"))
 tagger = SequenceTagger.load("flair/ner-english-ontonotes-large")
@@ -548,27 +550,34 @@ class Column:
             synsets = [synset for sublist in synsets for synset in sublist]
             return synsets
 
+        def preprocess_sentences_in_parallel():
+            with ThreadPoolExecutor() as executor:
+                for cell in self.cells:
+                    for candidate in cell.candidates:
+                        future = executor.submit(
+                            preprocess_sentence, candidate.to_sentence
+                        )
+                        preprocessed_sentences[cell.mention][
+                            candidate
+                        ] = future.result()
+
+        def path_similarity_cached(synset1, synset2):
+            cache_key = (synset1, synset2)
+            if cache_key not in path_similarity_cache:
+                path_similarity_cache[cache_key] = synset1.path_similarity(synset2) or 0
+            return path_similarity_cache[cache_key]
+
         preprocessed_sentences = defaultdict(dict)
+        path_similarity_cache = {}
+
+        preprocess_sentences_in_parallel()
 
         for cell in self.cells:
             for candidate in cell.candidates:
-                candidate.most_similar_to = ""
-                if candidate not in preprocessed_sentences[cell.mention]:
-                    preprocessed_sentences[cell.mention][
-                        candidate
-                    ] = preprocess_sentence(candidate.to_sentence)
-
-        for cell in self.cells:
-            for candidate in cell.candidates:
-                GREEN = "\033[92m"
-                RED = "\033[91m"
-                RESET = "\033[0m"
-                print(
-                    f"Processing {RED}{len(cell.candidates)}{RESET} candidates for {cell.mention}..."
-                )
                 my_synsets = preprocessed_sentences[cell.mention][candidate]
 
                 most_similar_candidate = None
+                candidate.most_similar_to = ""
                 candidate.similarity_avg = 0
                 for other_cell in self.cells:
                     max_similarity = -1
@@ -577,19 +586,11 @@ class Column:
 
                     for other_candidate in other_cell.candidates:
                         similarity_score = 0
-                        if (
-                            other_candidate
-                            not in preprocessed_sentences[other_cell.mention]
-                        ):
-                            preprocessed_sentences[other_cell.mention][
-                                other_candidate
-                            ] = preprocess_sentence(other_candidate.to_sentence)
-
                         other_synsets = preprocessed_sentences[other_cell.mention][
                             other_candidate
                         ]
                         similarity_sum = sum(
-                            ms.path_similarity(synset) or 0
+                            path_similarity_cached(ms, synset)
                             for ms in my_synsets
                             for synset in other_synsets
                         )
@@ -605,24 +606,14 @@ class Column:
                             max_similarity = similarity_score
                             most_similar_candidate = other_candidate
 
-                    if candidate.most_similar_to == "":
-                        candidate.most_similar_to += most_similar_candidate.to_sentence
-                        candidate.similarity_avg += max_similarity
-                    else:
-                        candidate.most_similar_to += (
-                            " | " + most_similar_candidate.to_sentence
-                        )
-                        candidate.similarity_avg += max_similarity
+                    candidate.most_similar_to += (
+                        " | " + most_similar_candidate.to_sentence
+                        if candidate.most_similar_to
+                        else most_similar_candidate.to_sentence
+                    )
+                    candidate.similarity_avg += max_similarity
 
                 if len(self.cells) == 1:
                     candidate.similarity_avg = 0
                 else:
                     candidate.similarity_avg /= len(self.cells) - 1
-
-                print(f"{candidate.to_sentence} is most similar to these candidates:")
-                print(candidate.most_similar_to)
-                print(
-                    f"Average similarity score: {GREEN}{candidate.similarity_avg}{RESET}"
-                )
-                print("---------------------------------")
-                print()
