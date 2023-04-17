@@ -23,8 +23,8 @@ PICKLE_FILE_NAME = "test-2022-bing"
 # cols_test: list[Column] = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=True)
 # cols_validation: list[Column] = pickle_load("validation-2022-bing", is_dump=True)
 
-cols_test_tag = pickle_load("all-test-tag", is_dump=True)
-cols_validation_tag = pickle_load("all-validation-tag", is_dump=True)
+cols_test_tag = pickle_load("all-test-with-semantic-features", is_dump=True)
+cols_validation_tag = pickle_load("all-validation-with-semantic-features", is_dump=True)
 
 # ----- Fetch candidates -----
 while not all([col.all_cells_fetched for col in cols_test_tag]):
@@ -44,39 +44,6 @@ with progress:
         col.compute_features()
         pickle_save(cols_test_tag, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
-
-    num_of_iterations = 0
-    counter_test = 0
-
-    for col in progress.track(
-        cols_test_tag,
-        description="Generating normalized num_statements (test)",
-    ):
-        col.normalize_num_statements
-        counter_test += 1
-        if counter_test % 100 == 0:
-            num_of_iterations += 1
-            pickle_save(
-                cols_test_tag[:counter_test],
-                f"with-semantic-features-test-{num_of_iterations}",
-            )
-
-    num_of_iterations = 0
-    counter_validation = 0
-
-    for col in progress.track(
-        cols_validation_tag,
-        description="Generating normalized num_statements (validation)",
-    ):
-        col.normalize_num_statements
-        counter_validation += 1
-        if counter_validation % 100 == 0:
-            num_of_iterations += 1
-            pickle_save(
-                cols_validation_tag[:counter_validation],
-                f"with-semantic-features-validation-{num_of_iterations}",
-            )
-
 
 # with progress:
 #     t1 = progress.add_task("Columns", total=len(cols))
@@ -115,9 +82,11 @@ test = pd.DataFrame(
         "description_overlap": [x[6] for x in features_test],
         "tag": [x[7] if x[7] is not None else "" for x in features_test],
         "tag_ratio": [x[8] for x in features_test],
+        "most_similar_to": [x[9] if x[9] is not None else "" for x in features_test],
+        "similarity_avg": [x[10] for x in features_test],
         # "instance_names": [x[7] for x in features],
-        "title_levenshtein": [x[9] for x in features_test],
-        "label": [x[10] for x in features_test],
+        "title_levenshtein": [x[11] for x in features_test],
+        "label": [x[12] for x in features_test],
     }
 )
 train = pd.DataFrame(
@@ -131,15 +100,19 @@ train = pd.DataFrame(
         "description_overlap": [x[6] for x in features_validation],
         "tag": [x[7] if x[7] is not None else "" for x in features_validation],
         "tag_ratio": [x[8] for x in features_validation],
+        "most_similar_to": [
+            x[9] if x[9] is not None else "" for x in features_validation
+        ],
+        "similarity_avg": [x[10] for x in features_validation],
         # "instance_names": [x[7] for x in features_validation],
-        "title_levenshtein": [x[9] for x in features_validation],
-        "label": [x[10] for x in features_validation],
+        "title_levenshtein": [x[11] for x in features_validation],
+        "label": [x[12] for x in features_validation],
     }
 )
 
 
 # text_features = ["title", "description", "tag"]
-text_features = ["title", "description", "tag"]
+text_features = ["title", "description", "tag", "most_similar_to"]
 # text_features = []
 
 X_train = train.drop(["label"], axis=1)
@@ -203,14 +176,11 @@ param_grid = ParameterGrid(cb_params)
 param_grid = list(param_grid)
 random.shuffle(param_grid)
 
-best_f1 = 0
+best_f1 = 0.80
 num_of_iterations = 0
 list_of_params = []
-already_seen = pickle_load("used-parameters", is_dump=True)
 # loop through the parameter combinations
 for params in param_grid:
-    if params in already_seen:
-        continue
     num_of_iterations += 1
     print(params)
     print()
@@ -294,7 +264,7 @@ for params in param_grid:
         print(f"{GREEN}{BOLD}NEW BEST F1:{RESET}      {GREEN}{BOLD}{best_f1}{RESET}")
         print("----------------------------------------")
         print()
-        if best_f1 > 0.797:
+        if best_f1 > 0.80:
             # pickle f1, precision, recall and model
             pickle_save(
                 {

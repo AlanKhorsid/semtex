@@ -1,98 +1,58 @@
 from util import pickle_load, pickle_save
 
-# x1 = pickle_load("all-test-tag", is_dump=True)
+x1 = pickle_load("with-semantic-features-test-0-2000", is_dump=True)
+x2 = pickle_load("with-semantic-features-test-2000-4000", is_dump=True)
+x3 = pickle_load("with-semantic-features-test-4000-5600", is_dump=True)
+x4 = pickle_load("with-semantic-features-test-5601-5631", is_dump=True)
+x5 = pickle_load("with-semantic-features-test-5631", is_dump=True)
 
-# # get tags and tag ratio
-# for col in x1:
-#     print(f"Column: {col.cells}")
+# for x in x5.cells:
+#     for cand in x.candidates:
+#         if hasattr(cand, "most_similar_to"):
+#             print(cand.most_similar_to)
+#         else:
+#             print("x5 None")
+
+# z = pickle_load("all-test-tag", is_dump=True)
+
+# remove the first 2000 from x2
+x2 = x2[2000:]
+# remove the first 4000 from x3
+x3 = x3[4000:]
+
+
+# print(len(x1) + len(x2) + len(x3) + len(x4))
+
+x = x1 + x2 + x3 + x4
+x.append(x5)
+pickle_save(x, "all-test-with-semantic-features")
+# list_x = []
+# list_x_cells = []
+# list_z = []
+# list_z_cells = []
+# # check if x and z are the same and in the same order. If not then print the column and the cells
+# for col in x:
+#     list_x_cells = []
 #     for cell in col.cells:
-#         print(f"Cell: {cell}")
-#         print()
-#         for candidate in cell.candidates:
-#             print(f"Candidate: {candidate.to_sentence}")
-#             print(f"Tag:    {candidate.tag}")
-#             print(f"Tag ratio:    {candidate.tag_ratio}")
-#             print()
+#         list_x_cells.append(cell.mention)
 
-# x2 = pickle_load("best-model-so-far", is_dump=True)
-
-# print(x2.get_params())
-# print(x2)
-import nltk
-from nltk.corpus import wordnet as wn
-from nltk.tokenize import word_tokenize
-from nltk.stem import WordNetLemmatizer
-from nltk.corpus import stopwords
+#     list_x.append(list_x_cells)
 
 
-# Define the function to find the most semantically similar sentence from a list
-def find_most_similar(target_sentence, sentence_list):
-    # Tokenize the target sentence into words
-    target_words = word_tokenize(target_sentence)
+# for col in z:
+#     list_z_cells = []
+#     for cell in col.cells:
+#         list_z_cells.append(cell.mention)
 
-    # Remove stop words from the target sentence
-    stop_words = set(stopwords.words("english"))
-    target_words = [word for word in target_words if not word.lower() in stop_words]
+#     list_z.append(list_z_cells)
 
-    # Lemmatize the words in the target sentence
-    lemmatizer = WordNetLemmatizer()
-    target_words = [lemmatizer.lemmatize(word) for word in target_words]
+# num = 0
+# # check if x and z are the same and in the same order. If not then print the column and the cells
+# for i in range(len(list_x)):
+#     if list_x[i] != list_z[i]:
+#         print(f"Column {i} is not the same")
+#         print(f"X: {list_x[i]}")
+#         print(f"Z: {list_z[i]}")
+#         num += 1
 
-    # Create synsets for the words in the target sentence
-    target_synsets = [wn.synsets(word) for word in target_words]
-    target_synsets = [synset for sublist in target_synsets for synset in sublist]
-
-    # Loop through each sentence in the list and find the maximum similarity score
-    max_similarity = 0
-    most_similar_sentence = ""
-    for sentence in sentence_list:
-        # Tokenize the sentence into words
-        words = word_tokenize(sentence)
-
-        # Remove stop words from the sentence
-        words = [word for word in words if not word.lower() in stop_words]
-
-        # Lemmatize the words in the sentence
-        words = [lemmatizer.lemmatize(word) for word in words]
-
-        # Create synsets for the words in the sentence
-        synsets = [wn.synsets(word) for word in words]
-        synsets = [synset for sublist in synsets for synset in sublist]
-
-        # Find the maximum similarity score between synsets from the target sentence and the current sentence
-        similarity_sum = 0
-        for target_synset in target_synsets:
-            for synset in synsets:
-                similarity = target_synset.path_similarity(synset)
-                if similarity is not None:
-                    similarity_sum += similarity
-
-        similarity_score = similarity_sum / (len(target_synsets) * len(synsets))
-
-        # Update the maximum similarity score and most similar sentence
-        if similarity_score > max_similarity:
-            max_similarity = similarity_score
-            most_similar_sentence = sentence
-
-    return most_similar_sentence, max_similarity
-
-
-# Example usage
-target_sentence = "Islamic Emirate of Afghanistan is a Taliban-led partially recognized government of Afghanistan from 1996 to 2001 and is an instance of sovereign state, emirate, historical country, state with limited recognition"
-sentence_list = [
-    "Transnistria is a de facto unrecognized state in Eastern Europe that has declared independence from Moldova and is an instance of state with limited recognition, country, landlocked country, unitary state, Rechtsstaat, social state, secular state",
-    "Parliament of Transnistria is a Legislature of Transnistria and is an instance of unicameral legislature",
-    "Transnistria is an instance of geographical region, disputed territory",
-    "coat of arms of Transnistria is a national coat of arms of Transnistria and is an instance of national coat of arms",
-]
-most_similar_sentence, similarity_score = find_most_similar(
-    target_sentence, sentence_list
-)
-print("The most semantically similar sentence is:", most_similar_sentence)
-print("The similarity score is:", similarity_score)
-# print all scores
-for sentence in sentence_list:
-    most_similar_sentence, similarity_score = find_most_similar(
-        target_sentence, [sentence]
-    )
-    print(f"Similarity score for {sentence} is {similarity_score}")
+# print(num)
