@@ -88,17 +88,17 @@ test = pd.DataFrame(
         "description": [x[2] for x in features_test],
         "num_statements": [x[3] for x in features_test],
         "instance_overlap": [x[4] for x in features_test],
-        # "subclass_overlap": [x[5] for x in features_test],
-        "description_overlap": [x[5] for x in features_test],
-        "tag": [x[6] if x[6] is not None else "" for x in features_test],
-        "tag_ratio": [x[7] for x in features_test],
-        "description_length": [x[8] for x in features_test],
-        "title_length": [x[9] for x in features_test],
-        "num_of_desc_words": [x[10] for x in features_test],
-        "num_of_title_words": [x[11] for x in features_test],
+        "subclass_overlap": [x[5] for x in features_test],
+        "description_overlap": [x[6] for x in features_test],
+        "tag": [x[7] if x[7] is not None else "" for x in features_test],
+        "tag_ratio": [x[8] for x in features_test],
+        "description_length": [x[9] for x in features_test],
+        "title_length": [x[10] for x in features_test],
+        "num_of_desc_words": [x[11] for x in features_test],
+        "num_of_title_words": [x[12] for x in features_test],
         # "instance_names": [x[7] for x in features],
-        "title_levenshtein": [x[12] for x in features_test],
-        "label": [x[13] for x in features_test],
+        "title_levenshtein": [x[13] for x in features_test],
+        "label": [x[14] for x in features_test],
     }
 )
 train = pd.DataFrame(
@@ -108,17 +108,17 @@ train = pd.DataFrame(
         "description": [x[2] for x in features_validation],
         "num_statements": [x[3] for x in features_validation],
         "instance_overlap": [x[4] for x in features_validation],
-        # "subclass_overlap": [x[5] for x in features_validation],
-        "description_overlap": [x[5] for x in features_validation],
-        "tag": [x[6] if x[6] is not None else "" for x in features_validation],
-        "tag_ratio": [x[7] for x in features_validation],
-        "description_length": [x[8] for x in features_validation],
-        "title_length": [x[9] for x in features_validation],
-        "num_of_desc_words": [x[10] for x in features_validation],
-        "num_of_title_words": [x[11] for x in features_validation],
+        "subclass_overlap": [x[5] for x in features_validation],
+        "description_overlap": [x[6] for x in features_validation],
+        "tag": [x[7] if x[7] is not None else "" for x in features_validation],
+        "tag_ratio": [x[8] for x in features_validation],
+        "description_length": [x[9] for x in features_validation],
+        "title_length": [x[10] for x in features_validation],
+        "num_of_desc_words": [x[11] for x in features_validation],
+        "num_of_title_words": [x[12] for x in features_validation],
         # "instance_names": [x[7] for x in features_validation],
-        "title_levenshtein": [x[12] for x in features_validation],
-        "label": [x[13] for x in features_validation],
+        "title_levenshtein": [x[13] for x in features_validation],
+        "label": [x[14] for x in features_validation],
     }
 )
 
@@ -178,7 +178,6 @@ cb_params = {
     ],
     "feature_calcers": [
         "BoW:top_tokens_count=1000",
-        "NaiveBayes",
     ],
 }
 
@@ -190,7 +189,6 @@ random.shuffle(param_grid)
 
 best_f1 = 0.8036256111937847
 num_of_iterations = 0
-list_of_params = []
 # loop through the parameter combinations
 for params in param_grid:
     num_of_iterations += 1
@@ -200,13 +198,6 @@ for params in param_grid:
     # train the model
     model = CatBoostClassifier(**params)
     model.fit(train_pool, eval_set=test_pool, verbose=100, early_stopping_rounds=100)
-    list_of_params.append(params)
-
-    if num_of_iterations % 50 == 0:
-        pickle_save(
-            list_of_params,
-            f"used-parameters",
-        )
 
     num_correct_annotations = 0
     num_submitted_annotations = 0
