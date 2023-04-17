@@ -32,16 +32,21 @@ class Statement:
         elif self.type == "time":
             try:
                 literal_date = parse_date(literal)
+                if self.value.date() == literal_date.date():
+                    return 1
+                d1 = literal_date
+                d2 = self.value
+                if d2 < d1:
+                    d1, d2 = d2, d1
+                norm_date_diff = 1 - abs((d2 - d1).days) / ((date(d2.year, 12, 31) - date(d1.year, 1, 1)).days + 1)
+                return norm_date_diff
             except:
                 return 0
-            if self.value.date() == literal_date.date():
+
+        elif self.type == "monolingualtext":
+            if self.value == literal:
                 return 1
-            d1 = literal_date
-            d2 = self.value
-            if d2 < d1:
-                d1, d2 = d2, d1
-            norm_date_diff = 1 - abs((d2 - d1).days) / ((date(d2.year, 12, 31) - date(d1.year, 1, 1)).days + 1)
-            return norm_date_diff
+            return Levenshtein.ratio(self.value, literal)
         else:
             return 0
 
@@ -99,6 +104,8 @@ class Candidate:
                         # some weird dates can occour. Should be fixed in the future
                         continue
                 value = dt
+            elif type == "monolingualtext":
+                value = value["text"]
             else:
                 continue
             parsed_statements.append(Statement(prop, type, value))
@@ -153,10 +160,10 @@ class Cell:
                 score, properties, _ = candidate.get_property_score(literal, type="literal")
                 literal_scores.append((score, properties))
             entity_scores = []
-            for entity in row_entities:
+            for col_index, entity in row_entities:
                 score, properties, values = candidate.get_property_score(entity.mention, type="entity")
-                entity_scores.append((score, properties, values))
-            total = sum([score for score, _ in literal_scores]) + sum([score for score, _, _ in entity_scores])
+                entity_scores.append((score, properties, values, col_index))
+            total = sum([score for score, _ in literal_scores]) + sum([score for score, _, _, _ in entity_scores])
             scores.append((total, literal_scores, entity_scores, candidate))
         scores.sort(key=lambda x: x[0], reverse=True)
 
@@ -172,8 +179,8 @@ class Cell:
                             {"score": score, "properties": properties} for score, properties in literal_scores
                         ],
                         "entity_scores": [
-                            {"score": score, "properties": properties, "values": values}
-                            for score, properties, values in entity_scores
+                            {"score": score, "properties": properties, "values": values, "col_index": col_index}
+                            for score, properties, values, col_index in entity_scores
                         ],
                         "candidate": candidate,
                     }
@@ -185,32 +192,35 @@ class Cell:
 
 
 class Column:
-    cells: list[Cell]
+    cells: list[Union[Cell, None]]
     index: int
 
-    def __init__(self, cells: list[Cell], index: int):
+    def __init__(self, cells: list[Union[Cell, None]], index: int):
         self.cells = cells
         self.index = index
 
 
 class Table:
     columns: list[Column]
-    literal_columns: list[list[str]]
+    literal_columns: list[list[Union[str, None]]]
+    targets: dict
 
-    def __init__(self, columns: list[Column], literal_columns: list[list[str]]):
+    def __init__(self, columns: list[Column], literal_columns: list[list[Union[str, None]]], targets: dict):
         self.columns = columns
         self.literal_columns = literal_columns
+        self.targets = targets
 
     def dogboost(self):
         col_scores = []
         for i, column in enumerate(self.columns):
             best_scores = []
             for j, cell in enumerate(column.cells):
-                if cell.correct_id == 73848923:
-                    x = 1
-
                 row_literals = [literal_column[j] for literal_column in self.literal_columns]
-                row_entities = [entity_column.cells[j] for z, entity_column in enumerate(self.columns) if z != i]
+                row_entities = [
+                    (entity_column.index, entity_column.cells[j])
+                    for z, entity_column in enumerate(self.columns)
+                    if z != i
+                ]
                 best_score = cell.get_property_scores(row_entities, row_literals)
                 best_scores.append(best_score)
             avg_score = sum([score[0]["total"] for score in best_scores]) / len(best_scores)
@@ -256,27 +266,57 @@ class Table:
                 # return 0, 0, 0
                 pass
 
+        cea_results = []
         num_correct_annotations = 0
         num_submitted_annotations = 0
         num_ground_truth_annotations = 0
 
-        for score, cell in zip(selections, column.cells):
-            if score[0]["candidate"] is None or not cell.has_correct_candidate:
-                continue
+        for i, (score, cell) in enumerate(zip(selections, column.cells)):
             num_ground_truth_annotations += 1
+            if score[0]["candidate"] is None:
+                for entity in score[0]["entity_scores"]:
+                    num_ground_truth_annotations += 1
+                continue
 
+            cea_results.append((i + 1, column.index, score[0]["candidate"]))
+            for entity in score[0]["entity_scores"]:
+                if len(entity["values"]) > 1 or len(entity["values"]) > 1:
+                    if len(set(entity["values"])) != 1:
+                        # Here we should select the one with the most occouring property - not just the first one
+                        pass
+
+                num_ground_truth_annotations += 1
+                num_submitted_annotations += 1
+
+                entity_col = [c for c in self.columns if c.index == entity["col_index"]][0]
+                c = [c for c in entity_col.cells[i].candidates if c.id == entity["values"][0]]
+                if len(c) == 0:
+                    # fetch candidate here
+                    continue
+                else:
+                    c = c[0]
+
+                cea_results.append((i + 1, entity["col_index"], c))
+
+                if entity_col.cells[i].correct_id == entity["values"][0]:
+                    num_correct_annotations += 1
+
+            # if score[0]["total"] < (len(score[0]["literal_scores"]) + len(score[0]["entity_scores"])) * 0.8:
+            #     x = 1
             num_submitted_annotations += 1
-
             if score[0]["candidate"].id == cell.correct_id:
                 num_correct_annotations += 1
-            else:
-                if cell.has_correct_candidate and len(score) == 1:
-                    x = 1
+                # diff = (len(score[0]["literal_scores"]) + len(score[0]["entity_scores"])) - score[0]["total"]
+                # if diff > 0.1:
+                #     x = 1
+            # else:
+            #     if cell.has_correct_candidate and len(score) == 1:
+            #         x = 1
 
-                    # If confidence (total) is less than some threshold, then we should give it ML
-                    # If title is not close to the cell mention, then we should give it ML
+            # If confidence (total) is less than some threshold, then we should give it ML
+            # If title is not close to the cell mention, then we should give it ML
 
-        return num_correct_annotations, num_submitted_annotations, num_ground_truth_annotations
+        return cea_results, num_correct_annotations, num_submitted_annotations, num_ground_truth_annotations
 
 
 class TableCollection:
@@ -290,32 +330,36 @@ class TableCollection:
             for table in progress.track(self.tables.values(), description="Fetching candidates"):
                 for column in table.columns:
                     for cell in column.cells:
-                        cell.fetch_candidates()
+                        if cell is not None:
+                            cell.fetch_candidates()
 
     def fetch_info(self):
         candidate_ids = set()
         for table in self.tables.values():
             for column in table.columns:
                 for cell in column.cells:
-                    for candidate in cell.candidates:
-                        candidate_ids.add(candidate.id)
+                    if cell is not None:
+                        for candidate in cell.candidates:
+                            candidate_ids.add(candidate.id)
         wikidata_fetch_entities(list(candidate_ids))
 
         for table in self.tables.values():
             for column in table.columns:
                 for cell in column.cells:
-                    for candidate in cell.candidates:
-                        candidate.fetch_info()
+                    if cell is not None:
+                        for candidate in cell.candidates:
+                            candidate.fetch_info()
 
     def fetch_statement_entities(self):
         entity_ids = set()
         for table in self.tables.values():
             for column in table.columns:
                 for cell in column.cells:
-                    for candidate in cell.candidates:
-                        for statement in candidate.statements:
-                            if statement.type == "wikibase-item":
-                                entity_ids.add(statement.value)
+                    if cell is not None:
+                        for candidate in cell.candidates:
+                            for statement in candidate.statements:
+                                if statement.type == "wikibase-item":
+                                    entity_ids.add(statement.value)
         wikidata_fetch_entities(list(entity_ids))
 
     def limit_to(self, n: int):

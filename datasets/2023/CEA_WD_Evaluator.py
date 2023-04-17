@@ -34,6 +34,7 @@ class CEA_Evaluator:
             cell = '%s %s %s' % (row['tab_id'], row['row_id'], row['col_id'])
             if cell in gt_cell_ent:
                 if cell in annotated_cells:
+                    print(cell)
                     raise Exception("Duplicate cells in the submission file")
                 else:
                     annotated_cells.add(cell)
@@ -44,6 +45,8 @@ class CEA_Evaluator:
 
                 if annotation.lower() in gt_cell_ent[cell].lower().split():
                     correct_cells.add(cell)
+                else:
+                    print('%s,%s' % (cell.replace(' ', ','), gt_cell_ent[cell]))
 
         precision = len(correct_cells) / len(annotated_cells) if len(annotated_cells) > 0 else 0.0
         recall = len(correct_cells) / len(gt_cell_ent.keys())
@@ -73,14 +76,14 @@ class CEA_Evaluator:
 if __name__ == "__main__":
     # Lets assume the the ground_truth is a CSV file
     # and is present at data/ground_truth.csv
-    # # and a sample submission is present at data/sample_submission.csv
-    # answer_file_path = "./DataSets/HardTablesR1/Valid/gt/cea_gt.csv"
-    # d = './DataSets/HardTablesR1/Valid/Submissions/cea'
-    answer_file_path = "./DataSets/HardTablesR1/Test/gt/cea_gt.csv"
-    d = './DataSets/HardTablesR1/Test/Submissions/cea'
+    # and a sample submission is present at data/sample_submission.csv
+    answer_file_path = "./DataSets/HardTablesR2/Valid/gt/cea_gt.csv"
 
+    d = '/Users/xx/Downloads/CEA'
     for ff in os.listdir(d):
         _client_payload = {}
+        if ff == '.DS_Store':
+            continue
         print(ff)
         _client_payload["submission_file_path"] = os.path.join(d, ff)
 

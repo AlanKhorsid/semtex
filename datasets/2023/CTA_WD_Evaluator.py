@@ -22,10 +22,8 @@ class CTA_Evaluator:
     """
     submission_file_path = client_payload["submission_file_path"]
 
-    # gt_ancestor = json.load(open("./DataSets/HardTablesR1/Valid/gt/cta_gt_ancestor.json"))
-    # gt_descendent = json.load(open("./DataSets/HardTablesR1/Valid/gt/cta_gt_descendent.json"))
-    gt_ancestor = json.load(open("./DataSets/HardTablesR1/Test/gt/cta_gt_ancestor.json"))
-    gt_descendent = json.load(open("./DataSets/HardTablesR1/Test/gt/cta_gt_descendent.json"))
+    gt_ancestor = json.load(open("./DataSets/HardTablesR2/Valid/gt/cta_gt_ancestor.json"))
+    gt_descendent = json.load(open("./DataSets/HardTablesR2/Valid/gt/cta_gt_descendent.json"))
 
     cols, col_type = set(), dict()
     gt = pd.read_csv(self.answer_file_path, delimiter=',', names=['tab_id', 'col_id', 'type'],
@@ -44,6 +42,7 @@ class CTA_Evaluator:
         col = '%s %s' % (row['tab_id'], row['col_id'])
         if col in annotated_cols:
             # continue
+            print(col)
             raise Exception("Duplicate columns in the submission file")
         else:
             annotated_cols.add(col)
@@ -76,7 +75,9 @@ class CTA_Evaluator:
                     score = 0
                 if score > max_score:
                     max_score = score
-
+            if max_score < 0.7:
+                s_tmp = col.replace(' ', ',')
+                print('%s,%s' % (s_tmp, col_type[col]))
             total_score += max_score
 
     precision = total_score / len(annotated_cols) if len(annotated_cols) > 0 else 0
@@ -110,14 +111,12 @@ if __name__ == "__main__":
     # Lets assume the the ground_truth is a CSV file
     # and is present at data/ground_truth.csv
     # and a sample submission is present at data/sample_submission.csv
-
-    # answer_file_path = "./DataSets/HardTablesR1/Valid/gt/cta_gt.csv"
-    # d = './DataSets/HardTablesR1/Valid/Submissions/cta'
-    answer_file_path = "./DataSets/HardTablesR1/Test/gt/cta_gt.csv"
-    d = './DataSets/HardTablesR1/Test/Submissions/cta'
-
+    answer_file_path = "./DataSets/HardTablesR2/Valid/gt/cta_gt.csv"
+    d = '/Users/jiahen/Downloads/CTA/'
     for ff in os.listdir(d):
         _client_payload = {}
+        if ff == '.DS_Store':
+            continue
         print(ff)
         _client_payload["submission_file_path"] = os.path.join(d, ff)
 

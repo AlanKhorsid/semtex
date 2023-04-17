@@ -2,6 +2,7 @@ import json
 import os
 import html
 import pickle
+from typing import Literal
 
 # from bingsearchapi import call_manually
 from .bestmatch import get_best_title_match
@@ -57,16 +58,17 @@ def pickle_load(filename, is_dump: bool = False):
 all_search_results = None
 
 
-def generate_suggestion(query):
+def generate_suggestion(query, dataset: Literal["test", "validation"], year: Literal["2022", "2023"]):
     global all_search_results
     if all_search_results is None:
-        all_search_results = pickle_load("bingsearches", is_dump=True)
+        if year == "2022":
+            all_search_results = pickle_load("bingsearches", is_dump=True)
+        elif year == "2023":
+            all_search_results = pickle_load(f"bing-results-{dataset}-2023", is_dump=True)
 
-    if query == "Voynovo":
-        return query
+    query = query.strip()
+    assert query in all_search_results, f"Query {query} not found in Bing search results."
 
-    if not query in all_search_results:
-        return query
     json_obj = all_search_results[query]
 
     if not "webPages" in json_obj:
@@ -91,3 +93,8 @@ def generate_suggestion(query):
             return html.unescape(get_best_title_match(query, titles))
         else:
             return query
+
+
+def release_search_results():
+    global all_search_results
+    all_search_results = None

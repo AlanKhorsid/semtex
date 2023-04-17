@@ -17,12 +17,15 @@ API_URL = "https://www.wikidata.org/w/api.php"
 
 ENTITY_RE = r"^Q\d+$"
 
+
 # Request limit exception
 class RateLimitException(Exception):
     pass
 
 
-fetch_entity_updater = PickleUpdater("/datasets/wikidata_fetch_entity_cache.pickle", save_interval=20)
+fetch_entity_updater = PickleUpdater("/datasets/wikidata_fetch_entity_cache_2023.pickle", save_interval=0)
+entity_query_updater = PickleUpdater("/datasets/wikidata_entity_query_cache_2023.pickle", save_interval=0)
+entity_search_updater = PickleUpdater("/datasets/wikidata_entity_search_cache_2023.pickle", save_interval=0)
 
 
 def wikidata_fetch_entities(ids: list[int], lang: str = "en", chunk_size: int = 50):
@@ -67,7 +70,7 @@ def wikidata_fetch_entities(ids: list[int], lang: str = "en", chunk_size: int = 
                         statements.append((prop, type, value))
                 fetch_entity_updater.update_data(entity_id, (title, description, statements))
 
-    fetch_entity_updater.save_data()
+    fetch_entity_updater.close_data()
 
 
 def get_entity(entity_id: int):
@@ -84,8 +87,8 @@ def get_entity(entity_id: int):
 # -------------
 # -------------
 
-entity_query_updater = JsonUpdater("/datasets/wikidata_entity_query_cache.json")
-entity_search_updater = JsonUpdater("/datasets/wikidata_entity_search_cache.json")
+# entity_query_updater = JsonUpdater("/datasets/wikidata_entity_query_cache.json")
+# entity_search_updater = JsonUpdater("/datasets/wikidata_entity_search_cache.json")
 get_entity_updater = JsonUpdater("/datasets/wikidata_get_entity_cache.json")
 get_property_updater = JsonUpdater("/datasets/wikidata_get_property_cache.json")
 

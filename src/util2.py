@@ -9,7 +9,7 @@ from pathlib import Path
 import csv
 from rich import progress as prog
 
-from preprocessing.suggester import generate_suggestion
+from preprocessing.suggester import generate_suggestion, release_search_results
 
 ROOTPATH = Path(__file__).parent.parent
 
@@ -34,43 +34,70 @@ def get_csv_rows(file_path: str, skip_header: bool = False) -> list:
         return list(reader)
 
 
-def open_targets(dataset: Literal["test", "validation"], task: Literal["cea", "cpa", "cta"]):
-    if dataset == "test":
-        file_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Test/target/{task}_target.csv"
-    elif dataset == "validation":
-        file_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/{task}_gt.csv"
-    else:
-        raise ValueError(f"Invalid dataset: {dataset}")
+def open_targets(dataset: Literal["test", "validation"], year: Literal["2022", "2023"]):
+    if year == "2022":
+        if dataset == "validation":
+            cea_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/cea_gt.csv"
+            cta_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/cta_gt.csv"
+            cpa_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/cpa_gt.csv"
+        elif dataset == "test":
+            cea_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Test/target/cea_target.csv"
+            cta_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Test/target/cta_target.csv"
+            cpa_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Test/target/cpa_target.csv"
+    elif year == "2023":
+        if dataset == "validation":
+            cea_path = f"{ROOTPATH}/datasets/2023/DataSets/Valid/targets/cea_targets.csv"
+            cta_path = f"{ROOTPATH}/datasets/2023/DataSets/Valid/targets/cta_targets.csv"
+            cpa_path = f"{ROOTPATH}/datasets/2023/DataSets/Valid/targets/cpa_targets.csv"
+        elif dataset == "test":
+            cea_path = f"{ROOTPATH}/datasets/2023/DataSets/Test/targets/cea_targets.csv"
+            cta_path = f"{ROOTPATH}/datasets/2023/DataSets/Test/targets/cta_targets.csv"
+            cpa_path = f"{ROOTPATH}/datasets/2023/DataSets/Test/targets/cpa_targets.csv"
 
-    rows = get_csv_rows(file_path)
+    cea_rows = get_csv_rows(cea_path)
+    cta_rows = get_csv_rows(cta_path)
+    cpa_rows = get_csv_rows(cpa_path)
+
+    files = set()
+    for row in cea_rows:
+        files.add(row[0])
+    for row in cta_rows:
+        files.add(row[0])
+    for row in cpa_rows:
+        files.add(row[0])
 
     targets = {}
-    for row in rows:
-        if not row[0] in targets:
-            targets[row[0]] = set([int(row[2])])
-        else:
-            targets[row[0]].add(int(row[2]))
+    with progress:
+        # for file in progress.track(list(files)[:100], description="Opening targets"):
+        for file in progress.track(files, description="Opening targets"):
+            targets[file] = {
+                "cea": [(int(row[1]), int(row[2])) for row in cea_rows if row[0] == file],
+                "cta": [int(row[1]) for row in cta_rows if row[0] == file],
+                "cpa": [(int(row[1]), int(row[2])) for row in cpa_rows if row[0] == file],
+            }
 
-    return {key: list(value) for key, value in targets.items()}
+    return targets
 
 
 def open_table(
     dataset: Literal["test", "validation"],
     file_name: str,
-    entity_cols: list[int],
+    cea_targets: list,
+    year: Literal["2022", "2023"],
     spellcheck: Union[None, Literal["bing"]] = None,
 ):
     from classes2 import Cell, Column
 
-    if file_name == "HXA71H9Q":
-        x = 1
-
-    if dataset == "test":
-        file_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Test/tables"
-    elif dataset == "validation":
-        file_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/tables"
-    else:
-        raise ValueError(f"Invalid dataset: {dataset}")
+    if year == "2022":
+        if dataset == "validation":
+            file_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/tables"
+        elif dataset == "test":
+            file_path = f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Test/tables"
+    elif year == "2023":
+        if dataset == "validation":
+            file_path = f"{ROOTPATH}/datasets/2023/DataSets/Valid/tables"
+        elif dataset == "test":
+            file_path = f"{ROOTPATH}/datasets/2023/DataSets/Test/tables"
 
     rows = get_csv_rows(f"{file_path}/{file_name}.csv", skip_header=True)
 
@@ -79,17 +106,27 @@ def open_table(
     for row in rows:
         assert len(row) == num_cols
 
-    # iterate over the columns and return the ones that are in cols
     columns: list[Column] = []
-    literal_columns: list[list[str]] = []
+    literal_columns: list[list[Union[None, str]]] = []
     for i in range(num_cols):
-        if i in entity_cols:
-            if spellcheck == "bing":
-                columns.append(Column([Cell(generate_suggestion(row[i])) for row in rows], i))
-            else:
-                columns.append(Column([Cell(row[i]) for row in rows]))
+        col_is_entity = any(target[1] == i for target in cea_targets)
+        if not col_is_entity:
+            literal_columns.append([row[i] if row[i] != "" else None for row in rows])
         else:
-            literal_columns.append([row[i] for row in rows])
+            if spellcheck == "bing":
+                cells = [
+                    Cell(generate_suggestion(row[i], dataset=dataset, year=year)) if row[i] != "" else None
+                    for row in rows
+                ]
+            else:
+                cells = [Cell(row[i]) if row[i] != "" else None for row in rows]
+
+            # check that every cell is a cea target
+            for j, cell in enumerate(cells):
+                if cell is not None:
+                    assert (j + 1, i) in cea_targets
+
+            columns.append(Column(cells, i))
 
     return columns, literal_columns
 
@@ -97,30 +134,45 @@ def open_table(
 def open_tables(
     dataset: Literal["test", "validation"],
     task: Literal["cea", "cpa", "cta"] = "cea",
+    year: Literal["2022", "2023"] = "2023",
     spellcheck: Union[None, Literal["bing"]] = None,
 ):
     from classes2 import Table, TableCollection
 
-    if dataset == "test":
-        gt_rows = get_csv_rows(f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/test/gt/{task}_gt.csv")
-    elif dataset == "validation":
-        gt_rows = get_csv_rows(f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/{task}_gt.csv")
+    if year == "2022":
+        if dataset == "test":
+            gt_rows = get_csv_rows(f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Test/target/cea_target.csv")
+        elif dataset == "validation":
+            gt_rows = get_csv_rows(f"{ROOTPATH}/datasets/HardTablesR1/DataSets/HardTablesR1/Valid/gt/cea_gt.csv")
+    elif year == "2023":
+        if dataset == "test":
+            gt_rows = None
+        elif dataset == "validation":
+            gt_rows = get_csv_rows(f"{ROOTPATH}/datasets/2023/DataSets/Valid/gt/cea_gt.csv")
+    else:
+        raise ValueError(f"Invalid year: {year}")
 
-    targets = open_targets(dataset, task)
+    targets = open_targets(dataset, year)
     tables = {}
     with progress:
-        for filename, cols in progress.track(targets.items(), description=f"Opening {dataset} dataset"):
-            columns, literal_columns = open_table(dataset, filename, cols, spellcheck=spellcheck)
+        for filename, targets in progress.track(targets.items(), description=f"Opening {dataset} dataset"):
+            columns, literal_columns = open_table(dataset, filename, targets["cea"], year, spellcheck=spellcheck)
 
             # set the correct id for each cell
-            for i, col in zip(cols, columns):
-                for j, cell in enumerate(col.cells):
-                    gt_row = next(
-                        row for row in gt_rows if row[0] == filename and int(row[1]) == j + 1 and int(row[2]) == i
-                    )
-                    cell.correct_id = int(gt_row[3].split("/")[-1][1:])
+            if gt_rows is not None:
+                for col in columns:
+                    for j, cell in enumerate(col.cells):
+                        if cell is None:
+                            continue
+                        gt_row = next(
+                            row
+                            for row in gt_rows
+                            if row[0] == filename and int(row[1]) == j + 1 and int(row[2]) == col.index
+                        )
+                        cell.correct_id = int(gt_row[3].split("/")[-1][1:])
 
-            tables[filename] = Table(columns, literal_columns)
+            tables[filename] = Table(columns, literal_columns, targets)
+    release_search_results()
     return TableCollection(tables)
 
 
