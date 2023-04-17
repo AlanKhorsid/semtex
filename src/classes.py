@@ -33,15 +33,16 @@ class Candidate:
     instances: Union[list[int], None]
     subclasses: Union[list[int], None]
     num_statements: Union[int, None]
-
     instance_overlap: Union[int, None]
     subclass_overlap: Union[int, None]
     description_overlap: Union[float, None]
     lex_score: Union[float, None]
     tag: Union[str, None]
     tag_ratio: Union[float, None]
-    most_similar_to: Union[str, None]
-    similarity_avg: Union[float, None]
+    description_length: Union[int, None]
+    title_length: Union[int, None]
+    num_of_desc_words: Union[int, None]
+    num_of_title_words: Union[int, None]
 
     instance_overlap_l1_l2: Union[int, None]
     instance_overlap_l2_l1: Union[int, None]
@@ -73,8 +74,10 @@ class Candidate:
         self.lex_score = None
         self.tag = None
         self.tag_ratio = None
-        self.most_similar_to = None
-        self.similarity_avg = None
+        self.description_length = None
+        self.title_length = None
+        self.num_of_desc_words = None
+        self.num_of_title_words = None
 
         self.instance_overlap_l1_l2 = None
         self.instance_overlap_l2_l1 = None
@@ -265,8 +268,10 @@ class Candidate:
             self.description_overlap,
             self.tag,
             self.tag_ratio,
-            self.most_similar_to,
-            self.similarity_avg
+            self.description_length,
+            self.title_length,
+            self.num_of_desc_words,
+            self.num_of_title_words,
             # self.instance_names,
         ]
 
@@ -621,17 +626,18 @@ class Column:
                 else:
                     candidate.similarity_avg /= len(self.cells) - 1
 
-    # normalize num_statements
+    # calculate length of description
     @property
-    def normalize_num_statements(self):
-        # get the max num_statements for each candidateset
-        max_num_statements = 0
+    def get_description_and_title_length(self):
         for cell in self.cells:
             for candidate in cell.candidates:
-                if candidate.num_statements > max_num_statements:
-                    max_num_statements = candidate.num_statements
+                candidate.description_length = len(candidate.description)
+                candidate.title_length = len(candidate.title)
 
-        # normalize num_statements
+    # calculate number of words in description
+    @property
+    def get_description_and_title_word_count(self):
         for cell in self.cells:
             for candidate in cell.candidates:
-                candidate.num_statements /= max_num_statements
+                candidate.num_of_desc_words = len(candidate.description.split())
+                candidate.num_of_title_words = len(candidate.title.split())

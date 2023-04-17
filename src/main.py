@@ -23,27 +23,37 @@ PICKLE_FILE_NAME = "test-2022-bing"
 # cols_test: list[Column] = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=True)
 # cols_validation: list[Column] = pickle_load("validation-2022-bing", is_dump=True)
 
-cols_test_tag = pickle_load("all-test-with-semantic-features", is_dump=True)
-cols_validation_tag = pickle_load("all-validation-with-semantic-features", is_dump=True)
+cols_test = pickle_load("cols_test_with_word_count", is_dump=True)
+cols_validation = pickle_load("cols_validation_with_word_count", is_dump=True)
 
 # ----- Fetch candidates -----
-while not all([col.all_cells_fetched for col in cols_test_tag]):
+while not all([col.all_cells_fetched for col in cols_test]):
     with progress:
-        for col in progress.track(cols_test_tag, description="Fetching candidates"):
+        for col in progress.track(cols_test, description="Fetching candidates"):
             if col.all_cells_fetched:
                 continue
             col.fetch_cells()
-            pickle_save(cols_test_tag, f"{PICKLE_FILE_NAME}-{i}")
+            pickle_save(cols_test, f"{PICKLE_FILE_NAME}-{i}")
             i = i + 1 if i < 9 else 1
 
 # ----- Generate features -----
 with progress:
-    for col in progress.track(cols_test_tag, description="Generating features"):
+    for col in progress.track(cols_test, description="Generating features"):
         if col.features_computed:
             continue
         col.compute_features()
-        pickle_save(cols_test_tag, f"{PICKLE_FILE_NAME}-{i}")
+        pickle_save(cols_test, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
+
+    # for col in cols_test:
+    #     col.get_description_and_title_word_count
+
+    # pickle_save(cols_test, f"cols_test_with_word_count")
+
+    # for col in cols_validation:
+    #     col.get_description_and_title_word_count
+
+    # pickle_save(cols_validation, f"cols_validation_with_word_count")
 
 # with progress:
 #     t1 = progress.add_task("Columns", total=len(cols))
@@ -60,10 +70,10 @@ with progress:
 # ----- Train model -----
 features_test = []
 features_validation = []
-for col in progress.track(cols_test_tag, description="Training model"):
+for col in progress.track(cols_test, description="Training model"):
     features_test.extend(col.features)
 
-for col in progress.track(cols_validation_tag, description="Training model"):
+for col in progress.track(cols_validation, description="Training model"):
     features_validation.extend(col.features)
 
 # max_id = max([i[0] for i in features])
@@ -78,15 +88,17 @@ test = pd.DataFrame(
         "description": [x[2] for x in features_test],
         "num_statements": [x[3] for x in features_test],
         "instance_overlap": [x[4] for x in features_test],
-        "subclass_overlap": [x[5] for x in features_test],
-        "description_overlap": [x[6] for x in features_test],
-        "tag": [x[7] if x[7] is not None else "" for x in features_test],
-        "tag_ratio": [x[8] for x in features_test],
-        "most_similar_to": [x[9] if x[9] is not None else "" for x in features_test],
-        "similarity_avg": [x[10] for x in features_test],
+        # "subclass_overlap": [x[5] for x in features_test],
+        "description_overlap": [x[5] for x in features_test],
+        "tag": [x[6] if x[6] is not None else "" for x in features_test],
+        "tag_ratio": [x[7] for x in features_test],
+        "description_length": [x[8] for x in features_test],
+        "title_length": [x[9] for x in features_test],
+        "num_of_desc_words": [x[10] for x in features_test],
+        "num_of_title_words": [x[11] for x in features_test],
         # "instance_names": [x[7] for x in features],
-        "title_levenshtein": [x[11] for x in features_test],
-        "label": [x[12] for x in features_test],
+        "title_levenshtein": [x[12] for x in features_test],
+        "label": [x[13] for x in features_test],
     }
 )
 train = pd.DataFrame(
@@ -96,23 +108,23 @@ train = pd.DataFrame(
         "description": [x[2] for x in features_validation],
         "num_statements": [x[3] for x in features_validation],
         "instance_overlap": [x[4] for x in features_validation],
-        "subclass_overlap": [x[5] for x in features_validation],
-        "description_overlap": [x[6] for x in features_validation],
-        "tag": [x[7] if x[7] is not None else "" for x in features_validation],
-        "tag_ratio": [x[8] for x in features_validation],
-        "most_similar_to": [
-            x[9] if x[9] is not None else "" for x in features_validation
-        ],
-        "similarity_avg": [x[10] for x in features_validation],
+        # "subclass_overlap": [x[5] for x in features_validation],
+        "description_overlap": [x[5] for x in features_validation],
+        "tag": [x[6] if x[6] is not None else "" for x in features_validation],
+        "tag_ratio": [x[7] for x in features_validation],
+        "description_length": [x[8] for x in features_validation],
+        "title_length": [x[9] for x in features_validation],
+        "num_of_desc_words": [x[10] for x in features_validation],
+        "num_of_title_words": [x[11] for x in features_validation],
         # "instance_names": [x[7] for x in features_validation],
-        "title_levenshtein": [x[11] for x in features_validation],
-        "label": [x[12] for x in features_validation],
+        "title_levenshtein": [x[12] for x in features_validation],
+        "label": [x[13] for x in features_validation],
     }
 )
 
 
-# text_features = ["title", "description", "tag"]
-text_features = ["title", "description", "tag", "most_similar_to"]
+text_features = ["title", "description", "tag"]
+# text_features = ["title", "description", "tag", "most_similar_to"]
 # text_features = []
 
 X_train = train.drop(["label"], axis=1)
@@ -134,20 +146,20 @@ test_pool = Pool(
 )
 
 cb_params = {
-    "iterations": [5000],
-    "learning_rate": [0.01, 0.03, 0.1],
-    "depth": [6, 8, 10, 12],
-    "l2_leaf_reg": [1, 2, 3],
-    # "loss_function": "MultiClassOneVsAll",
+    "iterations": [5000, 7500, 10000],
+    "learning_rate": [0.01],
+    "depth": [16, 20, 24],
+    "l2_leaf_reg": [3, 4, 6],
+    "loss_function": ["Logloss"],
     "leaf_estimation_method": ["Newton"],
     "random_seed": [42],
     "verbose": [False],
-    "random_strength": [10, 12, 14, 16, 18, 20],
-    "bootstrap_type": ["Bayesian", "Bernoulli"],
-    "early_stopping_rounds": [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+    "random_strength": [16, 18, 20],
+    "bootstrap_type": ["Bernoulli", "Bayesian"],
+    "early_stopping_rounds": [60, 80, 100, 120, 200],
     "grow_policy": ["Lossguide"],
-    "max_leaves": [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
-    "min_data_in_leaf": [1, 2],
+    "max_leaves": [2000, 3000, 4000],
+    "min_data_in_leaf": [1],
     # "task_type": "GPU",
     "tokenizers": [
         {
@@ -176,7 +188,7 @@ param_grid = ParameterGrid(cb_params)
 param_grid = list(param_grid)
 random.shuffle(param_grid)
 
-best_f1 = 0.80
+best_f1 = 0.8036256111937847
 num_of_iterations = 0
 list_of_params = []
 # loop through the parameter combinations
@@ -200,10 +212,10 @@ for params in param_grid:
     num_submitted_annotations = 0
     num_ground_truth_annotations = 0
     with progress:
-        t1 = progress.add_task("Columns", total=len(cols_test_tag))
+        t1 = progress.add_task("Columns", total=len(cols_test))
         # t2 = progress.add_task("|-> Cells")
 
-        for col in cols_test_tag:
+        for col in cols_test:
             # progress.update(task_id=t2, total=len(col.cells))
             for cell in col.cells:
                 num_ground_truth_annotations += 1
@@ -264,7 +276,7 @@ for params in param_grid:
         print(f"{GREEN}{BOLD}NEW BEST F1:{RESET}      {GREEN}{BOLD}{best_f1}{RESET}")
         print("----------------------------------------")
         print()
-        if best_f1 > 0.80:
+        if best_f1 > 0.8036256111937847:
             # pickle f1, precision, recall and model
             pickle_save(
                 {
