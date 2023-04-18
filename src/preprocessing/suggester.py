@@ -6,8 +6,8 @@ import html
 from decouple import config
 
 # from bingsearchapi import call_manually
-from preprocessing.bestmatch import get_best_title_match
-from preprocessing.preprocesschecker import check_spellchecker
+from .bestmatch import get_best_title_match
+from .preprocesschecker import check_spellchecker
 from pathlib import Path
 
 from util import pickle_load, pickle_save
@@ -51,7 +51,7 @@ def search_for_JSON(query_string):
     return query_string
 
 
-all_search_results = pickle_load("all-test-cells-search-results", is_dump=True)
+all_search_results = pickle_load("all-validation-cells-bing", is_dump=True)
 
 
 def generate_suggestion(query):
@@ -89,8 +89,8 @@ def generate_suggestion(query):
             titles = [result["name"] for result in results]
             for title in titles:
                 if query in title:
-                    return html.unescape(query)
-        return html.unescape(get_best_title_match(suggestion, titles))
+                    return html.unescape(suggestion)
+        return html.unescape(get_best_title_match(query, titles))
 
     else:
         # get the best match for the original query based on search result titles
@@ -102,4 +102,4 @@ def generate_suggestion(query):
             return query
 
 
-check_spellchecker(generate_suggestion, only_hard=True)
+# check_spellchecker(generate_suggestion, only_hard=True, case_sensitive=True)
