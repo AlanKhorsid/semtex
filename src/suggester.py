@@ -6,8 +6,8 @@ import html
 from decouple import config
 
 # from bingsearchapi import call_manually
-from .bestmatch import get_best_title_match
-from .preprocesschecker import check_spellchecker_threaded
+from preprocessing.bestmatch import get_best_title_match
+from preprocessing.preprocesschecker import check_spellchecker
 from pathlib import Path
 
 from util import pickle_load, pickle_save
@@ -44,7 +44,8 @@ def search_for_JSON(query_string):
                 json_data = json.load(f)
                 if (
                     json_data["_type"] == "SearchResponse"
-                    and json_data["queryContext"]["originalQuery"].lower() == query_string.lower()
+                    and json_data["queryContext"]["originalQuery"].lower()
+                    == query_string.lower()
                 ):
                     return json_data
     return query_string
@@ -73,8 +74,6 @@ def generate_suggestion(query):
         "Barack Obama"
     """
 
-    # all_search_results = pickle_load("all-test-cells-search-results", is_dump=True)
-
     if not query in all_search_results:
         return query
     json_obj = all_search_results[query]
@@ -90,8 +89,8 @@ def generate_suggestion(query):
             titles = [result["name"] for result in results]
             for title in titles:
                 if query in title:
-                    return html.unescape(suggestion)
-        return html.unescape(get_best_title_match(query, titles))
+                    return html.unescape(query)
+        return html.unescape(get_best_title_match(suggestion, titles))
 
     else:
         # get the best match for the original query based on search result titles
@@ -101,3 +100,6 @@ def generate_suggestion(query):
             return html.unescape(get_best_title_match(query, titles))
         else:
             return query
+
+
+check_spellchecker(generate_suggestion, only_hard=True)

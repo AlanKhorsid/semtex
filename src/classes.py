@@ -119,10 +119,17 @@ class Candidate:
         sentence = Sentence(self.to_sentence)
         tagger.predict(sentence)
         self.tag = ""
-        # only take the first tag
+        all_cand_tags = []
         for entity in sentence.get_spans("ner"):
-            self.tag = entity.tag
-            break
+            all_cand_tags.append(entity.tag)
+
+        mydict = {}
+        cnt, itm = 0, ""
+        for item in reversed(all_cand_tags):
+            mydict[item] = mydict.get(item, 0) + 1
+            if mydict[item] >= cnt:
+                cnt, itm = mydict[item], item
+        self.tag = itm
 
     @property
     def info_fetched(self) -> bool:

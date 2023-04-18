@@ -45,15 +45,23 @@ with progress:
         pickle_save(cols_test, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
 
-    # for col in cols_test:
-    #     col.get_description_and_title_word_count
+    for col in progress.track(
+        cols_test, description="Generating features avg ner for test"
+    ):
+        for cell in col.cells:
+            for cand in cell.candidates:
+                cand.get_tag
 
-    # pickle_save(cols_test, f"cols_test_with_word_count")
+    pickle_save(cols_test, f"cols_test_with_avg_ner")
 
-    # for col in cols_validation:
-    #     col.get_description_and_title_word_count
+    for col in progress.track(
+        cols_validation, description="Generating features avg ner for validation"
+    ):
+        for cell in col.cells:
+            for cand in cell.candidates:
+                cand.get_tag
 
-    # pickle_save(cols_validation, f"cols_validation_with_word_count")
+    pickle_save(cols_validation, f"cols_validation_with_avg_ner")
 
 # with progress:
 #     t1 = progress.add_task("Columns", total=len(cols))
