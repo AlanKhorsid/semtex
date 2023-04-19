@@ -33,9 +33,9 @@ def cta_no_query(candidates, correct = None, print_output = False, max_depth = 1
 
     confidence = best_value/(len(candidates)-amount_of_nonetypes)
     if confidence > 1:
-        print("!!!!!WHAT!!!!!")
+        raise ValueError()
 
-    while confidence != 1 and current_depth < max_depth and explore_tree == True:
+    while confidence < 1 and current_depth < max_depth and explore_tree == True:
         current_depth += 1
         #query wikidata on subclass of and part of on each key in instance_dict
         instance_dict = cta_query(instance_dict)
