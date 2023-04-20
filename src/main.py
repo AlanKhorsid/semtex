@@ -23,8 +23,8 @@ PICKLE_FILE_NAME = "test-2022-bing"
 # cols_test: list[Column] = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=True)
 # cols_validation: list[Column] = pickle_load("validation-2022-bing", is_dump=True)
 
-cols_test = pickle_load("cols_test_with_word_count", is_dump=True)
-cols_validation = pickle_load("cols_validation_with_word_count", is_dump=True)
+cols_test = pickle_load("cols_test_with_num_of_instances", is_dump=True)
+cols_validation = pickle_load("cols_validation_with_num_of_instances", is_dump=True)
 
 # ----- Fetch candidates -----
 while not all([col.all_cells_fetched for col in cols_test]):
@@ -45,23 +45,23 @@ with progress:
         pickle_save(cols_test, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
 
-    for col in progress.track(
-        cols_test, description="Generating features avg ner for test"
-    ):
-        for cell in col.cells:
-            for cand in cell.candidates:
-                cand.get_tag
+    # for col in progress.track(
+    #     cols_test, description="Generating features avg ner for test"
+    # ):
+    #     for cell in col.cells:
+    #         for cand in cell.candidates:
+    #             cand.get_num_of_instances
 
-    pickle_save(cols_test, f"cols_test_with_avg_ner")
+    # pickle_save(cols_test, f"cols_test_with_num_of_instances")
 
-    for col in progress.track(
-        cols_validation, description="Generating features avg ner for validation"
-    ):
-        for cell in col.cells:
-            for cand in cell.candidates:
-                cand.get_tag
+    # for col in progress.track(
+    #     cols_validation, description="Generating features avg ner for validation"
+    # ):
+    #     for cell in col.cells:
+    #         for cand in cell.candidates:
+    #             cand.get_num_of_instances
 
-    pickle_save(cols_validation, f"cols_validation_with_avg_ner")
+    # pickle_save(cols_validation, f"cols_validation_with_num_of_instances")
 
 # with progress:
 #     t1 = progress.add_task("Columns", total=len(cols))
@@ -104,9 +104,10 @@ test = pd.DataFrame(
         "title_length": [x[10] for x in features_test],
         "num_of_desc_words": [x[11] for x in features_test],
         "num_of_title_words": [x[12] for x in features_test],
+        "num_of_instances": [x[13] for x in features_test],
         # "instance_names": [x[7] for x in features],
-        "title_levenshtein": [x[13] for x in features_test],
-        "label": [x[14] for x in features_test],
+        "title_levenshtein": [x[14] for x in features_test],
+        "label": [x[15] for x in features_test],
     }
 )
 train = pd.DataFrame(
@@ -124,9 +125,10 @@ train = pd.DataFrame(
         "title_length": [x[10] for x in features_validation],
         "num_of_desc_words": [x[11] for x in features_validation],
         "num_of_title_words": [x[12] for x in features_validation],
+        "num_of_instances": [x[13] for x in features_validation],
         # "instance_names": [x[7] for x in features_validation],
-        "title_levenshtein": [x[13] for x in features_validation],
-        "label": [x[14] for x in features_validation],
+        "title_levenshtein": [x[14] for x in features_validation],
+        "label": [x[15] for x in features_validation],
     }
 )
 
@@ -154,19 +156,19 @@ test_pool = Pool(
 )
 
 cb_params = {
-    "iterations": [5000, 7500, 10000],
+    "iterations": [20000],
     "learning_rate": [0.01],
-    "depth": [16, 20, 24],
-    "l2_leaf_reg": [3, 4, 6],
+    "depth": [28, 30, 36],
+    "l2_leaf_reg": [2, 3, 4],
     "loss_function": ["Logloss"],
     "leaf_estimation_method": ["Newton"],
     "random_seed": [42],
     "verbose": [False],
-    "random_strength": [16, 18, 20],
-    "bootstrap_type": ["Bernoulli", "Bayesian"],
-    "early_stopping_rounds": [60, 80, 100, 120, 200],
+    "random_strength": [18],
+    "bootstrap_type": ["Bayesian"],
+    "early_stopping_rounds": [200],
     "grow_policy": ["Lossguide"],
-    "max_leaves": [2000, 3000, 4000],
+    "max_leaves": [5000, 5500],
     "min_data_in_leaf": [1],
     # "task_type": "GPU",
     "tokenizers": [
@@ -195,7 +197,7 @@ param_grid = ParameterGrid(cb_params)
 param_grid = list(param_grid)
 random.shuffle(param_grid)
 
-best_f1 = 0.8036256111937847
+best_f1 = 0.8083798774713488
 num_of_iterations = 0
 # loop through the parameter combinations
 for params in param_grid:
@@ -275,7 +277,7 @@ for params in param_grid:
         print(f"{GREEN}{BOLD}NEW BEST F1:{RESET}      {GREEN}{BOLD}{best_f1}{RESET}")
         print("----------------------------------------")
         print()
-        if best_f1 > 0.8036256111937847:
+        if best_f1 > 0.8083798774713488:
             # pickle f1, precision, recall and model
             pickle_save(
                 {

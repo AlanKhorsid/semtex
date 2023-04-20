@@ -43,6 +43,7 @@ class Candidate:
     title_length: Union[int, None]
     num_of_desc_words: Union[int, None]
     num_of_title_words: Union[int, None]
+    num_of_instances: Union[int, None]
 
     instance_overlap_l1_l2: Union[int, None]
     instance_overlap_l2_l1: Union[int, None]
@@ -78,6 +79,7 @@ class Candidate:
         self.title_length = None
         self.num_of_desc_words = None
         self.num_of_title_words = None
+        self.num_of_instances = None
 
         self.instance_overlap_l1_l2 = None
         self.instance_overlap_l2_l1 = None
@@ -279,6 +281,7 @@ class Candidate:
             self.title_length,
             self.num_of_desc_words,
             self.num_of_title_words,
+            self.num_of_instances
             # self.instance_names,
         ]
 
@@ -315,6 +318,10 @@ class Candidate:
                 instances.update(ins1)
                 subclasses.update(sub1)
         return list(instances), list(subclasses)
+
+    @property
+    def get_num_of_instances(self):
+        self.num_of_instances = len(self.instances)
 
 
 class CandidateSet:
