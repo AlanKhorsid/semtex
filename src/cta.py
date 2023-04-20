@@ -17,7 +17,7 @@ from _requests import wikidata_fetch_entities, get_entity
 
 
 #TODO: rename cta_no_query to cta
-def cta_no_query(candidates, correct = None, print_output = False, max_depth = 1, explore_tree = False):
+def cta_no_query(candidates, correct = None, print_output = False, max_depth = 0):
     instance_dict = dict()
     best_value = 0
     best_key = 0
@@ -35,16 +35,20 @@ def cta_no_query(candidates, correct = None, print_output = False, max_depth = 1
     if confidence > 1:
         raise ValueError()
 
-    while confidence < 1 and current_depth < max_depth and explore_tree == True:
+    while confidence < 1 and current_depth < max_depth:
         current_depth += 1
+        current_best_value = best_value
+        current_best_key = best_key
         #query wikidata on subclass of and part of on each key in instance_dict
         instance_dict = cta_query(instance_dict)
         best_key, best_value, correct_key = find_best_key(instance_dict, correct=correct)
         confidence = best_value/(len(candidates)-amount_of_nonetypes)
+        if confidence < current_best_value/(len(candidates)-amount_of_nonetypes):
+            best_value = current_best_value
+            best_key = current_best_key
     
 
     if print_output:
-        print(f"return key: {best_key} confidence: {confidence} best-value/len(candidates): {best_value/len(candidates)} percentage Nonetypes: {amount_of_nonetypes/len(candidates)}")
         if amount_of_nonetypes == len(candidates):
             print("=====ALL NONTYPES=====")
             return None
@@ -108,13 +112,23 @@ if __name__ == "__main__":
     candidates = candidates[0:200]
     successes = 0
     failures = 0
+    max_depth_failures = 0
+    max_depth_successes = 0
     for cand in candidates:
-        result = cta_no_query(cand['candidates'], correct=cand['cta'], print_output=True, explore_tree = True)
-        if result == cand['cta']:
+        result1 = cta_no_query(cand['candidates'], correct=cand['cta'], max_depth = 0)
+        result2 = cta_no_query(cand['candidates'], correct=cand['cta'], max_depth = 1)
+        if result1 == cand['cta']:
             successes += 1
         else:
             print("======DID NOT FIND INSTANCE======")
-            print(f"expected: {cand['cta']} result: {result}")
+            print(f"expected: {cand['cta']} result: {result1}")
             failures += 1
+        if result1 != result2 and result1 == cand['cta']:
+            max_depth_failures += 1
+            print(f"max depth = 1 failed when max depth = 0 didn't")
+            print(f"expected: {cand['cta']} result: {result2}")
+        elif result1 != result2 and result2 == cand['cta']:
+            max_depth_successes += 1
     print(f"successes: {successes}   failures: {failures}")
     print(f"success percentage: {successes/(successes+failures)}")
+    print(f"max depth successes: {max_depth_successes}   max depth failures: {max_depth_failures}")
