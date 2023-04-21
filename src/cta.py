@@ -17,11 +17,13 @@ from _requests import wikidata_fetch_entities, get_entity
 
 
 #TODO: rename cta_no_query to cta
-def cta_retriever(candidates_list, correct = None, print_output = False, max_depth = 0):
+def cta_retriever(candidates_list, correct = None, max_depth = 0):
     result_ids = []
     instance_dicts = []
     confidence_vector = []
     correct_key_vector = []
+    ids_to_query = []
+    current_depth = 0
     index = 0
     for i in range(len(candidates_list)):
         result_ids.append(None)
@@ -32,14 +34,19 @@ def cta_retriever(candidates_list, correct = None, print_output = False, max_dep
         else:
             correct_key_vector = correct
 
+    #while loop to collect and query for instace of elements
+    while confidence_vector[index] < 1 and current_depth < max_depth:
+        current_depth += 1
+        pass
+        
 
 
     for candidates in candidates_list:
+
         best_value = 0
         best_key = 0
         correct_key = correct_key_vector[index]
         amount_of_nonetypes = 0
-        current_depth = 0
         confidence = 0
 
         #get instance_dict and amount of 
@@ -47,38 +54,36 @@ def cta_retriever(candidates_list, correct = None, print_output = False, max_dep
 
         best_key, best_value, correct_key = find_best_key(instance_dicts[index], correct_key=correct_key) 
 
-        confidence = best_value/(len(candidates)-amount_of_nonetypes)
-        if confidence > 1:
-            print(f"index: {index}, best_value: {best_value}, dict: {instance_dicts[index]}, candidates length: {len(candidates)}")
-            for cand in candidates:
-                print(cand.id)
+        confidence_vector[index] = best_value/(len(candidates)-amount_of_nonetypes)
+        
+        #exception in case we have a confidence higher than 100%
+        if confidence_vector[index] > 1:
             raise ValueError()
 
-        while confidence < 1 and current_depth < max_depth:
+        while confidence_vector[index] < 1 and current_depth < max_depth:
+            pass
             current_depth += 1
             current_best_value = best_value
             current_best_key = best_key
             #query wikidata on subclass of and part of on each key in instance_dict
             instance_dicts[index] = cta_query(instance_dicts[index])
             best_key, best_value, correct_key = find_best_key(instance_dicts[index], correct=correct)
-            confidence = best_value/(len(candidates)-amount_of_nonetypes)
-            if confidence < current_best_value/(len(candidates)-amount_of_nonetypes):
+            confidence_vector[index] = best_value/(len(candidates)-amount_of_nonetypes)
+            if confidence_vector[index] < current_best_value/(len(candidates)-amount_of_nonetypes):
                 best_value = current_best_value
                 best_key = current_best_key
         
+        result_ids[index] = best_key
+        index += 1
 
-        if print_output:
+        #debug output
+        if correct != None:
             if amount_of_nonetypes == len(candidates):
                 print("=====ALL NONTYPES=====")
                 best_key = 0
             if correct_key != best_key and correct_key != None:
                 print(f"Found the correct key in the dataset, it is not the return key: {correct_key}")
                 print(f"return key: {best_key} confidence: {confidence} best-value/len(candidates): {best_value/len(candidates)} percentage Nonetypes: {amount_of_nonetypes/len(candidates)}")
-        result_ids[index] = best_key
-        if result_ids[index] == 0:
-            print("HAD ZERO VALUE")
-
-        index += 1
 
     return result_ids
 
@@ -142,9 +147,8 @@ def find_best_key(instance_dict, correct_key = None):
     return best_key, best_value, result_key
 
 
+#test code
 if __name__ == "__main__":
-    #cta_query({618123: 1})
-
     PICKLE_FILE_NAME = "cea_results_test"
     candidates_objects: list[Candidate] = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=False)
     candidates_objects = candidates_objects[0:100]
