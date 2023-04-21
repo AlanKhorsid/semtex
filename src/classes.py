@@ -19,11 +19,12 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 from concurrent.futures import ThreadPoolExecutor
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
-stop_words = set(stopwords.words("english"))
 tagger = SequenceTagger.load("flair/ner-english-ontonotes-large")
-lemmatizer = WordNetLemmatizer()
+vectorizer = TfidfVectorizer()
 
 
 class Candidate:
@@ -44,6 +45,7 @@ class Candidate:
     num_of_desc_words: Union[int, None]
     num_of_title_words: Union[int, None]
     num_of_instances: Union[int, None]
+    tf_idf_sum: Union[float, None]
 
     instance_overlap_l1_l2: Union[int, None]
     instance_overlap_l2_l1: Union[int, None]
@@ -80,6 +82,7 @@ class Candidate:
         self.num_of_desc_words = None
         self.num_of_title_words = None
         self.num_of_instances = None
+        self.tf_idf_sum = None
 
         self.instance_overlap_l1_l2 = None
         self.instance_overlap_l2_l1 = None
@@ -281,7 +284,8 @@ class Candidate:
             self.title_length,
             self.num_of_desc_words,
             self.num_of_title_words,
-            self.num_of_instances
+            self.num_of_instances,
+            self.tf_idf_sum
             # self.instance_names,
         ]
 
@@ -560,85 +564,20 @@ class Column:
                     )
 
     @property
-    def find_most_similar(self):
-        def preprocess_sentence(sentence):
-            words = word_tokenize(sentence)
-            words = [word for word in words if not word.lower() in stop_words]
-            words = [lemmatizer.lemmatize(word) for word in words]
-            synsets = [wn.synsets(word) for word in words]
-            synsets = [synset for sublist in synsets for synset in sublist]
-            return synsets
-
-        def preprocess_sentences_in_parallel():
-            with ThreadPoolExecutor() as executor:
-                for cell in self.cells:
-                    for candidate in cell.candidates:
-                        future = executor.submit(
-                            preprocess_sentence, candidate.to_sentence
-                        )
-                        preprocessed_sentences[cell.mention][
-                            candidate
-                        ] = future.result()
-
-        def path_similarity_cached(synset1, synset2):
-            cache_key = (synset1, synset2)
-            if cache_key not in path_similarity_cache:
-                path_similarity_cache[cache_key] = synset1.path_similarity(synset2) or 0
-            return path_similarity_cache[cache_key]
-
-        preprocessed_sentences = defaultdict(dict)
-        path_similarity_cache = {}
-
-        preprocess_sentences_in_parallel()
-
+    def get_tf_idf_sum(self):
         for cell in self.cells:
-            for candidate in cell.candidates:
-                my_synsets = preprocessed_sentences[cell.mention][candidate]
-
-                most_similar_candidate = None
-                candidate.most_similar_to = ""
-                candidate.similarity_avg = 0
+            list1 = []
+            for i, candidate in enumerate(cell.candidates):
+                list1 = []
+                list1.append(candidate.to_sentence)
                 for other_cell in self.cells:
-                    max_similarity = -1
                     if other_cell.mention == cell.mention:
                         continue
-
                     for other_candidate in other_cell.candidates:
-                        similarity_score = 0
-                        other_synsets = preprocessed_sentences[other_cell.mention][
-                            other_candidate
-                        ]
-                        similarity_sum = sum(
-                            path_similarity_cached(ms, synset)
-                            for ms in my_synsets
-                            for synset in other_synsets
-                        )
+                        list1.append(other_candidate.to_sentence)
 
-                        if len(my_synsets) == 0 or len(other_synsets) == 0:
-                            similarity_score = 0
-                        else:
-                            similarity_score = similarity_sum / (
-                                len(my_synsets) * len(other_synsets)
-                            )
-
-                        if similarity_score > max_similarity:
-                            max_similarity = similarity_score
-                            most_similar_candidate = other_candidate
-
-                    if most_similar_candidate is not None:
-                        candidate.most_similar_to += (
-                            " | " + most_similar_candidate.to_sentence
-                            if candidate.most_similar_to
-                            else most_similar_candidate.to_sentence
-                        )
-                        candidate.similarity_avg += max_similarity
-                    else:
-                        candidate.most_similar_to = ""
-
-                if len(self.cells) == 1:
-                    candidate.similarity_avg = 0
-                else:
-                    candidate.similarity_avg /= len(self.cells) - 1
+                tfidf_matrix = vectorizer.fit_transform(list1)
+                candidate.tf_idf_sum = np.sum(tfidf_matrix.toarray(), axis=1)[i]
 
     # calculate length of description
     @property

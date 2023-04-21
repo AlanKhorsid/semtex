@@ -45,23 +45,19 @@ with progress:
         pickle_save(cols_test, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
 
-    # for col in progress.track(
-    #     cols_test, description="Generating features avg ner for test"
-    # ):
-    #     for cell in col.cells:
-    #         for cand in cell.candidates:
-    #             cand.get_num_of_instances
+        for col in progress.track(
+            cols_test, description="Generating features tf_idf_sum for test"
+        ):
+            col.get_tf_idf_sum
 
-    # pickle_save(cols_test, f"cols_test_with_num_of_instances")
+        pickle_save(cols_test, f"cols_test_with_tf_idf_sum")
 
-    # for col in progress.track(
-    #     cols_validation, description="Generating features avg ner for validation"
-    # ):
-    #     for cell in col.cells:
-    #         for cand in cell.candidates:
-    #             cand.get_num_of_instances
+    for col in progress.track(
+        cols_validation, description="Generating features tf_idf_sum for validation"
+    ):
+        col.get_tf_idf_sum
 
-    # pickle_save(cols_validation, f"cols_validation_with_num_of_instances")
+    pickle_save(cols_validation, f"cols_validation_with_tf_idf_sum")
 
 # with progress:
 #     t1 = progress.add_task("Columns", total=len(cols))
@@ -158,17 +154,17 @@ test_pool = Pool(
 cb_params = {
     "iterations": [20000],
     "learning_rate": [0.01],
-    "depth": [28, 30, 36],
-    "l2_leaf_reg": [2, 3, 4],
+    "depth": [36],
+    "l2_leaf_reg": [0.5],
     "loss_function": ["Logloss"],
     "leaf_estimation_method": ["Newton"],
     "random_seed": [42],
     "verbose": [False],
     "random_strength": [18],
     "bootstrap_type": ["Bayesian"],
-    "early_stopping_rounds": [200],
+    "early_stopping_rounds": [800],
     "grow_policy": ["Lossguide"],
-    "max_leaves": [5000, 5500],
+    "max_leaves": [5000],
     "min_data_in_leaf": [1],
     # "task_type": "GPU",
     "tokenizers": [
@@ -197,7 +193,7 @@ param_grid = ParameterGrid(cb_params)
 param_grid = list(param_grid)
 random.shuffle(param_grid)
 
-best_f1 = 0.8083798774713488
+best_f1 = 0.8103125060394643
 num_of_iterations = 0
 # loop through the parameter combinations
 for params in param_grid:
@@ -277,7 +273,7 @@ for params in param_grid:
         print(f"{GREEN}{BOLD}NEW BEST F1:{RESET}      {GREEN}{BOLD}{best_f1}{RESET}")
         print("----------------------------------------")
         print()
-        if best_f1 > 0.8083798774713488:
+        if best_f1 > 0.8103125060394643:
             # pickle f1, precision, recall and model
             pickle_save(
                 {
