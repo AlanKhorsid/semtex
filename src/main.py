@@ -50,28 +50,29 @@ with progress:
     for col in progress.track(
         cols_validation, description="Generating claims for validation"
     ):
-        try:
-            for cell in col.cells:
-                for candidate in cell.candidates:
-                    candidate.claims = []
-                    _, _, claims = claims_dict[candidate.id]
-                    tuple_of_statements = claims
-                    for prop_id, _, _ in tuple_of_statements:
-                        candidate.claims.append(prop_id)
-        except KeyError:
-            print(f"Missing claims for {candidate.id}")
-            continue
-    pickle_save(cols_validation, f"with-claims-feature-validation")
-
-    for col in progress.track(cols_test, description="Generating claims for test"):
         for cell in col.cells:
             for candidate in cell.candidates:
                 candidate.claims = []
-                tuple = claims_dict[candidate.id]
-                tuple_of_statements = tuple[2]
-                for statement in tuple_of_statements:
-                    candidate.claims.append(statement[0])
-    pickle_save(cols_test, f"with-claims-feature-test")
+                if candidate.id not in claims_dict:
+                    print(f"{candidate.id} not found")
+                    candidate.claims.append(-1)
+                    continue
+                _, _, claims = claims_dict[candidate.id]
+                tuple_of_statements = claims
+                for prop_id, _, _ in tuple_of_statements:
+                    candidate.claims.append(prop_id)
+
+    pickle_save(cols_validation, f"cols_validation_with_claims_validation")
+
+    # for col in progress.track(cols_test, description="Generating claims for test"):
+    #     for cell in col.cells:
+    #         for candidate in cell.candidates:
+    #             candidate.claims = []
+    #             tuple = claims_dict[candidate.id]
+    #             tuple_of_statements = tuple[2]
+    #             for statement in tuple_of_statements:
+    #                 candidate.claims.append(statement[0])
+    # pickle_save(cols_test, f"with-claims-feature-test")
 
 # with progress:
 #     t1 = progress.add_task("Columns", total=len(cols))

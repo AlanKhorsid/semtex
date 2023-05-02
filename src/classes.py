@@ -23,8 +23,9 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
-tagger = SequenceTagger.load("flair/ner-english-ontonotes-large")
+# tagger = SequenceTagger.load("flair/ner-english-ontonotes-large")
 vectorizer = TfidfVectorizer()
+tagger = None
 
 
 class Candidate:
@@ -561,6 +562,44 @@ class Column:
                     candidate.tag_ratio = 0.0
                 else:
                     candidate.tag_ratio = (
+                        overlap_counts[candidate] / total_counts[candidate]
+                    )
+
+    @property
+    def get_claim_overlap(self):
+        # Pre-calculate named entities for all candidates
+        candidate_claims = {}
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                candidate.get_claim
+                candidate_claims[candidate] = candidate.claim
+
+        # Initialize overlap count and total candidates count dictionaries
+        overlap_counts = {candidate: 0 for candidate in candidate_claims}
+        total_counts = {candidate: 0 for candidate in candidate_claims}
+
+        # Compare each candidate with other candidates in different cells
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                my_claim = candidate_claims[candidate]
+                for other_cell in self.cells:
+                    if other_cell.mention == cell.mention:
+                        continue
+                    for other_cand in other_cell.candidates:
+                        other_claim = candidate_claims[other_cand]
+                        # my_claim and other_claim are lists of claims
+                        for claim in my_claim:
+                            if claim in other_claim:
+                                overlap_counts[candidate] += 1
+                            total_counts[candidate] += 1
+
+        # Calculate the overlap ratio for each candidate
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                if total_counts[candidate] == 0:
+                    candidate.claim_overlap = 0.0
+                else:
+                    candidate.claim_overlap = (
                         overlap_counts[candidate] / total_counts[candidate]
                     )
 
