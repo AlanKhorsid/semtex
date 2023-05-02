@@ -47,6 +47,13 @@ with progress:
         pickle_save(cols_test, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
 
+    # for col in progress.track(
+    #     cols_validation, description="Generating claims for validation"
+    # ):
+    #     col.get_claim_overlap
+
+    # pickle_save(cols_validation, f"cols_validation_with_claims_overlap")
+
     for col in progress.track(
         cols_validation, description="Generating claims for validation"
     ):
@@ -64,16 +71,18 @@ with progress:
 
     pickle_save(cols_validation, f"cols_validation_with_claims_validation")
 
-    # for col in progress.track(cols_test, description="Generating claims for test"):
-    #     for cell in col.cells:
-    #         for candidate in cell.candidates:
-    #             candidate.claims = []
-    #             tuple = claims_dict[candidate.id]
-    #             tuple_of_statements = tuple[2]
-    #             for statement in tuple_of_statements:
-    #                 candidate.claims.append(statement[0])
-    # pickle_save(cols_test, f"with-claims-feature-test")
-
+    for col in progress.track(cols_test, description="Generating claims for test"):
+        for cell in col.cells:
+            for candidate in cell.candidates:
+                candidate.claims = []
+                if candidate.id not in claims_dict:
+                    print(f"{candidate.id} not found")
+                    candidate.claims.append(-1)
+                    continue
+                _, _, claims = claims_dict[candidate.id]
+                tuple_of_statements = claims
+                for prop_id, _, _ in tuple_of_statements:
+                    candidate.claims.append(prop_id)
 # with progress:
 #     t1 = progress.add_task("Columns", total=len(cols))
 #     t2 = progress.add_task("|-> Cells")
@@ -116,8 +125,9 @@ test = pd.DataFrame(
         "num_of_desc_words": [x[11] for x in features_test],
         "num_of_title_words": [x[12] for x in features_test],
         "num_of_instances": [x[13] for x in features_test],
-        "title_levenshtein": [x[14] for x in features_test],
-        "label": [x[15] for x in features_test],
+        "claims_overlap": [x[14] for x in features_test],
+        "title_levenshtein": [x[15] for x in features_test],
+        "label": [x[16] for x in features_test],
     }
 )
 train = pd.DataFrame(
@@ -136,9 +146,10 @@ train = pd.DataFrame(
         "num_of_desc_words": [x[11] for x in features_validation],
         "num_of_title_words": [x[12] for x in features_validation],
         "num_of_instances": [x[13] for x in features_validation],
+        "claims_overlap": [x[14] for x in features_validation],
         # "instance_names": [x[7] for x in features_validation],
-        "title_levenshtein": [x[14] for x in features_validation],
-        "label": [x[15] for x in features_validation],
+        "title_levenshtein": [x[15] for x in features_validation],
+        "label": [x[16] for x in features_validation],
     }
 )
 
@@ -149,6 +160,10 @@ X_train = train.drop(["label"], axis=1)
 y_train = train["label"]
 X_test = test.drop(["label"], axis=1)
 y_test = test["label"]
+
+# X_train, X_test, y_train, y_test = train_test_split(
+#     train, train["label"], random_state=42, test_size=0.3, shuffle=True
+# )
 
 train_pool = Pool(
     X_train,

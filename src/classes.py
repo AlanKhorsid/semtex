@@ -571,8 +571,7 @@ class Column:
         candidate_claims = {}
         for cell in self.cells:
             for candidate in cell.candidates:
-                candidate.get_claim
-                candidate_claims[candidate] = candidate.claim
+                candidate_claims[candidate] = candidate.claims
 
         # Initialize overlap count and total candidates count dictionaries
         overlap_counts = {candidate: 0 for candidate in candidate_claims}
