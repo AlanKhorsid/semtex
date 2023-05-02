@@ -45,7 +45,8 @@ class Candidate:
     num_of_desc_words: Union[int, None]
     num_of_title_words: Union[int, None]
     num_of_instances: Union[int, None]
-    tf_idf_sum: Union[float, None]
+    claims: Union[list[int], None]
+    claim_overlap: Union[int, None]
 
     instance_overlap_l1_l2: Union[int, None]
     instance_overlap_l2_l1: Union[int, None]
@@ -82,7 +83,8 @@ class Candidate:
         self.num_of_desc_words = None
         self.num_of_title_words = None
         self.num_of_instances = None
-        self.tf_idf_sum = None
+        self.claim_overlap = None
+        self.claims = None
 
         self.instance_overlap_l1_l2 = None
         self.instance_overlap_l2_l1 = None
@@ -285,8 +287,7 @@ class Candidate:
             self.num_of_desc_words,
             self.num_of_title_words,
             self.num_of_instances,
-            self.tf_idf_sum
-            # self.instance_names,
+            self.claim_overlap,
         ]
 
     @property
@@ -562,22 +563,6 @@ class Column:
                     candidate.tag_ratio = (
                         overlap_counts[candidate] / total_counts[candidate]
                     )
-
-    @property
-    def get_tf_idf_sum(self):
-        for cell in self.cells:
-            list1 = []
-            for i, candidate in enumerate(cell.candidates):
-                list1 = []
-                list1.append(candidate.to_sentence)
-                for other_cell in self.cells:
-                    if other_cell.mention == cell.mention:
-                        continue
-                    for other_candidate in other_cell.candidates:
-                        list1.append(other_candidate.to_sentence)
-
-                tfidf_matrix = vectorizer.fit_transform(list1)
-                candidate.tf_idf_sum = np.sum(tfidf_matrix.toarray(), axis=1)[i]
 
     # calculate length of description
     @property

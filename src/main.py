@@ -26,6 +26,8 @@ PICKLE_FILE_NAME = "test-2022-bing"
 cols_test = pickle_load("cols_test_with_num_of_instances", is_dump=True)
 cols_validation = pickle_load("cols_validation_with_num_of_instances", is_dump=True)
 
+claims_dict = pickle_load("wikidata_fetch_entity_cache", is_dump=True)
+
 # ----- Fetch candidates -----
 while not all([col.all_cells_fetched for col in cols_test]):
     with progress:
@@ -45,19 +47,31 @@ with progress:
         pickle_save(cols_test, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
 
-        for col in progress.track(
-            cols_test, description="Generating features tf_idf_sum for test"
-        ):
-            col.get_tf_idf_sum
-
-        pickle_save(cols_test, f"cols_test_with_tf_idf_sum")
-
     for col in progress.track(
-        cols_validation, description="Generating features tf_idf_sum for validation"
+        cols_validation, description="Generating claims for validation"
     ):
-        col.get_tf_idf_sum
+        try:
+            for cell in col.cells:
+                for candidate in cell.candidates:
+                    candidate.claims = []
+                    _, _, claims = claims_dict[candidate.id]
+                    tuple_of_statements = claims
+                    for prop_id, _, _ in tuple_of_statements:
+                        candidate.claims.append(prop_id)
+        except KeyError:
+            print(f"Missing claims for {candidate.id}")
+            continue
+    pickle_save(cols_validation, f"with-claims-feature-validation")
 
-    pickle_save(cols_validation, f"cols_validation_with_tf_idf_sum")
+    for col in progress.track(cols_test, description="Generating claims for test"):
+        for cell in col.cells:
+            for candidate in cell.candidates:
+                candidate.claims = []
+                tuple = claims_dict[candidate.id]
+                tuple_of_statements = tuple[2]
+                for statement in tuple_of_statements:
+                    candidate.claims.append(statement[0])
+    pickle_save(cols_test, f"with-claims-feature-test")
 
 # with progress:
 #     t1 = progress.add_task("Columns", total=len(cols))
@@ -101,7 +115,6 @@ test = pd.DataFrame(
         "num_of_desc_words": [x[11] for x in features_test],
         "num_of_title_words": [x[12] for x in features_test],
         "num_of_instances": [x[13] for x in features_test],
-        # "instance_names": [x[7] for x in features],
         "title_levenshtein": [x[14] for x in features_test],
         "label": [x[15] for x in features_test],
     }
@@ -130,8 +143,6 @@ train = pd.DataFrame(
 
 
 text_features = ["title", "description", "tag"]
-# text_features = ["title", "description", "tag", "most_similar_to"]
-# text_features = []
 
 X_train = train.drop(["label"], axis=1)
 y_train = train["label"]
