@@ -16,9 +16,10 @@ from _requests import wikidata_fetch_entities, get_entity
 # output: common type annotation
 
 
-#TODO: rename cta_no_query to cta
+#TODO: Make cta_retriever check if a result is an instance of of another equally good result
 def cta_retriever(candidates_list, correct = None, max_depth = 0):
     result_ids = []
+    best_values = []
     instance_dicts = []
     confidence_vector = []
     correct_key_vector = []
@@ -26,7 +27,9 @@ def cta_retriever(candidates_list, correct = None, max_depth = 0):
     current_depth = 0
     index = 0
     for i in range(len(candidates_list)):
+        #initialize lists with base values
         result_ids.append(None)
+        best_values.append(0)
         instance_dicts.append(dict())
         confidence_vector.append(0)
         if correct == None:
@@ -35,78 +38,87 @@ def cta_retriever(candidates_list, correct = None, max_depth = 0):
             correct_key_vector = correct
 
     #while loop to collect and query for instace of elements
-    while confidence_vector[index] < 1 and current_depth < max_depth:
+    while index < len(candidates_list) and current_depth <= max_depth:
+        print(ids_to_query)
+        wikidata_fetch_entities(ids_to_query)
+        ids_to_query = []
+            
+        for candidates in candidates_list:
+            best_key = result_ids[index]
+            correct_key = correct_key_vector[index]
+            amount_of_nonetypes = 0
+            confidence = 0
+            explore_next = []
+
+            #get instance_dict and amount of nones in first pass
+            if current_depth == 0:
+                instance_dicts[index], amount_of_nonetypes, explore_next = add_to_instance_dict(candidates, instance_dicts[index])
+
+                best_key, best_values[index], correct_key = find_best_key(instance_dicts[index], correct_key=correct_key) 
+
+                confidence_vector[index] = best_values[index]/(len(candidates)-amount_of_nonetypes)
+            
+                #exception in case we have a confidence higher than 100%
+                if confidence_vector[index] > 1:
+                    raise ValueError()
+            else:
+                cands = fetch_cand_info(instance_dicts[index])
+                instance_dicts[index], num_of_none, explore_next = add_to_instance_dict(cands, instance_dicts[index], tree_exploration = True)
+
+                #placeholder vars for previously best key and value to compare with the next iteration's values
+                current_best_value = best_values[index]
+                current_best_key = best_key
+
+                best_key, best_values[index], correct_key = find_best_key(instance_dicts[index], correct_key=correct)
+
+                confidence_vector[index] = best_values[index]/(len(candidates)-amount_of_nonetypes)
+
+            
+                if confidence_vector[index] <= current_best_value/(len(candidates)-amount_of_nonetypes):
+                    best_values[index] = current_best_value
+                    best_key = current_best_key
+                    confidence_vector[index] = current_best_value/(len(candidates)-amount_of_nonetypes)
+            
+            #Add ids of the entites that should be explored next iteration
+            for val in explore_next:
+                if val not in ids_to_query:
+                    ids_to_query.append(val)
+            
+            #set the result id as the best found key
+            result_ids[index] = best_key
+            index += 1
+
+            #debug output
+            if correct != None:
+                if amount_of_nonetypes == len(candidates):
+                    print("=====ALL NONTYPES=====")
+                    best_key = 0
+                if correct_key != best_key and correct_key != None:
+                    print(f"Found the correct key in the dataset, it is not the return key: {correct_key}")
+                    print(f"return key: {best_key} confidence: {confidence} best-value/len(candidates): {best_values[index]/len(candidates)} percentage Nonetypes: {amount_of_nonetypes/len(candidates)}")
+
+        #prepare for next iteration of while
         current_depth += 1
-        pass
-        
-
-
-    for candidates in candidates_list:
-
-        best_value = 0
-        best_key = 0
-        correct_key = correct_key_vector[index]
-        amount_of_nonetypes = 0
-        confidence = 0
-
-        #get instance_dict and amount of 
-        instance_dicts[index], amount_of_nonetypes = add_to_instance_dict(candidates, instance_dicts[index])
-
-        best_key, best_value, correct_key = find_best_key(instance_dicts[index], correct_key=correct_key) 
-
-        confidence_vector[index] = best_value/(len(candidates)-amount_of_nonetypes)
-        
-        #exception in case we have a confidence higher than 100%
-        if confidence_vector[index] > 1:
-            raise ValueError()
-
-        while confidence_vector[index] < 1 and current_depth < max_depth:
-            pass
-            current_depth += 1
-            current_best_value = best_value
-            current_best_key = best_key
-            #query wikidata on subclass of and part of on each key in instance_dict
-            instance_dicts[index] = cta_query(instance_dicts[index])
-            best_key, best_value, correct_key = find_best_key(instance_dicts[index], correct=correct)
-            confidence_vector[index] = best_value/(len(candidates)-amount_of_nonetypes)
-            if confidence_vector[index] < current_best_value/(len(candidates)-amount_of_nonetypes):
-                best_value = current_best_value
-                best_key = current_best_key
-        
-        result_ids[index] = best_key
-        index += 1
-
-        #debug output
-        if correct != None:
-            if amount_of_nonetypes == len(candidates):
-                print("=====ALL NONTYPES=====")
-                best_key = 0
-            if correct_key != best_key and correct_key != None:
-                print(f"Found the correct key in the dataset, it is not the return key: {correct_key}")
-                print(f"return key: {best_key} confidence: {confidence} best-value/len(candidates): {best_value/len(candidates)} percentage Nonetypes: {amount_of_nonetypes/len(candidates)}")
+        index = 0
 
     return result_ids
 
 
-def cta_query(instance_dict : dict):
-    fetch_ids = []
+def fetch_cand_info(instance_dict : dict):
     candidates = []
+    num_of_none = 0
+
     for key, value in instance_dict.items():
-        fetch_ids.append(key)
-
-    wikidata_fetch_entities(fetch_ids)
-    for ids in fetch_ids:
-        candidates.append(Candidate(ids))
-
+        candidates.append(Candidate(key))
+    
     for cand in candidates:
         cand.fetch_info()
 
-    add_to_instance_dict(candidates, instance_dict, tree_exploration = True)
-
-    return instance_dict
+    return candidates
 
 def add_to_instance_dict(candidates, instance_dict, tree_exploration = False):
     amount_of_nonetypes = 0
+    explore_next = []
     for candidate in candidates:
         discovered_ids = []
         if candidate == None:
@@ -115,9 +127,7 @@ def add_to_instance_dict(candidates, instance_dict, tree_exploration = False):
 
         for statement in candidate.statements:
             if ((statement.property == 31 and tree_exploration == False) or (statement.property == 279 and tree_exploration == True)):
-                #print(f"statement value: {statement.value}")
                 if statement.value in discovered_ids:
-                    #print(f"continue called statement_value: {statement.value}")
                     continue
 
 
@@ -128,10 +138,13 @@ def add_to_instance_dict(candidates, instance_dict, tree_exploration = False):
                     instance_dict[statement.value] = 1
                 
                 discovered_ids.append(statement.value)
-
+        
+        for ids in discovered_ids:
+            if ids not in explore_next:
+                explore_next.append(ids)
         discovered_ids = []
 
-    return instance_dict, amount_of_nonetypes
+    return instance_dict, amount_of_nonetypes, explore_next
 
 def find_best_key(instance_dict, correct_key = None):
     best_key = None
@@ -151,8 +164,9 @@ def find_best_key(instance_dict, correct_key = None):
 if __name__ == "__main__":
     PICKLE_FILE_NAME = "cea_results_test"
     candidates_objects: list[Candidate] = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=False)
-    candidates_objects = candidates_objects[0:100]
+    candidates_objects = candidates_objects
     candidates = []
+    correct_results = []
     successes = 0
     failures = 0
     max_depth_failures = 0
@@ -161,11 +175,10 @@ if __name__ == "__main__":
 
     for cand in candidates_objects:
         candidates.append(cand['candidates'])
+        correct_results.append(cand['cta'])
 
     result1 = cta_retriever(candidates)
-    result2 = cta_retriever(candidates)
-
-    print(result1)
+    result2 = cta_retriever(candidates, max_depth = 1, correct=correct_results)
 
     for cand in candidates_objects:
         if result1[index] == cand['cta']:
@@ -178,9 +191,14 @@ if __name__ == "__main__":
             max_depth_failures += 1
             print(f"max depth = 1 failed when max depth = 0 didn't")
             print(f"expected: {cand['cta']} result: {result2[index]}")
+            print("entity values:")
+            for c in candidates[index]:
+                print(c.id)
         elif result1[index] != result2[index] and result2[index] == cand['cta']:
             max_depth_successes += 1
         index += 1
     print(f"successes: {successes}   failures: {failures}")
-    print(f"success percentage: {successes/(successes+failures)}")
-    print(f"max depth successes: {max_depth_successes}   max depth failures: {max_depth_failures}")
+    print(f"max depth 1 successes: {max_depth_successes}   failures: {max_depth_failures}")
+    print(f"max depth 0 success percentage: {successes/(successes+failures)}")
+    print(f"max depth 1 success percentage: {max_depth_successes/(max_depth_successes+max_depth_failures)}")
+    print(f"max depth successes: {max_depth_successes}   max depth failures: {max_depth_failures}   success/failures: {max_depth_successes/max_depth_failures}")
