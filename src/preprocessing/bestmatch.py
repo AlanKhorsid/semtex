@@ -1,35 +1,33 @@
-import Levenshtein
+import html
+import random
+import itertools
+from Levenshtein import ratio
 
 
-def generate_title_permutations(title):
-    # remove " - Wikidata" from title
+def generate_title_permutations(title: str) -> list:
     title = title.replace(" - Wikidata", "")
-    title_words = title.split()
-    if len(title_words) > 20:
-        print(f"Title too long: {title}")
+    title = title.replace(" — Wikidata", "")
+    words = title.split()
+    if len(words) > 4:
+        print(f"Title has too many words: {html.unescape(title)}")
         return [title]
-    result = []
-    for i in range(1, 2 ** len(title_words)):
-        perm = " ".join([title_words[j] for j in range(len(title_words)) if i & (1 << j)])
-        if perm != title and len(perm.split()) > 0:
-            result.append(perm)
-    result.append(title)
-    return result
+
+    all_permutations = set()
+    for length in range(1, len(words) + 1):
+        for permutation in itertools.combinations(words, length):
+            all_permutations.add(" ".join(permutation))
+    all_permutations.add(title)
+    return list(all_permutations)
 
 
-def compare_title_permutations_with_query(title, query):
+def compare_title_permutations_with_query(title: str, query: str) -> list:
     permutations = generate_title_permutations(title)
-    return [(p, 1 - Levenshtein.ratio(query.lower(), p.lower())) for p in permutations]
+    return [(p, 1 - ratio(query.lower(), p.lower())) for p in permutations]
 
 
-def remove_last_symbol(best_match):
-    symbols = [",", ":", ";", "-", ".", " ", "?", "!"]
-    while len(best_match) > 0 and best_match[-1] in symbols:
-        best_match = best_match[:-1]
-    return best_match
-
-
-def get_best_title_match(query, titles):
+def get_best_title_match(
+    query: str, titles: list, distance_tolerance: float = 0.12
+) -> str:
     best_match = None
     lowest_distance = float("inf")
     for title in titles:
@@ -38,12 +36,25 @@ def get_best_title_match(query, titles):
             if r[1] < lowest_distance:
                 lowest_distance = r[1]
                 best_match = r[0]
-    best_match = remove_last_symbol(best_match)
-    if best_match is None or not is_acceptable_match(best_match):
+
+    if (
+        lowest_distance > distance_tolerance
+        or best_match is None
+        or is_too_long_title(best_match)
+    ):
         return query
+
+    best_match = remove_last_symbol(best_match)
     best_match = best_match.replace("\u2019", "'")
     return best_match
 
 
-def is_acceptable_match(suggestion):
-    return not suggestion.endswith("...")
+def remove_last_symbol(best_match: str) -> str:
+    symbols = [",", ":", ";", "-", ".", " ", "?", "!"]
+    while len(best_match) > 0 and best_match[-1] in symbols:
+        best_match = best_match[:-1]
+    return best_match
+
+
+def is_too_long_title(suggestion: str) -> bool:
+    return suggestion.endswith("...")

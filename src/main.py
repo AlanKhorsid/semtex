@@ -47,53 +47,47 @@ with progress:
         pickle_save(cols_test, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
 
-    # for col in progress.track(
-    #     cols_validation, description="Generating claims for validation"
-    # ):
-    #     col.get_claim_overlap
+# ----- Get claims for all candidates -----
+# for col in progress.track(
+#     cols_validation, description="Generating claims for validation"
+# ):
+#     for cell in col.cells:
+#         for candidate in cell.candidates:
+#             candidate.claims = []
+#             if candidate.id not in claims_dict:
+#                 print(f"{candidate.id} not found")
+#                 candidate.claims.append(-1)
+#                 continue
+#             _, _, claims = claims_dict[candidate.id]
+#             tuple_of_statements = claims
+#             for prop_id, _, _ in tuple_of_statements:
+#                 candidate.claims.append(prop_id)
 
-    # pickle_save(cols_validation, f"cols_validation_with_claims_overlap")
+# pickle_save(cols_validation, f"cols_validation_with_claims_validation")
 
-    for col in progress.track(
-        cols_validation, description="Generating claims for validation"
-    ):
-        for cell in col.cells:
-            for candidate in cell.candidates:
-                candidate.claims = []
-                if candidate.id not in claims_dict:
-                    print(f"{candidate.id} not found")
-                    candidate.claims.append(-1)
-                    continue
-                _, _, claims = claims_dict[candidate.id]
-                tuple_of_statements = claims
-                for prop_id, _, _ in tuple_of_statements:
-                    candidate.claims.append(prop_id)
+# for col in progress.track(cols_test, description="Generating claims for test"):
+#     for cell in col.cells:
+#         for candidate in cell.candidates:
+#             candidate.claims = []
+#             if candidate.id not in claims_dict:
+#                 print(f"{candidate.id} not found")
+#                 candidate.claims.append(-1)
+#                 continue
+#             _, _, claims = claims_dict[candidate.id]
+#             tuple_of_statements = claims
+#             for prop_id, _, _ in tuple_of_statements:
+#                 candidate.claims.append(prop_id)
 
-    pickle_save(cols_validation, f"cols_validation_with_claims_validation")
+# ----- Generate claims overlap -----
+# for col in progress.track(
+#     cols_validation, description="Generating claims for validation"
+# ):
+#     col.get_claim_overlap
+# pickle_save(cols_validation, f"cols_validation_with_claims_overlap")
 
-    for col in progress.track(cols_test, description="Generating claims for test"):
-        for cell in col.cells:
-            for candidate in cell.candidates:
-                candidate.claims = []
-                if candidate.id not in claims_dict:
-                    print(f"{candidate.id} not found")
-                    candidate.claims.append(-1)
-                    continue
-                _, _, claims = claims_dict[candidate.id]
-                tuple_of_statements = claims
-                for prop_id, _, _ in tuple_of_statements:
-                    candidate.claims.append(prop_id)
-# with progress:
-#     t1 = progress.add_task("Columns", total=len(cols))
-#     t2 = progress.add_task("|-> Cells")
-#     for col in cols:
-#         progress.update(task_id=t2, total=len(col.cells))
-#         for cell in col.cells:
-#             cell.add_layer(col)
-#             progress.update(task_id=t2, advance=1)
-#         progress.update(task_id=t2, completed=0)
-#         progress.update(task_id=t1, advance=1)
-# pickle_save(cols, f"{PICKLE_FILE_NAME}-l3")
+# for col in progress.track(cols_test, description="Generating claims for test"):
+#     col.get_claim_overlap
+# pickle_save(cols_test, f"cols_test_with_claims_overlap")
 
 # ----- Train model -----
 features_test = []
@@ -104,11 +98,7 @@ for col in progress.track(cols_test, description="Training model"):
 for col in progress.track(cols_validation, description="Training model"):
     features_validation.extend(col.features)
 
-# max_id = max([i[0] for i in features])
-# features = [[x[0] / max_id] + x[1:] for x in features]
-
 # Process features
-
 test = pd.DataFrame(
     {
         "id": [x[0] for x in features_test],
@@ -147,7 +137,6 @@ train = pd.DataFrame(
         "num_of_title_words": [x[12] for x in features_validation],
         "num_of_instances": [x[13] for x in features_validation],
         "claims_overlap": [x[14] for x in features_validation],
-        # "instance_names": [x[7] for x in features_validation],
         "title_levenshtein": [x[15] for x in features_validation],
         "label": [x[16] for x in features_validation],
     }
@@ -160,10 +149,6 @@ X_train = train.drop(["label"], axis=1)
 y_train = train["label"]
 X_test = test.drop(["label"], axis=1)
 y_test = test["label"]
-
-# X_train, X_test, y_train, y_test = train_test_split(
-#     train, train["label"], random_state=42, test_size=0.3, shuffle=True
-# )
 
 train_pool = Pool(
     X_train,

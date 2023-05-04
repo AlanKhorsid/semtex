@@ -1,6 +1,7 @@
 from collections import defaultdict
 from _requests import wikidata_entity_search, wikidata_get_entity, RateLimitException
-from preprocessing.suggester import generate_suggestion
+
+# from preprocessing.suggester import generate_suggestion
 from util import (
     parse_entity_description,
     parse_entity_properties,
@@ -172,8 +173,6 @@ class Candidate:
         instance_total: int,
         subclass_total: int,
     ):
-        # self.lex_score = Levenshtein.ratio(self.title, correct.title)
-
         instance_overlap = 0
         subclass_overlap = 0
         description_overlaps = []
@@ -588,6 +587,9 @@ class Column:
                         other_claim = candidate_claims[other_cand]
                         # my_claim and other_claim are lists of claims
                         for claim in my_claim:
+                            if claim == -1:
+                                total_counts[candidate] += 1
+                                continue
                             if claim in other_claim:
                                 overlap_counts[candidate] += 1
                             total_counts[candidate] += 1
