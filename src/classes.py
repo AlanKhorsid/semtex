@@ -49,7 +49,6 @@ class Candidate:
     num_of_instances: Union[int, None]
     claims: Union[list[int], None]
     claim_overlap: Union[int, None]
-    all_instances: Union[list[int], None]
 
     instance_overlap_l1_l2: Union[int, None]
     instance_overlap_l2_l1: Union[int, None]
@@ -289,7 +288,6 @@ class Candidate:
             self.num_of_title_words,
             self.num_of_instances,
             self.claim_overlap,
-            self.all_instances,
         ]
 
     @property
@@ -329,11 +327,6 @@ class Candidate:
     @property
     def get_num_of_instances(self):
         self.num_of_instances = len(self.instances)
-
-    @property
-    def join_all_instances(self):
-        for instance in self.instances:
-            self.all_instances.join(f"{instance} ")
 
 
 class CandidateSet:

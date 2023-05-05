@@ -23,8 +23,8 @@ PICKLE_FILE_NAME = "test-2022-bing"
 # cols_test: list[Column] = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=True)
 # cols_validation: list[Column] = pickle_load("validation-2022-bing", is_dump=True)
 
-cols_test = pickle_load("cols_test_with_num_of_instances", is_dump=True)
-cols_validation = pickle_load("cols_validation_with_num_of_instances", is_dump=True)
+cols_test = pickle_load("cols_test", is_dump=True)
+cols_validation = pickle_load("cols_validation", is_dump=True)
 
 claims_dict = pickle_load("wikidata_fetch_entity_cache", is_dump=True)
 
@@ -47,51 +47,47 @@ with progress:
         pickle_save(cols_test, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
 
-    # ----- Get claims for all candidates -----
-    # for col in progress.track(
-    #     cols_validation, description="Generating claims for validation"
-    # ):
-    #     for cell in col.cells:
-    #         for candidate in cell.candidates:
-    #             candidate.claims = []
-    #             if candidate.id not in claims_dict:
-    #                 print(f"{candidate.id} not found")
-    #                 candidate.claims.append(-1)
-    #                 continue
-    #             _, _, claims = claims_dict[candidate.id]
-    #             tuple_of_statements = claims
-    #             for prop_id, _, _ in tuple_of_statements:
-    #                 candidate.claims.append(prop_id)
+# ----- Get claims for all candidates -----
+# for col in progress.track(
+#     cols_validation, description="Generating claims for validation"
+# ):
+#     for cell in col.cells:
+#         for candidate in cell.candidates:
+#             candidate.claims = []
+#             if candidate.id not in claims_dict:
+#                 print(f"{candidate.id} not found")
+#                 candidate.claims.append(-1)
+#                 continue
+#             _, _, claims = claims_dict[candidate.id]
+#             tuple_of_statements = claims
+#             for prop_id, _, _ in tuple_of_statements:
+#                 candidate.claims.append(prop_id)
 
-    # pickle_save(cols_validation, f"cols_validation_with_claims_validation")
+# pickle_save(cols_validation, f"cols_validation_with_claims_validation")
 
-    # for col in progress.track(cols_test, description="Generating claims for test"):
-    #     for cell in col.cells:
-    #         for candidate in cell.candidates:
-    #             candidate.claims = []
-    #             if candidate.id not in claims_dict:
-    #                 print(f"{candidate.id} not found")
-    #                 candidate.claims.append(-1)
-    #                 continue
-    #             _, _, claims = claims_dict[candidate.id]
-    #             tuple_of_statements = claims
-    #             for prop_id, _, _ in tuple_of_statements:
-    #                 candidate.claims.append(prop_id)
+# for col in progress.track(cols_test, description="Generating claims for test"):
+#     for cell in col.cells:
+#         for candidate in cell.candidates:
+#             candidate.claims = []
+#             if candidate.id not in claims_dict:
+#                 print(f"{candidate.id} not found")
+#                 candidate.claims.append(-1)
+#                 continue
+#             _, _, claims = claims_dict[candidate.id]
+#             tuple_of_statements = claims
+#             for prop_id, _, _ in tuple_of_statements:
+#                 candidate.claims.append(prop_id)
 
-    # ----- Generate claims overlap -----
-    for col in progress.track(
-        cols_validation, description="Generating instance joins for validation"
-    ):
-        for cell in col.cells:
-            for candidate in cell.candidates:
-                candidate.join_all_instance
-    pickle_save(cols_validation, f"cols_validation_join_all_instance")
+# ----- Generate claims overlap -----
+# for col in progress.track(
+#     cols_validation, description="Generating claims for validation"
+# ):
+#     col.get_claim_overlap
+# pickle_save(cols_validation, f"cols_validation_with_claims_overlap")
 
-    for col in progress.track(cols_test, description="Generating instance for test"):
-        for cell in col.cells:
-            for candidate in cell.candidates:
-                candidate.join_all_instance
-    pickle_save(cols_test, f"cols_test_join_all_instance")
+# for col in progress.track(cols_test, description="Generating claims for test"):
+#     col.get_claim_overlap
+# pickle_save(cols_test, f"cols_test_with_claims_overlap")
 
 # ----- Train model -----
 features_test = []
