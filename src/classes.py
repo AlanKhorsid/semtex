@@ -288,6 +288,7 @@ class Candidate:
             self.num_of_title_words,
             self.num_of_instances,
             self.claim_overlap,
+            self.all_instances,
         ]
 
     @property
@@ -327,6 +328,12 @@ class Candidate:
     @property
     def get_num_of_instances(self):
         self.num_of_instances = len(self.instances)
+
+    @property
+    def join_all_instances(self):
+        self.all_instances = ""
+        for instance in self.instances:
+            self.all_instances += str(instance) + " "
 
 
 class CandidateSet:

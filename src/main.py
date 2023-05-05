@@ -23,10 +23,10 @@ PICKLE_FILE_NAME = "test-2022-bing"
 # cols_test: list[Column] = pickle_load(f"{PICKLE_FILE_NAME}", is_dump=True)
 # cols_validation: list[Column] = pickle_load("validation-2022-bing", is_dump=True)
 
-cols_test = pickle_load("cols_test", is_dump=True)
-cols_validation = pickle_load("cols_validation", is_dump=True)
+cols_test = pickle_load("cols_test_joined_instances", is_dump=True)
+cols_validation = pickle_load("cols_validation_joined_instances", is_dump=True)
 
-claims_dict = pickle_load("wikidata_fetch_entity_cache", is_dump=True)
+# claims_dict = pickle_load("wikidata_fetch_entity_cache", is_dump=True)
 
 # ----- Fetch candidates -----
 while not all([col.all_cells_fetched for col in cols_test]):
@@ -47,47 +47,20 @@ with progress:
         pickle_save(cols_test, f"{PICKLE_FILE_NAME}-{i}")
         i = i + 1 if i < 9 else 1
 
-# ----- Get claims for all candidates -----
-# for col in progress.track(
-#     cols_validation, description="Generating claims for validation"
-# ):
-#     for cell in col.cells:
-#         for candidate in cell.candidates:
-#             candidate.claims = []
-#             if candidate.id not in claims_dict:
-#                 print(f"{candidate.id} not found")
-#                 candidate.claims.append(-1)
-#                 continue
-#             _, _, claims = claims_dict[candidate.id]
-#             tuple_of_statements = claims
-#             for prop_id, _, _ in tuple_of_statements:
-#                 candidate.claims.append(prop_id)
+    # ----- Generate new feature here -----
+    # for col in progress.track(
+    #     cols_validation, description="Generating claims for validation"
+    # ):
+    #     for cell in col.cells:
+    #         for candidate in cell.candidates:
+    #             candidate.join_all_instances
+    # pickle_save(cols_validation, f"cols_validation_joined_instances")
 
-# pickle_save(cols_validation, f"cols_validation_with_claims_validation")
-
-# for col in progress.track(cols_test, description="Generating claims for test"):
-#     for cell in col.cells:
-#         for candidate in cell.candidates:
-#             candidate.claims = []
-#             if candidate.id not in claims_dict:
-#                 print(f"{candidate.id} not found")
-#                 candidate.claims.append(-1)
-#                 continue
-#             _, _, claims = claims_dict[candidate.id]
-#             tuple_of_statements = claims
-#             for prop_id, _, _ in tuple_of_statements:
-#                 candidate.claims.append(prop_id)
-
-# ----- Generate claims overlap -----
-# for col in progress.track(
-#     cols_validation, description="Generating claims for validation"
-# ):
-#     col.get_claim_overlap
-# pickle_save(cols_validation, f"cols_validation_with_claims_overlap")
-
-# for col in progress.track(cols_test, description="Generating claims for test"):
-#     col.get_claim_overlap
-# pickle_save(cols_test, f"cols_test_with_claims_overlap")
+    # for col in progress.track(cols_test, description="Generating claims for test"):
+    #     for cell in col.cells:
+    #         for candidate in cell.candidates:
+    #             candidate.join_all_instances
+    # pickle_save(cols_test, f"cols_test_joined_instances")
 
 # ----- Train model -----
 features_test = []
@@ -116,8 +89,9 @@ test = pd.DataFrame(
         "num_of_title_words": [x[12] for x in features_test],
         "num_of_instances": [x[13] for x in features_test],
         "claims_overlap": [x[14] for x in features_test],
-        "title_levenshtein": [x[15] for x in features_test],
-        "label": [x[16] for x in features_test],
+        "all_instances": [x[15] for x in features_test],
+        "title_levenshtein": [x[16] for x in features_test],
+        "label": [x[17] for x in features_test],
     }
 )
 train = pd.DataFrame(
@@ -137,13 +111,14 @@ train = pd.DataFrame(
         "num_of_title_words": [x[12] for x in features_validation],
         "num_of_instances": [x[13] for x in features_validation],
         "claims_overlap": [x[14] for x in features_validation],
-        "title_levenshtein": [x[15] for x in features_validation],
-        "label": [x[16] for x in features_validation],
+        "all_instances": [x[15] for x in features_validation],
+        "title_levenshtein": [x[16] for x in features_validation],
+        "label": [x[17] for x in features_validation],
     }
 )
 
 
-text_features = ["title", "description", "tag"]
+text_features = ["title", "description", "tag", "all_instances"]
 
 X_train = train.drop(["label"], axis=1)
 y_train = train["label"]
