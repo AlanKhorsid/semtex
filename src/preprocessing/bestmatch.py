@@ -4,7 +4,7 @@ import itertools
 from Levenshtein import ratio
 
 
-def generate_title_permutations(title: str) -> list:
+def generate_title_combinations(title: str) -> list:
     title = title.replace(" - Wikidata", "")
     title = title.replace(" — Wikidata", "")
     words = title.split()
@@ -12,17 +12,21 @@ def generate_title_permutations(title: str) -> list:
         print(f"Title has too many words: {html.unescape(title)}")
         return [title]
 
-    all_permutations = set()
+    all_combinations = set()
     for length in range(1, len(words) + 1):
-        for permutation in itertools.combinations(words, length):
-            all_permutations.add(" ".join(permutation))
-    all_permutations.add(title)
-    return list(all_permutations)
+        for combination in itertools.combinations(words, length):
+            all_combinations.add(" ".join(combination))
+    all_combinations.add(title)
+    return list(all_combinations)
 
 
-def compare_title_permutations_with_query(title: str, query: str) -> list:
-    permutations = generate_title_permutations(title)
-    return [(p, 1 - ratio(query.lower(), p.lower())) for p in permutations]
+def compare_title_combinations_with_query(title: str, query: str) -> list:
+    combinations = generate_title_combinations(title)
+    return [(p, 1 - ratio(query.lower(), p.lower())) for p in combinations]
+
+
+x = compare_title_combinations_with_query("Tesla Model 3", "Tesla Model 3 car")
+print(1 - ratio("Tesla Model 3 car", "Tesla Model 3"))
 
 
 def get_best_title_match(
@@ -31,7 +35,7 @@ def get_best_title_match(
     best_match = None
     lowest_distance = float("inf")
     for title in titles:
-        results = compare_title_permutations_with_query(title, query)
+        results = compare_title_combinations_with_query(title, query)
         for r in results:
             if r[1] < lowest_distance:
                 lowest_distance = r[1]
