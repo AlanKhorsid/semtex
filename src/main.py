@@ -164,20 +164,21 @@ test_pool = Pool(
 )
 
 cb_params = {
-    "iterations": [20000],
+    "iterations": [10000],
     "learning_rate": [0.01],
-    "depth": [36],
+    "depth": [40],
     "l2_leaf_reg": [0.5],
     "loss_function": ["Logloss"],
     "leaf_estimation_method": ["Newton"],
     "random_seed": [42],
     "verbose": [False],
-    "random_strength": [18],
-    "bootstrap_type": ["Bayesian"],
+    "random_strength": [26],
+    "bootstrap_type": ["Bernoulli"],
+    "subsample": [0.4],
     "early_stopping_rounds": [800],
     "grow_policy": ["Lossguide"],
     "max_leaves": [5000],
-    "min_data_in_leaf": [1],
+    "min_data_in_leaf": [6],
     # "task_type": "GPU",
     "tokenizers": [
         {
@@ -205,7 +206,7 @@ param_grid = ParameterGrid(cb_params)
 param_grid = list(param_grid)
 random.shuffle(param_grid)
 
-best_f1 = 0.8103125060394643
+best_f1 = 0.8112401677521598
 num_of_iterations = 0
 # loop through the parameter combinations
 for params in param_grid:
@@ -285,7 +286,7 @@ for params in param_grid:
         print(f"{GREEN}{BOLD}NEW BEST F1:{RESET}      {GREEN}{BOLD}{best_f1}{RESET}")
         print("----------------------------------------")
         print()
-        if best_f1 > 0.8103125060394643:
+        if best_f1 > 0.8112401677521598:
             # pickle f1, precision, recall and model
             pickle_save(
                 {

@@ -1,7 +1,7 @@
 from util import pickle_load, pickle_save
 
 
-x = pickle_load("best-model-so-far-2", is_dump=True)
+x = pickle_load("best-model-so-far", is_dump=True)
 
 print(x["f1"])
 print(x["params"])
