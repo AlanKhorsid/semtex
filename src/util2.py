@@ -3,12 +3,14 @@ import json
 import os
 import pickle
 import shutil
+import string
 import threading
 import time
 from typing import Dict, List, Literal, Union
 from pathlib import Path
 import csv
 from rich import progress as prog
+from nltk.corpus import stopwords
 
 from preprocessing.suggester import generate_suggestion, release_search_results
 
@@ -178,6 +180,14 @@ def open_tables(
     return TableCollection(tables)
 
 
+def remove_stopwords(unfiltered_string: str) -> str:
+    translator = str.maketrans("", "", string.punctuation)
+    filtered_words = unfiltered_string.translate(translator)
+    stop_words = set(stopwords.words("english"))
+    filtered_words = [word for word in filtered_words.split() if word.lower() not in stop_words]
+    return " ".join(filtered_words)
+
+
 # STUSUFSUFSUF
 # ----------------------------
 # ----------------------------
@@ -300,6 +310,26 @@ def parse_entity_properties(entity_data: dict) -> dict:
                 print(claims)
 
     return properties
+
+
+model = None
+
+def predict_candidates(candidates):
+    global model
+    if model is None:
+        model_info = pickle_load("best-model-so-far", is_dump=True)
+        model = model_info["model"]
+    
+    index_of_best_candidate = None
+    best_score = -1
+    for i, candidate in enumerate(candidates):
+        if candidate is None:
+            continue
+        pred = model.predict_proba(candidate.features)[1]
+        if pred > best_score:
+            best_score = pred
+            index_of_best_candidate = i
+    return index_of_best_candidate
 
 
 class JsonUpdater:

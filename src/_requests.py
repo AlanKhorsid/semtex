@@ -23,9 +23,9 @@ class RateLimitException(Exception):
     pass
 
 
-fetch_entity_updater = PickleUpdater("/datasets/wikidata_fetch_entity_cache_2023", save_interval=60)
-entity_query_updater = PickleUpdater("/datasets/wikidata_entity_query_cache_2023", save_interval=60)
-entity_search_updater = PickleUpdater("/datasets/wikidata_entity_search_cache_2023", save_interval=60)
+fetch_entity_updater = PickleUpdater("/datasets/wikidata_fetch_entity_cache", save_interval=0)
+entity_query_updater = PickleUpdater("/datasets/wikidata_entity_query_cache", save_interval=0)
+entity_search_updater = PickleUpdater("/datasets/wikidata_entity_search_cache", save_interval=0)
 
 
 def wikidata_fetch_entities(ids: list[int], lang: str = "en", chunk_size: int = 50):

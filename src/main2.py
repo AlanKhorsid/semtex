@@ -4,18 +4,15 @@ from pathlib import Path
 
 ROOTPATH = Path(__file__).parent.parent
 
-# tables = open_tables("validation", year="2023", spellcheck="bing")
-tables: TableCollection = pickle_load("open_tables_validation_2023_bing", is_dump=True)
+# tables = open_tables("validation", year="2022", spellcheck="bing")
+# # tables: TableCollection = pickle_load("open_tables_validation_2022_bing", is_dump=True)
 
-tables.fetch_candidates()
-tables.fetch_info()
-tables.fetch_statement_entities()
-x = 1
+# tables.fetch_candidates()
+# tables.fetch_info()
+# tables.fetch_statement_entities()
 
-# # pickle_save(tables, "tables_validation_bing")
-# tables: TableCollection = pickle_load("tables_test_bing", is_dump=True)
-
-# # tables.limit_to(10)
+# pickle_save(tables, "tables_validation_2022_bing")
+tables: TableCollection = pickle_load("tables_validation_2022_bing", is_dump=True)
 
 cea_results = []
 num_correct_annotations = 0
@@ -34,11 +31,11 @@ with progress:
         cpa_predictions.extend([[file] + pred for pred in table_cpa_predictions])
 
 
-# writeo cea_predictions to file
-# with open("cea_results.csv", "w") as f:
-#     f.write('"Table ID","Row ID","Column ID","Entity IRI"\n')
-#     for table, row, col, entity in cea_predictions:
-#         f.write(f'"{table}","{row}","{col}","{entity}"\n')
+# write cea_predictions to file
+with open("cea_results.csv", "w") as f:
+    f.write('"Table ID","Row ID","Column ID","Entity IRI"\n')
+    for table, row, col, entity in cea_predictions:
+        f.write(f'"{table}","{row}","{col}","{entity}"\n')
 
 # writeo cpa_predictions to file
 with open("cpa_results.csv", "w") as f:

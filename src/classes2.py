@@ -1,9 +1,16 @@
 from datetime import datetime, date
 from typing import Dict, List, Literal, Union
-from _requests import wikidata_entity_search, wikidata_get_entity, wikidata_fetch_entities, get_entity
-from util2 import parse_entity_description, parse_entity_statements, parse_entity_title, progress
+from _requests import wikidata_entity_search, wikidata_fetch_entities, get_entity
+from util2 import pickle_load, predict_candidates, progress, remove_stopwords
 from dateutil.parser import parse as parse_date
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from flair.data import Sentence
+from flair.models import SequenceTagger
 import Levenshtein
+
+
+tagger = None
 
 
 class Statement:
@@ -71,6 +78,14 @@ class Candidate:
     description: Union[str, None]
     statements = Union[list[Statement], None]
 
+    instance_overlap: Union[float, None]
+    subclass_overlap: Union[float, None]
+    description_overlap: Union[float, None]
+    semantic_tag: Union[str, None]
+    semantic_tag_ratio: Union[float, None]
+    claim_overlap: Union[float, None]
+    title_levenshtein: Union[float, None]
+
     def __init__(self, id: int):
         self.id = id
 
@@ -79,7 +94,6 @@ class Candidate:
         self.title = title
         self.description = description
         self.statements = self.parse_statements(statements)
-        y = 1
 
     @staticmethod
     def parse_statements(statements: list):
@@ -129,6 +143,105 @@ class Candidate:
                 values.append(statement.value)
 
         return score, properties, values
+
+
+    
+    def set_semantic_tag(self):
+        global tagger
+        if tagger is None:
+            tagger = SequenceTagger.load("flair/ner-english-ontonotes-large")
+
+        sentence = Sentence(self.sentence)
+        tagger.predict(sentence)
+
+        tags = []
+        for entity in sentence.get_spans("ner"):
+            tags.append(entity.tag)
+        
+        frequency_dict = {}
+        highest_frequency = 0
+        most_frequent_tag = ""
+        for tag in reversed(tags):
+            frequency_dict[tag] = frequency_dict.get(tag, 0) + 1
+            if frequency_dict[tag] > highest_frequency:
+                highest_frequency = frequency_dict[tag]
+                most_frequent_tag = tag
+        self.semantic_tag = most_frequent_tag
+
+
+    @property
+    def sentence(self) -> str:
+        assert self.title is not None and self.description is not None and self.statements is not None
+        
+        sentence = ""
+        if self.title != "":
+            sentence += f"{self.title}."
+        if self.description != "":
+            sentence += f" {self.description}."
+        
+        for statement in self.statements:
+            if statement.property != 31 and statement.property != 279:
+                continue
+            statement_title, _, _ = get_entity(statement.value)
+            sentence += f" {statement_title}."
+
+        return sentence
+
+
+    @property
+    def instance_ofs(self):
+        assert self.statements is not None
+        return [statement.value for statement in self.statements if statement.property == 31]
+    
+    @property
+    def subclass_ofs(self):
+        assert self.statements is not None
+        return [statement.value for statement in self.statements if statement.property == 279]
+
+    def description_overlap(self, other: "Candidate"):
+        if len(self.description) == 0 or len(other.description) == 0:
+            return 0.0
+        vectorizer = CountVectorizer().fit_transform([remove_stopwords(self.description), remove_stopwords(other.description)])
+        cosine_sim = cosine_similarity(vectorizer)
+        return cosine_sim[0][1]
+
+    @property
+    def all_instances(self):
+        assert self.statements is not None
+        all_instances = ""
+        for instance in self.instance_ofs:
+            statement_title, _, _ = get_entity(instance)
+            all_instances += f"{statement_title} "
+        return all_instances
+
+    @property
+    def features_computed(self):
+        return hasattr(self, "instance_overlap") and hasattr(self, "subclass_overlap") and hasattr(self, "description_overlap") and hasattr(self, "semantic_tag") and hasattr(self, "semantic_tag_ratio") and hasattr(self, "claim_overlap") and hasattr(self, "title_levenshtein")
+
+    @property
+    def features(self):
+        assert self.features_computed
+        return [
+            self.id,
+            self.title,
+            self.description,
+            len(self.statements),
+            self.instance_overlap,
+            self.subclass_overlap,
+            self.description_overlap,
+            self.semantic_tag,
+            self.semantic_tag_ratio,
+            len(self.description),
+            len(self.title),
+            len(self.description.split()),
+            len(self.title.split()),
+            len(self.instance_ofs),
+            self.claim_overlap,
+            self.all_instances,
+            self.title_levenshtein,
+        ]
+
+
 
 
 class Cell:
@@ -218,6 +331,87 @@ class Column:
     def __init__(self, cells: list[Union[Cell, None]], index: int):
         self.cells = cells
         self.index = index
+    
+    def generate_features(self):
+        for cell in self.cells:
+            if cell is None:
+                continue
+            
+            # gather candidates from other cells in the same column
+            other_candidates = []
+            for other_cell in self.cells:
+                if other_cell is None or other_cell == cell:
+                    continue
+                assert other_cell.candidates is not None
+                other_candidates.extend(other_cell.candidates)
+            total_instance_ofs = sum([len(candidate.instance_ofs) for candidate in other_candidates])
+            total_subclass_ofs = sum([len(candidate.subclass_ofs) for candidate in other_candidates])
+
+            # calculate overlap scores
+            for candidate in cell.candidates:
+                instance_overlap = 0
+                subclass_overlap = 0
+                description_overlaps = []
+
+                for other_candidate in other_candidates:
+                    instance_overlap += len(set(candidate.instance_ofs).intersection(other_candidate.instance_ofs))
+                    subclass_overlap += len(set(candidate.subclass_ofs).intersection(other_candidate.subclass_ofs))
+                    description_overlaps.append(candidate.description_overlap(other_candidate))
+                
+                candidate.instance_overlap = instance_overlap / total_instance_ofs if total_instance_ofs > 0 else 0.0
+                candidate.subclass_overlap = subclass_overlap / total_subclass_ofs if total_subclass_ofs > 0 else 0.0
+                candidate.description_overlap = sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0.0
+            
+            # calculate semantic tags
+            for candidate in cell.candidates:
+                candidate.set_semantic_tag()
+        
+        # calculate semantic tag ratios
+        candidate_tags = {candidate: candidate.semantic_tag for cell in self.cells for candidate in cell.candidates}
+        overlap_counts = {candidate: 0 for candidate in candidate_tags}
+        total_counts = {candidate: 0 for candidate in candidate_tags}
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                for other_cell in self.cells:
+                    if other_cell == cell:
+                        continue
+                    for other_cand in other_cell.candidates:
+                        if candidate_tags[candidate] == candidate_tags[other_cand]:
+                            overlap_counts[candidate] += 1
+                        total_counts[candidate] += 1
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                if total_counts[candidate] == 0:
+                    candidate.semantic_tag_ratio = 0.0
+                else:
+                    candidate.semantic_tag_ratio = overlap_counts[candidate] / total_counts[candidate]
+        
+        # calculate claim overlaps
+        claim_overlap_counts = {candidate: 0 for candidate in candidate_tags}
+        total_claim_counts = {candidate: 0 for candidate in candidate_tags}
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                for other_cell in self.cells:
+                    if other_cell == cell:
+                        continue
+                    for other_cand in other_cell.candidates:
+                        for statement in candidate.statements:
+                            for other_statement in other_cand.statements:
+                                if statement.property == other_statement.property:
+                                    claim_overlap_counts[candidate] += 1
+                                total_claim_counts[candidate] += 1
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                if total_claim_counts[candidate] == 0:
+                    candidate.claim_overlap = 0.0
+                else:
+                    candidate.claim_overlap = claim_overlap_counts[candidate] / total_claim_counts[candidate]
+        
+        # calculate title levenshteins
+        for cell in self.cells:
+            for candidate in cell.candidates:
+                candidate.title_levenshtein = Levenshtein.ratio(candidate.title, cell.mention)
+
 
 
 class Table:
@@ -338,32 +532,64 @@ class Table:
                 continue
             elif len(best_candidates) == 0:
                 # If we found no candidates, use ML to choose the best one
-                # TODO: ML
-                # For now, just choose the first one
+                features_computed = all(candidate["candidate"].features_computed for candidate in candidate_scores)
+                if not features_computed:
+                    subject_col.generate_features()
+                
+                candidates = [candidate["candidate"] for candidate in candidate_scores]
+                best_i = predict_candidates(candidates)
+                assert best_i is not None
+
                 chosen_candidates.append(
                     {
-                        "score": candidate_scores[0]["score"],
-                        "best_possible_score": len(candidate_scores[0]["entity_scores"])
-                        + len(candidate_scores[0]["literal_scores"]),
-                        "candidate": candidate_scores[0]["candidate"],
-                        "cpa_scores": get_cpa_scores(candidate_scores[0]),
+                        "score": candidate_scores[best_i]["score"],
+                        "best_possible_score": len(candidate_scores[best_i]["entity_scores"])
+                        + len(candidate_scores[best_i]["literal_scores"]),
+                        "candidate": candidate_scores[best_i]["candidate"],
+                        "cpa_scores": get_cpa_scores(candidate_scores[best_i]),
                         "reason": "no best",
                     }
                 )
+                # chosen_candidates.append(
+                #     {
+                #         "score": candidate_scores[0]["score"],
+                #         "best_possible_score": len(candidate_scores[0]["entity_scores"])
+                #         + len(candidate_scores[0]["literal_scores"]),
+                #         "candidate": candidate_scores[0]["candidate"],
+                #         "cpa_scores": get_cpa_scores(candidate_scores[0]),
+                #         "reason": "no best",
+                #     }
+                # )
             else:
-                # If we found multiple or zero candidates, use ML to choose the best one
-                # TODO: ML
-                # For now, just choose the first one
+                # If we found multiple candidates, use ML to choose the best one
+                features_computed = all(candidate["candidate"].features_computed for candidate in best_candidates)
+                if not features_computed:
+                    subject_col.generate_features()
+                
+                candidates = [candidate["candidate"] for candidate in best_candidates]
+                best_i = predict_candidates(candidates)
+                assert best_i is not None
+                
                 chosen_candidates.append(
                     {
-                        "score": best_candidates[0]["score"],
-                        "best_possible_score": len(best_candidates[0]["entity_scores"])
-                        + len(best_candidates[0]["literal_scores"]),
-                        "candidate": best_candidates[0]["candidate"],
-                        "cpa_scores": get_cpa_scores(best_candidates[0]),
+                        "score": best_candidates[best_i]["score"],
+                        "best_possible_score": len(best_candidates[best_i]["entity_scores"])
+                        + len(best_candidates[best_i]["literal_scores"]),
+                        "candidate": best_candidates[best_i]["candidate"],
+                        "cpa_scores": get_cpa_scores(best_candidates[best_i]),
                         "reason": "ML",
                     }
                 )
+                # chosen_candidates.append(
+                #     {
+                #         "score": best_candidates[0]["score"],
+                #         "best_possible_score": len(best_candidates[0]["entity_scores"])
+                #         + len(best_candidates[0]["literal_scores"]),
+                #         "candidate": best_candidates[0]["candidate"],
+                #         "cpa_scores": get_cpa_scores(best_candidates[0]),
+                #         "reason": "ML",
+                #     }
+                # )
 
         # CPA
         cpa_predictions = {}
@@ -394,18 +620,28 @@ class Table:
                 continue
             prop, _, score = sorted_prop_occurrences[0]
             cpa_predictions[to_i] = {"property": prop, "confidence": score}
-
+        
         # Find CEA for non-subject columns
         cea_predictions = []
         for i, chosen_candidate in enumerate(chosen_candidates):
             non_subj_cea_targets = [
                 (row, col) for row, col in self.targets["cea"] if row == i + 1 and col != SUBJECT_COL_INDEX
             ]
-            if len(non_subj_cea_targets) == 0:
-                continue
+            # if len(non_subj_cea_targets) == 0:
+            #     continue
 
             # If candidate is None, use ML to choose candidates for non_subj_cea_targets
             if chosen_candidate["candidate"] is None:
+                non_subj_target_cols = list(set([col for _, col in non_subj_cea_targets]))
+                for target_col_i in non_subj_target_cols:
+                    target_col = [col for col in self.columns if col.index == target_col_i][0]
+                    target_cell = target_col.cells[i]
+                    features_computed = all(candidate.features_computed for candidate in target_cell.candidates)
+                    if not features_computed:
+                        target_col.generate_features()
+                    best_i = predict_candidates(target_cell.candidates)
+                    assert best_i is not None
+                    cea_predictions.append([i + 1, target_col_i, f"http://www.wikidata.org/entity/Q{target_cell.candidates[best_i].id}"])
                 continue
 
             # ELse if ALL cpa_predictions are in the chosen candidates cpa_scores, use those

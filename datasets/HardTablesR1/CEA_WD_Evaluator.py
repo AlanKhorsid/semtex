@@ -76,8 +76,9 @@ if __name__ == "__main__":
     # # and a sample submission is present at data/sample_submission.csv
     # answer_file_path = "./DataSets/HardTablesR1/Valid/gt/cea_gt.csv"
     # d = './DataSets/HardTablesR1/Valid/Submissions/cea'
-    answer_file_path = "./DataSets/HardTablesR1/Test/gt/cea_gt.csv"
-    d = './DataSets/HardTablesR1/Test/Submissions/cea'
+
+    answer_file_path = "./DataSets/HardTablesR1/Valid/gt/cea_gt.csv"
+    d = './DataSets/HardTablesR1/Valid/Submissions/cea'
 
     for ff in os.listdir(d):
         _client_payload = {}
