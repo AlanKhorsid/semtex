@@ -2,9 +2,10 @@ from datetime import datetime
 import json
 import os
 import pickle
+import shutil
 import threading
 import time
-from typing import Literal, Union
+from typing import Dict, List, Literal, Union
 from pathlib import Path
 import csv
 from rich import progress as prog
@@ -107,11 +108,12 @@ def open_table(
         assert len(row) == num_cols
 
     columns: list[Column] = []
-    literal_columns: list[list[Union[None, str]]] = []
+    literal_columns: List[Dict[str, Union[List[Union[str, None]], int]]] = []
     for i in range(num_cols):
         col_is_entity = any(target[1] == i for target in cea_targets)
         if not col_is_entity:
-            literal_columns.append([row[i] if row[i] != "" else None for row in rows])
+            literal_columns.append({"cells": [row[i] if row[i] != "" else None for row in rows], "index": i})
+            x = 1
         else:
             if spellcheck == "bing":
                 cells = [
@@ -346,11 +348,11 @@ class PickleUpdater:
         return self.data is not None
 
     def load_data(self):
-        if not os.path.isfile(self.filename):
-            with open(self.filename, "wb") as f:
+        if not os.path.isfile(f"{self.filename}.pickle"):
+            with open(f"{self.filename}.pickle", "wb") as f:
                 pickle.dump({}, f)
 
-        with open(self.filename, "rb") as f:
+        with open(f"{self.filename}.pickle", "rb") as f:
             self.data = pickle.load(f)
 
     def update_data(self, key, value, force_save=False):
@@ -367,7 +369,9 @@ class PickleUpdater:
             self.save_data()
 
     def save_data(self):
-        with open(self.filename, "wb") as f:
+        shutil.copyfile(f"{self.filename}.pickle", f"{self.filename}_backup.pickle")
+
+        with open(f"{self.filename}.pickle", "wb") as f:
             pickle.dump(self.data, f)
 
     def close_data(self):
