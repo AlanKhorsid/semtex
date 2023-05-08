@@ -3,24 +3,13 @@ from util2 import (
 )
 from _requests import wikidata_fetch_entities, get_entity
 
-# ----CTA PLAN----#
-# input: list of candidates from CEA
-# check if the candidates have the same instance of
-#   if true, instance of is CTA
-#   else, make a list of instance of, check each instance of's subclass to see if it's in the list, otherwise add to list and keep going
-#
-# maybe set limit to how deep we check?
-#   if limit is hit, the largest overlap becomes the type (in case of errors in CEA)
-#
-# output: common type annotation
-
 
 # TODO: Make cta_retriever check if a result is an instance of of another equally good result
 def cta_retriever(candidates_list, correct=None, max_depth=0):
     result_ids = []
     best_values = []
     instance_dicts = []
-    confidence_vector = []
+    score_vector = []
     correct_key_vector = []
     ids_to_query = []
     current_depth = 0
@@ -30,7 +19,7 @@ def cta_retriever(candidates_list, correct=None, max_depth=0):
         result_ids.append(None)
         best_values.append(0)
         instance_dicts.append(dict())
-        confidence_vector.append(0)
+        score_vector.append(0)
         if correct == None:
             correct_key_vector.append(None)
         else:
@@ -58,11 +47,9 @@ def cta_retriever(candidates_list, correct=None, max_depth=0):
                     instance_dicts[index], correct_key=correct_key
                 )
 
-                confidence_vector[index] = best_values[index] / (len(candidates) - amount_of_nonetypes)
+                score_vector[index] = best_values[index] / (len(candidates) - amount_of_nonetypes)
 
                 # exception in case we have a confidence higher than 100%
-                if confidence_vector[index] > 1:
-                    raise ValueError()
             else:
                 cands = fetch_cand_info(instance_dicts[index])
                 instance_dicts[index], num_of_none, explore_next = add_to_instance_dict(
@@ -75,12 +62,12 @@ def cta_retriever(candidates_list, correct=None, max_depth=0):
 
                 best_key, best_values[index], correct_key = find_best_key(instance_dicts[index], correct_key=correct)
 
-                confidence_vector[index] = best_values[index] / (len(candidates) - amount_of_nonetypes)
+                score_vector[index] = best_values[index]
 
-                if confidence_vector[index] <= current_best_value / (len(candidates) - amount_of_nonetypes):
+                if score_vector[index] <= current_best_value:
                     best_values[index] = current_best_value
                     best_key = current_best_key
-                    confidence_vector[index] = current_best_value / (len(candidates) - amount_of_nonetypes)
+                    score_vector[index] = current_best_value
 
             # Add ids of the entites that should be explored next iteration
             for val in explore_next:
