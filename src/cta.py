@@ -47,7 +47,7 @@ def cta_retriever(candidates_list, correct=None, max_depth=0):
                     instance_dicts[index], correct_key=correct_key
                 )
 
-                score_vector[index] = best_values[index] / (len(candidates) - amount_of_nonetypes)
+                score_vector[index] = best_values[index]
 
                 # exception in case we have a confidence higher than 100%
             else:
