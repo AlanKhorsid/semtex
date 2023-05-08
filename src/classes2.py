@@ -666,7 +666,7 @@ class Table:
             # ELse if ALL cpa_predictions are in the chosen candidates cpa_scores, use those
             all_predictions_found = True
             for p_id, prediction in cpa_preds.items():
-                if p_id not in chosen_candidate["cpa_scores"]:
+                if prediction["property"] not in chosen_candidate["cpa_scores"][p_id]["properties"]:
                     all_predictions_found = False
                     break
 
@@ -701,8 +701,38 @@ class Table:
                         )
                 continue
 
-            # Else, use ML to choose candidates for non_subj_cea_targets
-            x = 1
+            # Else, use ML to choose candidates for cea
+            # subject cell
+            features_computed = all(candidate.features_computed for candidate in subject_col.cells[i].candidates)
+            if not features_computed:
+                subject_col.generate_features()
+            best_i = predict_candidates(subject_col.cells[i].candidates)
+            assert best_i is not None
+            cea_predictions.append(
+                [
+                    i + 1,
+                    SUBJECT_COL_INDEX,
+                    f"http://www.wikidata.org/entity/Q{subject_col.cells[i].candidates[best_i].id}",
+                    subject_col.cells[i].candidates[best_i],
+                ]
+            )
+
+            # non-subject cells
+            for _, c in non_subj_cea_targets:
+                col = [col for col in self.columns if col.index == c][0]
+                features_computed = all(candidate.features_computed for candidate in col.cells[i].candidates)
+                if not features_computed:
+                    col.generate_features()
+                best_i = predict_candidates(col.cells[i].candidates)
+                assert best_i is not None
+                cea_predictions.append(
+                    [
+                        i + 1,
+                        c,
+                        f"http://www.wikidata.org/entity/Q{col.cells[i].candidates[best_i].id}",
+                        col.cells[i].candidates[best_i],
+                    ]
+                )
 
         # CTA for non-subject columns
         for cta_target in self.targets["cta"]:
