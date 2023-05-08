@@ -337,6 +337,19 @@ class Column:
         self.index = index
 
     def generate_features(self):
+        instance_ofs = {}
+        subclass_ofs = {}
+        intersection_cache = {}
+
+        # populate instance_ofs and subclass_ofs dictionaries
+        for cell in self.cells:
+            if cell is None:
+                continue
+            assert cell.candidates is not None
+            for candidate in cell.candidates:
+                instance_ofs[candidate] = candidate.instance_ofs
+                subclass_ofs[candidate] = candidate.subclass_ofs
+
         for cell in self.cells:
             if cell is None:
                 continue
@@ -348,8 +361,10 @@ class Column:
                     continue
                 assert other_cell.candidates is not None
                 other_candidates.extend(other_cell.candidates)
-            total_instance_ofs = sum([len(candidate.instance_ofs) for candidate in other_candidates])
-            total_subclass_ofs = sum([len(candidate.subclass_ofs) for candidate in other_candidates])
+            total_instance_ofs = sum([len(instance_ofs[candidate]) for candidate in other_candidates])
+            total_subclass_ofs = sum([len(subclass_ofs[candidate]) for candidate in other_candidates])
+
+    
 
             # calculate overlap scores
             for candidate in cell.candidates:
@@ -358,9 +373,21 @@ class Column:
                 description_overlaps = []
 
                 for other_candidate in other_candidates:
-                    instance_overlap += len(set(candidate.instance_ofs).intersection(other_candidate.instance_ofs))
-                    subclass_overlap += len(set(candidate.subclass_ofs).intersection(other_candidate.subclass_ofs))
-                    description_overlaps.append(candidate.description_overlap(other_candidate))
+                    # check if intersection result is already in the cache
+                    if (candidate, other_candidate) in intersection_cache:
+                        instance_overlap_for_candidate, subclass_overlap_for_candidate, description_overlap_for_candidate = intersection_cache[(candidate, other_candidate)]
+                    elif (other_candidate, candidate) in intersection_cache:
+                        instance_overlap_for_candidate, subclass_overlap_for_candidate, description_overlap_for_candidate = intersection_cache[(other_candidate, candidate)]
+                    else:
+                        instance_overlap_for_candidate = len(set(instance_ofs[candidate]).intersection(instance_ofs[other_candidate]))
+                        subclass_overlap_for_candidate = len(set(subclass_ofs[candidate]).intersection(subclass_ofs[other_candidate]))
+                        description_overlap_for_candidate = candidate.description_overlap(other_candidate)
+                        # store intersection result in cache
+                        intersection_cache[(candidate, other_candidate)] = (instance_overlap_for_candidate, subclass_overlap_for_candidate, description_overlap_for_candidate)
+
+                    instance_overlap += instance_overlap_for_candidate
+                    subclass_overlap += subclass_overlap_for_candidate
+                    description_overlaps.append(description_overlap_for_candidate)
 
                 candidate.instance_overlap = instance_overlap / total_instance_ofs if total_instance_ofs > 0 else 0.0
                 candidate.subclass_overlap = subclass_overlap / total_subclass_ofs if total_subclass_ofs > 0 else 0.0
@@ -438,6 +465,9 @@ class Table:
         best_candidate_scores = []
         subject_col = self.columns[SUBJECT_COL_INDEX]
         for j, cell in enumerate(subject_col.cells):
+            if cell is None:
+                best_candidate_scores.append([{'score': 0, 'candidate': None, 'literal_scores': [], 'entity_scores': []}])
+                continue
             row_entities = []
             for cea_target in self.targets["cea"]:
                 row_i, col_i = cea_target
