@@ -7,6 +7,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from flair.data import Sentence
 from flair.models import SequenceTagger
+from cta import cta_retriever
 import Levenshtein
 
 
@@ -144,8 +145,6 @@ class Candidate:
 
         return score, properties, values
 
-
-    
     def set_semantic_tag(self):
         global tagger
         if tagger is None:
@@ -157,7 +156,7 @@ class Candidate:
         tags = []
         for entity in sentence.get_spans("ner"):
             tags.append(entity.tag)
-        
+
         frequency_dict = {}
         highest_frequency = 0
         most_frequent_tag = ""
@@ -168,17 +167,16 @@ class Candidate:
                 most_frequent_tag = tag
         self.semantic_tag = most_frequent_tag
 
-
     @property
     def sentence(self) -> str:
         assert self.title is not None and self.description is not None and self.statements is not None
-        
+
         sentence = ""
         if self.title != "":
             sentence += f"{self.title}."
         if self.description != "":
             sentence += f" {self.description}."
-        
+
         for statement in self.statements:
             if statement.property != 31 and statement.property != 279:
                 continue
@@ -187,12 +185,11 @@ class Candidate:
 
         return sentence
 
-
     @property
     def instance_ofs(self):
         assert self.statements is not None
         return [statement.value for statement in self.statements if statement.property == 31]
-    
+
     @property
     def subclass_ofs(self):
         assert self.statements is not None
@@ -201,7 +198,9 @@ class Candidate:
     def description_overlap(self, other: "Candidate"):
         if len(self.description) == 0 or len(other.description) == 0:
             return 0.0
-        vectorizer = CountVectorizer().fit_transform([remove_stopwords(self.description), remove_stopwords(other.description)])
+        vectorizer = CountVectorizer().fit_transform(
+            [remove_stopwords(self.description), remove_stopwords(other.description)]
+        )
         cosine_sim = cosine_similarity(vectorizer)
         return cosine_sim[0][1]
 
@@ -210,13 +209,20 @@ class Candidate:
         assert self.statements is not None
         all_instances = ""
         for instance in self.instance_ofs:
-            statement_title, _, _ = get_entity(instance)
-            all_instances += f"{statement_title} "
+            all_instances += f"{instance} "
         return all_instances
 
     @property
     def features_computed(self):
-        return hasattr(self, "instance_overlap") and hasattr(self, "subclass_overlap") and hasattr(self, "description_overlap") and hasattr(self, "semantic_tag") and hasattr(self, "semantic_tag_ratio") and hasattr(self, "claim_overlap") and hasattr(self, "title_levenshtein")
+        return (
+            hasattr(self, "instance_overlap")
+            and hasattr(self, "subclass_overlap")
+            and hasattr(self, "description_overlap")
+            and hasattr(self, "semantic_tag")
+            and hasattr(self, "semantic_tag_ratio")
+            and hasattr(self, "claim_overlap")
+            and hasattr(self, "title_levenshtein")
+        )
 
     @property
     def features(self):
@@ -240,8 +246,6 @@ class Candidate:
             self.all_instances,
             self.title_levenshtein,
         ]
-
-
 
 
 class Cell:
@@ -331,12 +335,12 @@ class Column:
     def __init__(self, cells: list[Union[Cell, None]], index: int):
         self.cells = cells
         self.index = index
-    
+
     def generate_features(self):
         for cell in self.cells:
             if cell is None:
                 continue
-            
+
             # gather candidates from other cells in the same column
             other_candidates = []
             for other_cell in self.cells:
@@ -357,15 +361,17 @@ class Column:
                     instance_overlap += len(set(candidate.instance_ofs).intersection(other_candidate.instance_ofs))
                     subclass_overlap += len(set(candidate.subclass_ofs).intersection(other_candidate.subclass_ofs))
                     description_overlaps.append(candidate.description_overlap(other_candidate))
-                
+
                 candidate.instance_overlap = instance_overlap / total_instance_ofs if total_instance_ofs > 0 else 0.0
                 candidate.subclass_overlap = subclass_overlap / total_subclass_ofs if total_subclass_ofs > 0 else 0.0
-                candidate.description_overlap = sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0.0
-            
+                candidate.description_overlap = (
+                    sum(description_overlaps) / len(description_overlaps) if len(description_overlaps) > 0 else 0.0
+                )
+
             # calculate semantic tags
             for candidate in cell.candidates:
                 candidate.set_semantic_tag()
-        
+
         # calculate semantic tag ratios
         candidate_tags = {candidate: candidate.semantic_tag for cell in self.cells for candidate in cell.candidates}
         overlap_counts = {candidate: 0 for candidate in candidate_tags}
@@ -385,7 +391,7 @@ class Column:
                     candidate.semantic_tag_ratio = 0.0
                 else:
                     candidate.semantic_tag_ratio = overlap_counts[candidate] / total_counts[candidate]
-        
+
         # calculate claim overlaps
         claim_overlap_counts = {candidate: 0 for candidate in candidate_tags}
         total_claim_counts = {candidate: 0 for candidate in candidate_tags}
@@ -406,12 +412,11 @@ class Column:
                     candidate.claim_overlap = 0.0
                 else:
                     candidate.claim_overlap = claim_overlap_counts[candidate] / total_claim_counts[candidate]
-        
+
         # calculate title levenshteins
         for cell in self.cells:
             for candidate in cell.candidates:
                 candidate.title_levenshtein = Levenshtein.ratio(candidate.title, cell.mention)
-
 
 
 class Table:
@@ -535,7 +540,7 @@ class Table:
                 features_computed = all(candidate["candidate"].features_computed for candidate in candidate_scores)
                 if not features_computed:
                     subject_col.generate_features()
-                
+
                 candidates = [candidate["candidate"] for candidate in candidate_scores]
                 best_i = predict_candidates(candidates)
                 assert best_i is not None
@@ -565,11 +570,11 @@ class Table:
                 features_computed = all(candidate["candidate"].features_computed for candidate in best_candidates)
                 if not features_computed:
                     subject_col.generate_features()
-                
+
                 candidates = [candidate["candidate"] for candidate in best_candidates]
                 best_i = predict_candidates(candidates)
                 assert best_i is not None
-                
+
                 chosen_candidates.append(
                     {
                         "score": best_candidates[best_i]["score"],
@@ -591,8 +596,15 @@ class Table:
                 #     }
                 # )
 
+        # CTA for subject column
+        assert SUBJECT_COL_INDEX in self.targets["cta"]
+        cta_predictions = []
+        candidates = [candidate["candidate"] for candidate in chosen_candidates]
+        cta_pred_id = cta_retriever([candidates])[0]
+        cta_predictions.append([SUBJECT_COL_INDEX, f"http://www.wikidata.org/entity/Q{cta_pred_id}"])
+
         # CPA
-        cpa_predictions = {}
+        cpa_preds = {}
         for from_i, to_i in self.targets["cpa"]:
             assert from_i == 0
             prop_occurrences = []
@@ -619,8 +631,8 @@ class Table:
             if len(sorted_prop_occurrences) == 0:
                 continue
             prop, _, score = sorted_prop_occurrences[0]
-            cpa_predictions[to_i] = {"property": prop, "confidence": score}
-        
+            cpa_preds[to_i] = {"property": prop, "confidence": score}
+
         # Find CEA for non-subject columns
         cea_predictions = []
         for i, chosen_candidate in enumerate(chosen_candidates):
@@ -641,12 +653,19 @@ class Table:
                         target_col.generate_features()
                     best_i = predict_candidates(target_cell.candidates)
                     assert best_i is not None
-                    cea_predictions.append([i + 1, target_col_i, f"http://www.wikidata.org/entity/Q{target_cell.candidates[best_i].id}"])
+                    cea_predictions.append(
+                        [
+                            i + 1,
+                            target_col_i,
+                            f"http://www.wikidata.org/entity/Q{target_cell.candidates[best_i].id}",
+                            target_cell.candidates[best_i],
+                        ]
+                    )
                 continue
 
             # ELse if ALL cpa_predictions are in the chosen candidates cpa_scores, use those
             all_predictions_found = True
-            for p_id, prediction in cpa_predictions.items():
+            for p_id, prediction in cpa_preds.items():
                 if p_id not in chosen_candidate["cpa_scores"]:
                     all_predictions_found = False
                     break
@@ -654,7 +673,12 @@ class Table:
             if all_predictions_found:
                 # subject cell
                 cea_predictions.append(
-                    [i + 1, SUBJECT_COL_INDEX, f"http://www.wikidata.org/entity/Q{chosen_candidate['candidate'].id}"]
+                    [
+                        i + 1,
+                        SUBJECT_COL_INDEX,
+                        f"http://www.wikidata.org/entity/Q{chosen_candidate['candidate'].id}",
+                        chosen_candidate["candidate"],
+                    ]
                 )
 
                 # non-subject cells
@@ -664,29 +688,54 @@ class Table:
                     assert len(cpa_score["objects"]) != 0
                     if len(cpa_score["objects"]) > 1:
                         # find index of prediction and use that to pick the object
-                        predicted_prop = cpa_predictions[col]["property"]
+                        predicted_prop = cpa_preds[col]["property"]
                         for j, prop in enumerate(cpa_score["properties"]):
                             if prop == predicted_prop:
                                 cea_predictions.append(
-                                    [i + 1, col, f"http://www.wikidata.org/entity/Q{cpa_score['objects'][j]}"]
+                                    [i + 1, col, f"http://www.wikidata.org/entity/Q{cpa_score['objects'][j]}", None]
                                 )
                                 break
                     else:
                         cea_predictions.append(
-                            [i + 1, col, f"http://www.wikidata.org/entity/Q{cpa_score['objects'][0]}"]
+                            [i + 1, col, f"http://www.wikidata.org/entity/Q{cpa_score['objects'][0]}", None]
                         )
                 continue
 
             # Else, use ML to choose candidates for non_subj_cea_targets
             x = 1
 
-        # Gather all predictions
-        cpa_preds = [
-            [SUBJECT_COL_INDEX, col, f"http://www.wikidata.org/prop/direct/P{prediction['property']}"]
-            for col, prediction in cpa_predictions.items()
-        ]
+        # CTA for non-subject columns
+        for cta_target in self.targets["cta"]:
+            if cta_target == SUBJECT_COL_INDEX:
+                continue
+            cea_targets_in_col = [row for row, col in self.targets["cea"] if col == cta_target]
+            assert len(cea_targets_in_col) != 0
+            candidates = []
+            for cea_target in cea_targets_in_col:
+                try:
+                    candidate, url = next(
+                        (cand, url) for r, c, url, cand in cea_predictions if r == cea_target and c == cta_target
+                    )
+                except:
+                    continue
+                if candidate is not None:
+                    candidates.append(candidate)
+                else:
+                    id = int(url.split("/")[-1][1:])
+                    candidate = Candidate(id)
+                    wikidata_fetch_entities([id])
+                    candidate.fetch_info()
+                    candidates.append(candidate)
+            cta_pred_id = cta_retriever([candidates])[0]
+            cta_predictions.append([cta_target, f"http://www.wikidata.org/entity/Q{cta_pred_id}"])
 
-        return cea_predictions, cpa_preds
+        # Gather all predictions
+        cpa_predictions = [
+            [SUBJECT_COL_INDEX, col, f"http://www.wikidata.org/prop/direct/P{prediction['property']}"]
+            for col, prediction in cpa_preds.items()
+        ]
+        cea_predictions = [prediction[:-1] for prediction in cea_predictions]
+        return cea_predictions, cpa_predictions, cta_predictions
 
 
 class TableCollection:

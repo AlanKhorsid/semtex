@@ -70,6 +70,7 @@ def generate_suggestion(query, dataset: Literal["test", "validation"], year: Lit
     assert query in all_search_results, f"Query {query} not found in Bing search results."
 
     json_obj = all_search_results[query]
+    assert json_obj is not None, f"JSON object for query {query} is None."
 
     if not "webPages" in json_obj:
         return query

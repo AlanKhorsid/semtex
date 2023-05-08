@@ -23,7 +23,7 @@ class RateLimitException(Exception):
     pass
 
 
-fetch_entity_updater = PickleUpdater("/datasets/wikidata_fetch_entity_cache", save_interval=0)
+fetch_entity_updater = PickleUpdater("/datasets/wikidata_fetch_entity_cache", save_interval=1200)
 entity_query_updater = PickleUpdater("/datasets/wikidata_entity_query_cache", save_interval=0)
 entity_search_updater = PickleUpdater("/datasets/wikidata_entity_search_cache", save_interval=0)
 
