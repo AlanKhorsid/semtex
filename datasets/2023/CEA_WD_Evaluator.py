@@ -85,9 +85,10 @@ if __name__ == "__main__":
     # Lets assume the the ground_truth is a CSV file
     # and is present at data/ground_truth.csv
     # and a sample submission is present at data/sample_submission.csv
-    answer_file_path = "./DataSets/Valid/gt/cea_gt.csv"
 
-    d = "./DataSets/Submissions/CEA/"
+    answer_file_path = "./DataSets/Valid/gt/cea_gt.csv"
+    d = './DataSets/Valid/Submissions/cea'
+
     for ff in os.listdir(d):
         _client_payload = {}
         if ff == ".DS_Store":

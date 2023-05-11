@@ -1,26 +1,20 @@
-from util import pickle_load, pickle_save
+from util2 import PickleUpdater, pickle_load, pickle_save
 
 
-import json
-import os
+fetch_entity_updater = pickle_load("wikidata_fetch_entity_cache_2023")
+updated = {}
 
-result_dict = {}
+for k, entity in fetch_entity_updater.items():
+    title, description, statements = entity
+    new_statements = []
 
-folder_path = "/Users/alankhorsid/Documents/semtex/datasets/BingSearchResults"
+    for prop, type, value in statements:
+        if type == "wikibase-item" or type == "quantity" or type == "time" or type == "monolingualtext":
+            new_statements.append((prop, type, value))
+    
+    updated[k] = (title, description, new_statements)
 
-for filename in os.listdir(folder_path):
-    if filename.endswith(".json"):
-        with open(os.path.join(folder_path, filename)) as json_file:
-            json_data = json.load(json_file)
-            original_query = json_data["queryContext"]["originalQuery"]
-            result_dict[original_query] = json_data
-
-
-# for key, value in result_dict.items():
-#     print(f"{key}: {value}\n")
+        
 
 
-dict1 = result_dict
-dict2 = pickle_load("all-test-cells-search-results", is_dump=True)
-
-print(len({**dict1, **dict2}))
+pickle_save(updated, "wikidata_fetch_entity_cache_2023_stripped")

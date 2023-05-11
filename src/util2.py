@@ -71,7 +71,6 @@ def open_targets(dataset: Literal["test", "validation"], year: Literal["2022", "
 
     targets = {}
     with progress:
-        # for file in progress.track(list(files)[:100], description="Opening targets"):
         for file in progress.track(files, description="Opening targets"):
             targets[file] = {
                 "cea": [(int(row[1]), int(row[2])) for row in cea_rows if row[0] == file],

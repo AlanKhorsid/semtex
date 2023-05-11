@@ -400,19 +400,23 @@ class Column:
                 candidate.set_semantic_tag()
 
         # calculate semantic tag ratios
-        candidate_tags = {candidate: candidate.semantic_tag for cell in self.cells for candidate in cell.candidates}
+        candidate_tags = {candidate: candidate.semantic_tag for cell in self.cells if cell is not None for candidate in cell.candidates}
         overlap_counts = {candidate: 0 for candidate in candidate_tags}
         total_counts = {candidate: 0 for candidate in candidate_tags}
         for cell in self.cells:
+            if cell is None:
+                continue
             for candidate in cell.candidates:
                 for other_cell in self.cells:
-                    if other_cell == cell:
+                    if other_cell is None or other_cell == cell:
                         continue
                     for other_cand in other_cell.candidates:
                         if candidate_tags[candidate] == candidate_tags[other_cand]:
                             overlap_counts[candidate] += 1
                         total_counts[candidate] += 1
         for cell in self.cells:
+            if cell is None:
+                continue
             for candidate in cell.candidates:
                 if total_counts[candidate] == 0:
                     candidate.semantic_tag_ratio = 0.0
@@ -423,9 +427,11 @@ class Column:
         claim_overlap_counts = {candidate: 0 for candidate in candidate_tags}
         total_claim_counts = {candidate: 0 for candidate in candidate_tags}
         for cell in self.cells:
+            if cell is None:
+                continue
             for candidate in cell.candidates:
                 for other_cell in self.cells:
-                    if other_cell == cell:
+                    if other_cell is None or other_cell == cell:
                         continue
                     for other_cand in other_cell.candidates:
                         for statement in candidate.statements:
@@ -434,6 +440,8 @@ class Column:
                                     claim_overlap_counts[candidate] += 1
                                 total_claim_counts[candidate] += 1
         for cell in self.cells:
+            if cell is None:
+                continue
             for candidate in cell.candidates:
                 if total_claim_counts[candidate] == 0:
                     candidate.claim_overlap = 0.0
@@ -442,6 +450,8 @@ class Column:
 
         # calculate title levenshteins
         for cell in self.cells:
+            if cell is None:
+                continue
             for candidate in cell.candidates:
                 candidate.title_levenshtein = Levenshtein.ratio(candidate.title, cell.mention)
 
@@ -457,6 +467,33 @@ class Table:
         self.columns = columns
         self.literal_columns = literal_columns
         self.targets = targets
+    
+
+    def dogboost_only_ml(self):
+        cea_predictions, cpa_predictions, cta_predictions = [], [], []
+        for column in self.columns:
+            features_computed = all(candidate.features_computed for cell in column.cells if cell for candidate in cell.candidates)
+            if not features_computed:
+                column.generate_features()
+            for row, cell in enumerate(column.cells):
+                if cell is None:
+                    continue
+                best_i = predict_candidates(cell.candidates)
+                if best_i is not None and (row + 1, column.index) in self.targets["cea"]:
+                    cea_predictions.append(
+                        [
+                            row + 1,
+                            column.index,
+                            f"http://www.wikidata.org/entity/Q{cell.candidates[best_i].id}",
+                            cell.candidates[best_i],
+                        ]
+                    )
+            chosen_candidates = [candidate for _, _, _, candidate in cea_predictions]
+            cta_pred_id = cta_retriever([chosen_candidates])[0]
+            if column.index in self.targets["cta"]:
+                cta_predictions.append([column.index, f"http://www.wikidata.org/entity/Q{cta_pred_id}"])
+        return cea_predictions, cpa_predictions, cta_predictions
+
 
     def dogboost(self):
         SUBJECT_COL_INDEX = 0
@@ -627,11 +664,11 @@ class Table:
                 # )
 
         # CTA for subject column
-        assert SUBJECT_COL_INDEX in self.targets["cta"]
-        cta_predictions = []
-        candidates = [candidate["candidate"] for candidate in chosen_candidates]
-        cta_pred_id = cta_retriever([candidates])[0]
-        cta_predictions.append([SUBJECT_COL_INDEX, f"http://www.wikidata.org/entity/Q{cta_pred_id}"])
+        if SUBJECT_COL_INDEX in self.targets["cta"]:
+            cta_predictions = []
+            candidates = [candidate["candidate"] for candidate in chosen_candidates]
+            cta_pred_id = cta_retriever([candidates])[0]
+            cta_predictions.append([SUBJECT_COL_INDEX, f"http://www.wikidata.org/entity/Q{cta_pred_id}"])
 
         # CPA
         cpa_preds = {}
@@ -682,20 +719,23 @@ class Table:
                     if not features_computed:
                         target_col.generate_features()
                     best_i = predict_candidates(target_cell.candidates)
-                    assert best_i is not None
-                    cea_predictions.append(
-                        [
-                            i + 1,
-                            target_col_i,
-                            f"http://www.wikidata.org/entity/Q{target_cell.candidates[best_i].id}",
-                            target_cell.candidates[best_i],
-                        ]
-                    )
+                    if best_i is not None:
+                        cea_predictions.append(
+                            [
+                                i + 1,
+                                target_col_i,
+                                f"http://www.wikidata.org/entity/Q{target_cell.candidates[best_i].id}",
+                                target_cell.candidates[best_i],
+                            ]
+                        )
                 continue
 
             # ELse if ALL cpa_predictions are in the chosen candidates cpa_scores, use those
             all_predictions_found = True
             for p_id, prediction in cpa_preds.items():
+                # skip if no cpa_scores for this column (because of empty cell)
+                if p_id not in chosen_candidate["cpa_scores"]:
+                    continue
                 if prediction["property"] not in chosen_candidate["cpa_scores"][p_id]["properties"]:
                     all_predictions_found = False
                     break

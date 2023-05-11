@@ -4,15 +4,16 @@ from pathlib import Path
 
 ROOTPATH = Path(__file__).parent.parent
 
-# tables = open_tables("validation", year="2022", spellcheck="bing")
-# # tables: TableCollection = pickle_load("open_tables_validation_2022_bing", is_dump=True)
+# # tables = open_tables("test", year="2023", spellcheck="bing")
+# # pickle_save(tables, "open_tables_test_2023_bing")
+# tables: TableCollection = pickle_load("open_tables_test_2023_bing", is_dump=True)
 
 # tables.fetch_candidates()
 # tables.fetch_info()
 # tables.fetch_statement_entities()
 
-# pickle_save(tables, "tables_validation_2022_bing")
-tables: TableCollection = pickle_load("tables_validation_2022_bing", is_dump=True)
+# # pickle_save(tables, "tables_validation_2023_bing")
+tables: TableCollection = pickle_load("tables_test_2023_progress_1840", is_dump=True)
 
 cea_results = []
 num_correct_annotations = 0
@@ -26,11 +27,14 @@ cpa_predictions = []
 cta_predictions = []
 
 with progress:
-    for file, table in progress.track(tables.tables.items(), description="DOGBOOSTING"):
+    for i, (file, table) in enumerate(progress.track(tables.tables.items(), description="DOGBOOSTING")):
         table_cea_predictions, table_cpa_predictions, table_cta_predictions = table.dogboost()
         cea_predictions.extend([[file] + pred for pred in table_cea_predictions])
         cpa_predictions.extend([[file] + pred for pred in table_cpa_predictions])
         cta_predictions.extend([[file] + pred for pred in table_cta_predictions])
+
+        if i % 100 == 0 and i > 1840:
+            pickle_save(tables, f"tables_test_2023_progress_{i}")
 
 
 # write cea_predictions to file

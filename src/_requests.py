@@ -23,9 +23,9 @@ class RateLimitException(Exception):
     pass
 
 
-fetch_entity_updater = PickleUpdater("/datasets/wikidata_fetch_entity_cache", save_interval=1200)
-entity_query_updater = PickleUpdater("/datasets/wikidata_entity_query_cache", save_interval=0)
-entity_search_updater = PickleUpdater("/datasets/wikidata_entity_search_cache", save_interval=0)
+fetch_entity_updater = PickleUpdater("/datasets/wikidata_fetch_entity_cache_2023", save_interval=1200)
+entity_query_updater = PickleUpdater("/datasets/wikidata_entity_query_cache_2023", save_interval=0)
+entity_search_updater = PickleUpdater("/datasets/wikidata_entity_search_cache_2023", save_interval=0)
 
 
 def wikidata_fetch_entities(ids: list[int], lang: str = "en", chunk_size: int = 50):
@@ -60,14 +60,15 @@ def wikidata_fetch_entities(ids: list[int], lang: str = "en", chunk_size: int = 
                 title = parse_entity_title(entity_data) or ""
                 description = parse_entity_description(entity_data) or ""
                 statements = []
-                for claims in entity_data["claims"].values():
-                    for claim in claims:
-                        if claim["mainsnak"]["snaktype"] == "novalue" or claim["mainsnak"]["snaktype"] == "somevalue":
-                            continue
-                        prop = int(claim["mainsnak"]["property"][1:])
-                        type = claim["mainsnak"]["datatype"]
-                        value = claim["mainsnak"]["datavalue"]["value"]
-                        statements.append((prop, type, value))
+                if "claims" in entity_data:
+                    for claims in entity_data["claims"].values():
+                        for claim in claims:
+                            if claim["mainsnak"]["snaktype"] == "novalue" or claim["mainsnak"]["snaktype"] == "somevalue":
+                                continue
+                            prop = int(claim["mainsnak"]["property"][1:])
+                            type = claim["mainsnak"]["datatype"]
+                            value = claim["mainsnak"]["datavalue"]["value"]
+                            statements.append((prop, type, value))
                 fetch_entity_updater.update_data(entity_id, (title, description, statements))
 
     fetch_entity_updater.close_data()

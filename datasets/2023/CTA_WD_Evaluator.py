@@ -22,8 +22,8 @@ class CTA_Evaluator:
     """
     submission_file_path = client_payload["submission_file_path"]
 
-    gt_ancestor = json.load(open("./DataSets/HardTablesR2/Valid/gt/cta_gt_ancestor.json"))
-    gt_descendent = json.load(open("./DataSets/HardTablesR2/Valid/gt/cta_gt_descendent.json"))
+    gt_ancestor = json.load(open("./DataSets/Valid/gt/cta_gt_ancestor.json"))
+    gt_descendent = json.load(open("./DataSets/Valid/gt/cta_gt_descendent.json"))
 
     cols, col_type = set(), dict()
     gt = pd.read_csv(self.answer_file_path, delimiter=',', names=['tab_id', 'col_id', 'type'],
@@ -111,8 +111,10 @@ if __name__ == "__main__":
     # Lets assume the the ground_truth is a CSV file
     # and is present at data/ground_truth.csv
     # and a sample submission is present at data/sample_submission.csv
-    answer_file_path = "./DataSets/HardTablesR2/Valid/gt/cta_gt.csv"
-    d = '/Users/jiahen/Downloads/CTA/'
+
+    answer_file_path = "./DataSets/Valid/gt/cta_gt.csv"
+    d = './DataSets/Valid/Submissions/cta'
+    
     for ff in os.listdir(d):
         _client_payload = {}
         if ff == '.DS_Store':
